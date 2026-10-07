@@ -5,7 +5,7 @@
  * 外部只感知 XML 字符串:{@code xml} prop 外部变化时重新导入;
  * 画布内任何命令栈变更(拖拽/属性编辑)触发 {@code onXmlChange} 回调。
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import BpmnJS from 'bpmn-js/lib/Modeler'
 import {
   BpmnPropertiesPanelModule,
@@ -17,6 +17,8 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 import { DshPropertiesProviderModule } from './DshPropertiesProvider'
 import { DshBackendTaskPaletteModule } from './dsh-backend-task-palette'
 import { ReplaceMenuFilterModule } from './replace-menu-filter'
+import { TranslateZhModule } from './translate-zh'
+import BpmnZoomControls, { type BpmnCanvasLike } from './BpmnZoomControls'
 import { dshModdleDescriptor, flowableModdleDescriptor } from './dsh-moddle'
 
 interface BpmnModelerProps {
@@ -33,6 +35,7 @@ interface BpmnModelerInstance {
   saveXML: (opts: { format?: boolean }) => Promise<{ xml: string }>
   on: (event: string, handler: () => void) => void
   destroy: () => void
+  get: (name: string) => unknown
 }
 
 export default function BpmnModeler({ xml, onXmlChange, readonly = false }: BpmnModelerProps) {
@@ -40,10 +43,17 @@ export default function BpmnModeler({ xml, onXmlChange, readonly = false }: Bpmn
   const panelRef = useRef<HTMLDivElement>(null)
   const paletteRef = useRef<HTMLDivElement>(null)
   const modelerRef = useRef<BpmnModelerInstance | null>(null)
+  // 右侧属性面板展开状态(div 始终挂载,只切宽度,避免 properties panel 重挂)
+  const [panelOpen, setPanelOpen] = useState(true)
   // 自己 emit 的 xml 存此;xml prop 回流时相同则跳过 importXML,避免导入循环
   const lastEmittedRef = useRef<string>('')
   const onXmlChangeRef = useRef(onXmlChange)
   onXmlChangeRef.current = onXmlChange
+
+  const getCanvas = (): BpmnCanvasLike | undefined => {
+    const modeler = modelerRef.current
+    return modeler ? (modeler.get('canvas') as BpmnCanvasLike) : undefined
+  }
 
   // 初始化 modeler(仅一次)
   useEffect(() => {
@@ -58,6 +68,7 @@ export default function BpmnModeler({ xml, onXmlChange, readonly = false }: Bpmn
         DshPropertiesProviderModule,
         DshBackendTaskPaletteModule,
         ReplaceMenuFilterModule,
+        TranslateZhModule,
       ],
       moddleExtensions: {
         dsh: dshModdleDescriptor,
@@ -101,8 +112,6 @@ export default function BpmnModeler({ xml, onXmlChange, readonly = false }: Bpmn
         borderRadius: 6,
         background: '#fff',
         overflow: 'hidden',
-        // 只读时整体禁用画布与面板交互(保留滚动浏览)
-        pointerEvents: readonly ? 'none' : 'auto',
       }}
     >
       {/* 左侧调色板 (Palette) */}
@@ -118,14 +127,49 @@ export default function BpmnModeler({ xml, onXmlChange, readonly = false }: Bpmn
           flexDirection: 'column',
           alignItems: 'center',
           padding: '8px 0',
+          // 只读时禁用画布与面板交互(缩放/折叠按钮在画布覆盖层,不受影响)
+          pointerEvents: readonly ? 'none' : 'auto',
         }}
       />
-      {/* 中间画布 */}
-      <div ref={canvasRef} style={{ flex: 1, minHeight: 0 }} />
-      {/* 右侧属性面板 */}
+      {/* 中间画布(relative 定位承托缩放控件覆盖层) */}
+      <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div
+          ref={canvasRef}
+          style={{ width: '100%', height: '100%', pointerEvents: readonly ? 'none' : 'auto' }}
+        />
+        {/* 右下角缩放控件 */}
+        <BpmnZoomControls getCanvas={getCanvas} />
+      </div>
+      {/* 属性面板折叠/展开切换 */}
+      <button
+        type="button"
+        title={panelOpen ? '收起属性面板' : '展开属性面板'}
+        onClick={() => setPanelOpen(open => !open)}
+        style={{
+          width: 16,
+          minHeight: 0,
+          background: '#fafafa',
+          border: 'none',
+          borderLeft: '1px solid #f0f0f0',
+          cursor: 'pointer',
+          color: '#8c8c8c',
+          fontSize: 12,
+          padding: 0,
+        }}
+      >
+        {panelOpen ? '‹' : '›'}
+      </button>
+      {/* 右侧属性面板(div 始终挂载,折叠只收宽度) */}
       <div
         ref={panelRef}
-        style={{ width: 340, minHeight: 0, overflowY: 'auto' }}
+        style={{
+          width: panelOpen ? 340 : 0,
+          flexShrink: 0,
+          minHeight: 0,
+          overflow: 'hidden',
+          transition: 'width 0.2s ease',
+          pointerEvents: readonly ? 'none' : 'auto',
+        }}
       />
     </div>
   )

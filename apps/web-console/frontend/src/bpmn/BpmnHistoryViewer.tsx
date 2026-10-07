@@ -18,6 +18,7 @@ import NavigatedViewer from 'bpmn-js/lib/NavigatedViewer'
 import { Alert, Spin } from 'antd'
 import type { HistoricActivityDto } from '../api/process-instances'
 import { dshModdleDescriptor, flowableModdleDescriptor } from './dsh-moddle'
+import BpmnZoomControls, { type BpmnCanvasLike } from './BpmnZoomControls'
 import 'bpmn-js/dist/assets/diagram-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css'
 import './bpmn-history-viewer.css'
@@ -88,6 +89,12 @@ export default function BpmnHistoryViewer({ xml, activities, onElementClick, fla
   const viewerRef = useRef<BpmnViewerInstance | null>(null)
   const [importing, setImporting] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // 缩放控件取 canvas 服务(点击时 viewer 已初始化)
+  const getCanvas = (): BpmnCanvasLike | undefined => {
+    const viewer = viewerRef.current
+    return viewer ? (viewer.get('canvas') as BpmnCanvasLike) : undefined
+  }
 
   // 初始化 viewer(仅一次)
   useEffect(() => {
@@ -187,6 +194,7 @@ export default function BpmnHistoryViewer({ xml, activities, onElementClick, fla
       }}
     >
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+      <BpmnZoomControls getCanvas={getCanvas} />
       {importing && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.6)' }}>
           <Spin />

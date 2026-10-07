@@ -23,6 +23,14 @@ html, body, #root {
   padding: 0;
 }
 
+/* ---- bpmn-js 画布 ---- */
+
+/* 隐藏 diagram-js 右下角 "Powered by BPMN.io" 水印。
+   注意:bpmn.io 许可证要求保留该署名,对外发布前请自行确认合规。 */
+.bjs-powered-by {
+  display: none;
+}
+
 body {
   font-family: var(--dsh-font);
   background: var(--dsh-canvas);
