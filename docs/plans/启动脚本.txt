@@ -174,4 +174,4 @@ pnpm run build
 pnpm dsh --profile enterprise
 
 # 5. 只推 feat 到你的 fork
-git push origin feat/enterprise-platform
+git push origin feat/enterprise-platform:master
