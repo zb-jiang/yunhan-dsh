@@ -8,7 +8,7 @@
 
 ***
 
-[中文](README.zh.md) | [English](README.md)
+[English](README.md) | 中文
 
 ## 个人提效 ≠ 企业提效
 
@@ -134,13 +134,13 @@ LLM 管理菜单集中模型接入、额度配置与用量分析：近一年消�
 pnpm install
 pnpm run build
 
-# 1) 流程引擎（:8090，首次启动自动建 ACT_* 表）
+# 1) Process engine (:8090, creates the ACT_* tables automatically on first start)
 cd apps/flowable-engine && mvn spring-boot:run
 
-# 2) 管理控制台（:8080，前端已打进同一个 jar）
+# 2) Management console (:8080, frontend bundled into the same jar)
 cd apps/web-console && mvn spring-boot:run
 
-# 3) 员工端 DSH（:3080）
+# 3) Employee client DSH (:3080)
 pnpm dsh --profile enterprise
 ```
 

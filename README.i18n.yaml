@@ -2,33 +2,81 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-/deepseek-harness:
-  en: f68c4f080ce55ff2
-  zh: 88a76d7f7f0b260e
-/deepseek-harness/developer-preview:
-  en: 4ef4d8a71ac143f0
-  zh: 1bfc3149ba8e5543
-/deepseek-harness/run:
-  en: 4e0248e4c6474fc6
-  zh: eb2fb8d78c7d6bc0
-/deepseek-harness/run/run-from-npm:
-  en: e22005cd42e6cbad
-  zh: 0f536f4208df1d60
-/deepseek-harness/run/run-from-source:
-  en: 819e3f7c144d0d64
-  zh: de815f040975dba7
-/deepseek-harness/community-and-support:
-  en: 20acf6451fdc869b
-  zh: d06246dd019ecef7
-/deepseek-harness/contributing:
-  en: cabc2d3e9f8898bd
-  zh: 83b6d238bae29ce3
-/deepseek-harness/development:
-  en: 803ca2b11b497bed
-  zh: 8b4071eb0e7783ef
-/deepseek-harness/citation:
-  en: 6704e9e5a8d49a91
-  zh: 85c9cdd8d56f8e9d
-/deepseek-harness/license:
-  en: 926995344fc1c72b
-  zh: c92fab5abf85932f
+/yunhan-enterprise-ai-collaboration-platform:
+  en: bf7d9e685fb2150a
+  zh: d86aa506eedca2c2
+/yunhan-enterprise-ai-collaboration-platform/personal-productivity-enterprise-productivity:
+  en: 88cd4a98274bfe44
+  zh: ff7f560738bdcaea
+/yunhan-enterprise-ai-collaboration-platform/four-enterprise-grade-capabilities:
+  en: b06ebc4dea45e4e6
+  zh: e744fd802137a339
+/yunhan-enterprise-ai-collaboration-platform/four-enterprise-grade-capabilities/1-enterprise-properties-for-the-work-agent:
+  en: d536a939cfd33504
+  zh: 0d36856ba943155f
+/yunhan-enterprise-ai-collaboration-platform/four-enterprise-grade-capabilities/2-standard-bpmn-integrates-with-existing-it-no-rebuild-required:
+  en: 4de29ab6b1c1126f
+  zh: ec475be01a1290c6
+/yunhan-enterprise-ai-collaboration-platform/four-enterprise-grade-capabilities/3-industry-standard-authentication-and-authorization:
+  en: 65bcc6c764fa7a26
+  zh: afc070967c369362
+/yunhan-enterprise-ai-collaboration-platform/four-enterprise-grade-capabilities/4-unified-authorization-monitoring-and-management-of-enterprise-token-compute:
+  en: 33520a8d8f7dd46e
+  zh: 1d3763ca5d98c4a5
+/yunhan-enterprise-ai-collaboration-platform/capability-overview:
+  en: e4d5ae5ddd5ae9e4
+  zh: 42ff25f19d04b5c8
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour:
+  en: 83fc277b2275f372
+  zh: 45ad012c64c64cfe
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/employee-client-a-personal-workspace-that-runs-enterprise-processes:
+  en: fcabb13b70d29740
+  zh: 88293855c08fac04
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/process-designer-drag-out-human-ai-hybrid-processes:
+  en: f214e049ccd91cbd
+  zh: 2fa5655e2209ed94
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/node-level-ai-orchestration-enterprise-prompts-enterprise-skills-output-mappings:
+  en: 8eaa3cc2c0ee3a3c
+  zh: f303c27f7aeb5515
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/instance-replay-every-ai-call-is-on-the-record:
+  en: 4e767b9e1c6404cb
+  zh: 3bd06a6578389f75
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/process-analytics-bottlenecks-from-the-enterprise-perspective:
+  en: fd963e504d05e8ce
+  zh: f84306c1768d9740
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/enterprise-knowledge-base-let-ai-read-the-company-s-documents:
+  en: e086d56b78697fe3
+  zh: 97cf221d48327d9d
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/token-compute-dashboard-every-unit-of-consumption-accounted-for:
+  en: 0c925ea5b0923265
+  zh: 708ef7856d85bd56
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/departments-and-authorization-the-skeleton-of-matrix-permissions:
+  en: 0817d3be6d444230
+  zh: dc9f62dc5a6ccb72
+/yunhan-enterprise-ai-collaboration-platform/a-quick-tour/app-governance-members-roles-skills-on-one-page:
+  en: 72c45ef513e28928
+  zh: b3ca2582601baaa7
+/yunhan-enterprise-ai-collaboration-platform/architecture:
+  en: 182a1636828c8729
+  zh: 98f4c5c436165698
+/yunhan-enterprise-ai-collaboration-platform/quick-start:
+  en: 9535b10be9abb7a8
+  zh: 754bdf1f360f89ea
+/yunhan-enterprise-ai-collaboration-platform/quick-start/prerequisites:
+  en: 87f7ee6c986e7b05
+  zh: 1f0bc01fece1532f
+/yunhan-enterprise-ai-collaboration-platform/quick-start/start:
+  en: f998d67e711cb109
+  zh: a19942b7465df2d1
+/yunhan-enterprise-ai-collaboration-platform/quick-start/environment-variables:
+  en: 5e866c76df463a32
+  zh: e43f7b5163bccad8
+/yunhan-enterprise-ai-collaboration-platform/community-and-co-building:
+  en: 4837056dad5bc9e9
+  zh: da0fea8d603bdb87
+/yunhan-enterprise-ai-collaboration-platform/acknowledgements:
+  en: ed9f157ed85e2780
+  zh: cddaca4d313abb7b
+/yunhan-enterprise-ai-collaboration-platform/license:
+  en: 82fa813f0a93522d
+  zh: 515a7c32bfa7dddf
