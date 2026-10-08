@@ -4,7 +4,7 @@
 
 <p align="center"><strong>面向流程的组织级 Work Agent —— 给组织提效，而不只是给个人提效</strong><br/>基于 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 全插件 Agent 框架与标准 BPMN 构建</p>
 
-<p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a><a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot-3-6DB33F?logo=spring&logoColor=white" alt="Spring Boot 3"></a><a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/powered%20by-DeepSeek%20Harness-blueviolet" alt="Powered by DeepSeek Harness"></a><a href="https://bpmn.io"><img src="https://img.shields.io/badge/BPMN-bpmn.io-00A3E0" alt="BPMN by bpmn.io"></a><a href="https://www.flowable.com"><img src="https://img.shields.io/badge/BPMN-Flowable%207-orange" alt="BPMN / Flowable 7"></a></p>
+<p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a><a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/powered%20by-DeepSeek%20Harness-blueviolet" alt="Powered by DeepSeek Harness"></a><a href="https://bpmn.io"><img src="https://img.shields.io/badge/BPMN-bpmn.io-00A3E0" alt="BPMN by bpmn.io"></a><a href="https://www.flowable.com"><img src="https://img.shields.io/badge/BPMN-Flowable%207-orange" alt="BPMN / Flowable 7"></a><a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot-3-6DB33F?logo=spring&logoColor=white" alt="Spring Boot 3"></a></p>
 
 ***
 
@@ -12,22 +12,22 @@
 
 ## 个人提效 ≠ 组织提效
 
-今天的 Work Agent 平台——WorkBuddy、Codex、Claude、千问办公、豆包办公——都在做同一件事：让个人更快。云汉**给主流 Work Agent 技术加上组织属性**。个人知识库变成组织知识库，个人 Skill 变成集中管理、版本可控、动态升级的组织 Skill，个人提示词变成绑定在流程节点上、随流程版本治理的组织提示词，个人 Token 变成企业统一授权与核算的算力——再通过行业标准 BPMN 把 AI 编进企业现有的 IT 与流程。一句话：**云汉不是给个人办公提效的 Work Agent，而是面向流程、给组织提效的 Work Agent。**
+今天的 Work Agent 平台——WorkBuddy、Codex、Claude、千问办公、豆包办公——都在做同一件事：让个人更快。云汉**给主流 Work Agent 技术加上企业属性**。个人知识库变成企业知识库，个人 Skill 变成集中管理、版本可控、动态升级的企业 Skill，个人提示词变成绑定在流程节点上、随流程版本治理的企业提示词，个人 Token 变成企业统一授权与核算的算力——再通过行业标准 BPMN 把 AI 编进企业现有的 IT 与流程。一句话：**云汉不是给个人办公提效的 Work Agent，而是面向流程、给企业提效的 Work Agent。**
 
-## 四个组织级能力
+## 四个企业级能力
 
-### 1. 给 Work Agent 加上组织属性
+### 1. 给 Work Agent 加上企业属性
 
-| 个人 Work Agent        | 云汉组织 Work Agent                                   |
+| 个人 Work Agent        | 云汉企业 Work Agent                                   |
 | -------------------- | ------------------------------------------------- |
-| 知识库散落在个人电脑与聊天记录      | 组织知识库：集中建库、按应用授权、三路混合检索（向量 + 关键词 + 全文）+ Rerank 精排 |
-| Skill 装在个人目录，各装各的版本  | 组织 Skill 仓库：集中管理、版本可追溯、按应用绑定，动态分发到员工端与 AI 节点      |
-| 提示词存在个人收藏夹，口径因人而异    | 组织提示词：与 BPMN 节点绑定，随流程定义版本化发布，全员同一口径               |
+| 知识库散落在个人电脑与聊天记录      | 企业知识库：集中建库、按应用授权、三路混合检索（向量 + 关键词 + 全文）+ Rerank 精排 |
+| Skill 装在个人目录，各装各的版本  | 企业 Skill 仓库：集中管理、版本可追溯、按应用绑定，动态分发到员工端与 AI 节点      |
+| 提示词存在个人收藏夹，口径因人而异    | 企业提示词：与 BPMN 节点绑定，随流程定义版本化发布，全员同一口径               |
 | Token 各花各的，花了多少没人说得清 | 企业算力：统一接入、额度配置、按人与按应用核算分析                         |
 
 ### 2. 标准 BPMN 融入现有 IT，而不是推翻重来
 
-以 Flowable 7（BPMN 2.0 行业标准）为流程核心，用自定义扩展把 AI 原生编进画布：单人审批、会签、串签、按票数收工的会签计票（如「5 人中 3 票同意即通过」）、超时自动提醒与升级、SoD 责权分离，全部开箱即用。AI 节点与人工节点通过服务密钥调用企业 legacy 业务系统（费控、ERP 等，仓库自带 `expense-ctrl` SOR 示例），流程产出直接写回业务系统——最新的 AI 工作方法落在传统企业 IT 上，是融入，不是重建。
+以 Flowable 7（BPMN 2.0 行业标准）为流程核心，用自定义扩展把 AI 原生编进画布：单人审批、会签、串签、按票数收工的会签计票（如「5 人中 3 票同意即通过」）、超时自动提醒与升级、SoD 责权分离，全部开箱即用。AI 节点与人工节点通过服务密钥调用企业 legacy 业务系统（System of Record：费控、ERP 等），流程产出直接写回业务系统——最新的 AI 工作方法落在传统企业 IT 上，是融入，不是重建。
 
 ### 3. 兼容行业标准的认证与授权
 
@@ -35,7 +35,7 @@ SSO 单点登录（Supabase OIDC，三端 JWKS 本地验签、无共享密钥）
 
 ### 4. 企业 Token 算力统一授权、监控、管理
 
-多模型供应商经 New API 网关统一接入；额度按人、按应用配置；用量分析提供近一年消耗热力图与逐笔调用明细；流程内每一次 AI 调用（提示词全文、响应、Token 用量）留痕可查——AI 花的每一分钱都对得上账。
+多模型供应商经API 网关统一接入；额度按人、按应用配置；用量分析提供近一年消耗热力图与逐笔调用明细；流程内每一次 AI 调用（提示词全文、响应、Token 用量）留痕可查——AI 花的每一分钱都对得上账。
 
 ## 能力总览
 
@@ -54,7 +54,7 @@ SSO 单点登录（Supabase OIDC，三端 JWKS 本地验签、无共享密钥）
 
 ## 界面速览
 
-### 员工端：个人工作台，承载的是组织流程
+### 员工端：个人工作台，承载的是企业流程
 
 员工登录 DSH 桌面端，左侧是待办工作台；中间是与 AI 协作完成任务的对话区；右侧任务摘要面板实时显示流程进度（执行路径高亮）与逐节点日志。
 
@@ -66,9 +66,9 @@ SSO 单点登录（Supabase OIDC，三端 JWKS 本地验签、无共享密钥）
 
 ![流程设计器：BPMN 画布 + 中文属性面板](docs/assets/应用中流程定义.png)
 
-### 节点级 AI 编排：组织提示词 + 组织 Skill + 输出映射
+### 节点级 AI 编排：企业提示词 +企业 Skill + 输出映射
 
-AI 自动节点与人工节点共用同一套编排模型：提示词中用 `{{变量}}` 插入流程上下文，按需引用组织 Skill 仓库中的 Skill，并以 JSON 骨架声明输出映射；多实例节点可绑定多个后台实例并行执行。
+AI 自动节点与人工节点共用同一套编排模型：提示词中用 `{{变量}}` 插入流程上下文，按需引用企业 Skill 仓库中的 Skill，并以 JSON 骨架声明输出映射；多实例节点可绑定多个后台实例并行执行。
 
 | AI 自动节点（后台任务）                                                  | 人工节点（用户任务）                                            |
 | -------------------------------------------------------------- | ----------------------------------------------------- |
@@ -80,13 +80,13 @@ AI 自动节点与人工节点共用同一套编排模型：提示词中用 `{{�
 
 ![流程实例详情：历史路径回放 + 段落日志](docs/assets/流程实例.png)
 
-### 效能分析：组织视角看流程瓶颈
+### 效能分析：企业视角看流程瓶颈
 
 节点按时长自动分成快/中/慢三档热力图，配合办理人耗时榜与最慢节点榜，流程瓶颈与超时重灾环节一目了然——这是个人Work Agent给不了的端到端视角。
 
 ![流程效能分析：节点热力图 + 耗时榜](docs/assets/流程效能分析.png)
 
-### 组织知识库：让 AI 读企业的文档
+### 企业知识库：让 AI 读企业的文档
 
 按应用建库、按文件夹组织文档，上传后自动解析、分块、向量化（解析状态实时可见）；检索走向量 + 关键词 + 全文三路召回、RRF 融合 + Rerank 精排，AI 节点与员工对话开箱即用。
 
