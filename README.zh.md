@@ -2,7 +2,7 @@
 
 <h1 align="center">云汉 YunHan</h1>
 
-<p align="center"><strong>面向流程的组织级 Work Agent —— 给组织提效，而不只是给个人提效</strong><br/>基于 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 全插件 Agent 框架与标准 BPMN 构建</p>
+<p align="center"><strong>面向流程的企业级 Work Agent —— 给企业提效，而不只是给个人提效</strong><br/>基于 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 全插件 Agent 框架与标准 BPMN 构建</p>
 
 <p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a><a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/powered%20by-DeepSeek%20Harness-blueviolet" alt="Powered by DeepSeek Harness"></a><a href="https://bpmn.io"><img src="https://img.shields.io/badge/BPMN-bpmn.io-00A3E0" alt="BPMN by bpmn.io"></a><a href="https://www.flowable.com"><img src="https://img.shields.io/badge/BPMN-Flowable%207-orange" alt="BPMN / Flowable 7"></a><a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot-3-6DB33F?logo=spring&logoColor=white" alt="Spring Boot 3"></a></p>
 
@@ -10,7 +10,7 @@
 
 [中文](README.zh.md) | [English](README.md)
 
-## 个人提效 ≠ 组织提效
+## 个人提效 ≠ 企业提效
 
 今天的 Work Agent 平台——WorkBuddy、Codex、Claude、千问办公、豆包办公——都在做同一件事：让个人更快。云汉**给主流 Work Agent 技术加上企业属性**。个人知识库变成企业知识库，个人 Skill 变成集中管理、版本可控、动态升级的企业 Skill，个人提示词变成绑定在流程节点上、随流程版本治理的企业提示词，个人 Token 变成企业统一授权与核算的算力——再通过行业标准 BPMN 把 AI 编进企业现有的 IT 与流程。一句话：**云汉不是给个人办公提效的 Work Agent，而是面向流程、给企业提效的 Work Agent。**
 
