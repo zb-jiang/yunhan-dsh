@@ -167,9 +167,19 @@ pnpm dsh --profile enterprise
 
 ## 交流与共建
 
-项目仍在快速进化中。如果你在思考「AI 怎么真正进入企业的流程与组织」，或者想把云汉落地到自己的业务上，欢迎扫码加微信交流；我们也提供与之配套的企业 AI 转型课程与落地方法论（从超级个体到超级团队的完整路径）。觉得不错的话，点一个 Star 并 Follow，就是最大的鼓励。
+项目仍在快速进化中。如果你在思考「AI 怎么真正进入企业的流程与组织」，或者想把云汉落地到自己的业务上，欢迎扫码加微信交流、在抖音关注我们；我们也提供与之配套的企业 AI 转型课程与落地方法论（从超级个体到超级团队的完整路径）。觉得不错的话，点一个 Star 并 Follow，就是最大的鼓励。
 
-<p align="center"><img src="docs/assets/微信二维码.png" alt="微信交流二维码" width="180"></p>
+<table>
+  <thead>
+    <tr><th align="center">微信交流</th><th align="center">抖音</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><img src="docs/assets/微信二维码.png" alt="微信交流二维码" width="180"></td>
+      <td align="center"><img src="docs/assets/抖音.png" alt="抖音二维码" width="180"></td>
+    </tr>
+  </tbody>
+</table>
 
 ## 致谢
 

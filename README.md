@@ -167,9 +167,19 @@ The backend node service (`dsh --profile enterprise-backend`) also needs `SUPABA
 
 ## Community and co-building
 
-The project is evolving fast. If you are thinking about how AI can truly enter enterprise processes and organizations, or want to bring YunHan to your own business, scan the QR code to reach us on WeChat; we also offer a companion enterprise AI transformation course and methodology (the full path from super individuals to super teams). If you like the project, a Star and a Follow are the best encouragement.
+The project is evolving fast. If you are thinking about how AI can truly enter enterprise processes and organizations, or want to bring YunHan to your own business, scan the QR codes to reach us on WeChat or follow us on Douyin; we also offer a companion enterprise AI transformation course and methodology (the full path from super individuals to super teams). If you like the project, a Star and a Follow are the best encouragement.
 
-<p align="center"><img src="docs/assets/微信二维码.png" alt="WeChat QR code" width="180"></p>
+<table>
+  <thead>
+    <tr><th align="center">WeChat</th><th align="center">Douyin</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><img src="docs/assets/微信二维码.png" alt="WeChat QR code" width="180"></td>
+      <td align="center"><img src="docs/assets/抖音.png" alt="Douyin QR code" width="180"></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Acknowledgements
 
