@@ -4,7 +4,7 @@
 
 <p align="center"><strong>面向流程的组织级 Work Agent —— 给组织提效，而不只是给个人提效</strong><br/>基于 <a href="https://github.com/deepseek-ai/deepseek-harness">DeepSeek Harness</a> 全插件 Agent 框架与标准 BPMN 构建</p>
 
-<p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a><img src="https://img.shields.io/badge/node-%5E22.19%20%7C%7C%20%3E%3D24-brightgreen" alt="Node ^22.19 || >=24"><a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/powered%20by-DeepSeek%20Harness-blueviolet" alt="Powered by DeepSeek Harness"></a><img src="https://img.shields.io/badge/BPMN-Flowable%207-orange" alt="BPMN / Flowable 7"></a></p>
+<p align="center"><a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a><a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring_Boot-3-6DB33F?logo=spring&logoColor=white" alt="Spring Boot 3"></a><a href="https://github.com/deepseek-ai/deepseek-harness"><img src="https://img.shields.io/badge/powered%20by-DeepSeek%20Harness-blueviolet" alt="Powered by DeepSeek Harness"></a><a href="https://bpmn.io"><img src="https://img.shields.io/badge/BPMN-bpmn.io-00A3E0" alt="BPMN by bpmn.io"></a><a href="https://www.flowable.com"><img src="https://img.shields.io/badge/BPMN-Flowable%207-orange" alt="BPMN / Flowable 7"></a></p>
 
 ***
 
@@ -182,5 +182,3 @@ pnpm dsh --profile enterprise
 ## 许可证
 
 [MIT](LICENSE)
-
-第三方依赖及其许可证见 [THIRD\_PARTY\_NOTICES.md](THIRD_PARTY_NOTICES.md)。
