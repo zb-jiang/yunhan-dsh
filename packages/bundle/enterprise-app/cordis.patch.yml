@@ -98,3 +98,8 @@
 
     - id: ui-enterprise
       name: '@deepseek-ai/dsh-client-ui-enterprise'
+
+# 右侧栏浏览器：web-app 补丁默认仅 desktop profile 启用（disabled 随
+# profileContext.name 计算），企业层用同 id 补丁行覆盖为常开。
+- id: ui-sidebar-browser
+  disabled: false
