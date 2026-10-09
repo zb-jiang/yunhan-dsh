@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/banner.jpg" alt="YunHan" width="100%"></p>
+
 # YunHan · Enterprise AI Collaboration Platform
 
 <h1 align="center">YunHan</h1>

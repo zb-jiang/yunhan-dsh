@@ -2,6 +2,9 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
+/:
+  en: 2f31cac1f2e76b5d
+  zh: 2f31cac1f2e76b5d
 /yunhan-enterprise-ai-collaboration-platform:
   en: bf7d9e685fb2150a
   zh: d86aa506eedca2c2

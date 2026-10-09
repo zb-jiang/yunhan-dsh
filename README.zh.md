@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/banner.jpg" alt="YunHan" width="100%"></p>
+
 # 云汉 · 企业级 AI 协同平台
 
 <h1 align="center">云汉 YunHan</h1>
