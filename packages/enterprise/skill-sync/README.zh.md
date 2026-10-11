@@ -113,6 +113,6 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-`fetchSkillhubManifest` 与 `installSkillZip` 导出供 dsh-backend-task 复用：后者的同步源不同，但 SkillHub 清单与下载协议是同一套。这两个函数的改动必须同时保住两个调用方。此处无未竟工作。
+`fetchSkillhubManifest` 与 `installSkillZip` 导出供 dsh-backend-task 复用：后者的同步源不同，但 SkillHub 清单与下载协议是同一套。这两个函数的改动必须同时保住两个调用方。不发布运行时不变量伴随导出：扫描、下载与注入行为由本包行为测试直接覆盖，没有会分叉的独立维护观测。此处无未竟工作。
 
 </details>

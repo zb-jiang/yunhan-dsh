@@ -116,6 +116,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The in-memory task table is a design-accepted constraint (delegate retries cover it); persistent task state would be new work in web-console or the engine, not here. No open work here.
+The in-memory task table is a design-accepted constraint (delegate retries cover it); persistent task state would be new work in web-console or the engine, not here. No runtime invariant companion is published: endpoint behavior and the in-memory task lifecycle are covered directly by the package's behavior tests, with no independently maintained observation that can diverge. No open work here.
 
 </details>

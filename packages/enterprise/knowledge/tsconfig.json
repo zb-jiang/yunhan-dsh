@@ -10,7 +10,6 @@
   "references": [
     { "path": "../user-identity-context" },
     { "path": "../../core/tools" },
-    { "path": "../../host/webserver" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../host/webserver" }
   ]
 }

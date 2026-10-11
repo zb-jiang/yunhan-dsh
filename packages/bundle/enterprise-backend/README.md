@@ -112,6 +112,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The invariant companion registers package ownership with no runtime invariant — a static patch-list carrier has none to assert. No open work here.
+No runtime invariant companion is published because the package is a static patch-list carrier with no mutable state to audit. No open work here.
 
 </details>

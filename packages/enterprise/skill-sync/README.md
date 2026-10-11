@@ -113,6 +113,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-`fetchSkillhubManifest` and `installSkillZip` are exported for dsh-backend-task, whose sync source differs but whose SkillHub manifest and download protocol is the same. Changes to those two functions must keep both callers working. No open work here.
+`fetchSkillhubManifest` and `installSkillZip` are exported for dsh-backend-task, whose sync source differs but whose SkillHub manifest and download protocol is the same. Changes to those two functions must keep both callers working. No runtime invariant companion is published: scan, download, and injection behavior is covered directly by the package's behavior tests, with no independently maintained observation that can diverge. No open work here.
 
 </details>

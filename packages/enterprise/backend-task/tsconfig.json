@@ -16,7 +16,6 @@
     { "path": "../../llm/llm" },
     { "path": "../../core/session" },
     { "path": "../../host/webserver" },
-    { "path": "../../runtime-diagnostics/invariants" },
     { "path": "../../skill/skill" },
     { "path": "../../skill/skill-filesystem" },
     { "path": "../kb-context" },

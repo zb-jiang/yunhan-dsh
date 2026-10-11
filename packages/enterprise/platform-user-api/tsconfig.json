@@ -9,7 +9,6 @@
   ],
   "references": [
     { "path": "../platform-user" },
-    { "path": "../../host/webserver" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../host/webserver" }
   ]
 }

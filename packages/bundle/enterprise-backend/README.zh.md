@@ -112,6 +112,6 @@ kind: "package-bundle"
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-invariant 伴随插件只登记包所有权，不携带运行时不变量 —— 静态 patch 清单载体没有可断言的不变量。此处无未竟工作。
+不发布运行时不变量伴随导出：本包是静态 patch 清单载体，没有需要审计的可变状态。此处无未竟工作。
 
 </details>

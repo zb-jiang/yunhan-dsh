@@ -144,6 +144,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Milestones M1, M2, and M3 are delivered: M1 shipped the proxy, the management routes, and the settings-page base (including the pairing-and-devices and desktop-identity cards); M2 shipped the access audit trail — local event buffer with batched reporting to the web-console audit log; M3 shipped the WAN tunnel — cloudflared lifecycle, quick and named modes, the auto-restore marker, the token store, and the disclaimer-gated WAN card.
+Milestones M1, M2, and M3 are delivered: M1 shipped the proxy, the management routes, and the settings-page base (including the pairing-and-devices and desktop-identity cards); M2 shipped the access audit trail — local event buffer with batched reporting to the web-console audit log; M3 shipped the WAN tunnel — cloudflared lifecycle, quick and named modes, the auto-restore marker, the token store, and the disclaimer-gated WAN card. No runtime invariant companion is published: every assertion for the two gates (device-cookie HMAC check, same-account identity comparison) and the listener lifecycle (started and stopped with the enabled switch) derives only from the plugin's own state — the device list, `Config.enabled`, and the proxy server handle — all covered by direct unit tests, so no independent observation source exists that can diverge.
 
 </details>

@@ -100,6 +100,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The per-file-row upload slot `sidebar.files.entry.action` is an enterprise deviation coexisting with upstream's header-action slot; see the repo AGENTS.md merge-preserve notes before touching it. No open work here.
+The per-file-row upload slot `sidebar.files.entry.action` is an enterprise deviation coexisting with upstream's header-action slot; see the repo AGENTS.md merge-preserve notes before touching it. No runtime invariant companion is published: the UI renders store state and registers slots, with no independently maintained observation that can diverge from the owning component tests. No open work here.
 
 </details>

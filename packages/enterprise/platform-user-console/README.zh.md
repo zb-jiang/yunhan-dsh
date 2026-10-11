@@ -46,7 +46,7 @@ dsh-platform-user 按认证方式解析已注册的 provider，因此没有其�
 
 ### 自读契约
 
-provider 假定 Web Console 的 `GET /api/users/me` 端点返回 `ApiResponse` 信封（`{ success, data, error }`），其 `data` 为 camelCase 治理记录（`id`、`authSubject`、`loginName`、`displayName`、`email`、`status`、`platformRoles`、`createdAt` 及可选的审批/禁用/锁定留痕字段）。未知字段（如 `orgUnits`）被忽略。没有运行时不变量包：本 provider 是薄传输适配器，本地验证 JWT 后每个请求读取一个后端端点，没有可检查的持久关系。
+provider 假定 Web Console 的 `GET /api/users/me` 端点返回 `ApiResponse` 信封（`{ success, data, error }`），其 `data` 为 camelCase 治理记录（`id`、`authSubject`、`loginName`、`displayName`、`email`、`status`、`platformRoles`、`createdAt` 及可选的审批/禁用/锁定留痕字段）。未知字段（如 `orgUnits`）被忽略。不发布运行时不变量伴随导出：本 provider 是薄传输适配器，本地验证 JWT 后每个请求读取一个后端端点，没有可检查的持久关系。
 
 </details>
 

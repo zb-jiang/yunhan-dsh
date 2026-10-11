@@ -78,4 +78,4 @@ None.
 
 </details>
 
-**Runtime invariant:** No companion content is published: the package is a static patch-list carrier with no mutable state to audit (see `src/invariant.ts`).
+**Runtime invariant:** No runtime invariant companion is published because the package is a static patch-list carrier with no mutable state to audit.

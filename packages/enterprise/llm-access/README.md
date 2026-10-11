@@ -114,6 +114,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Quota accounting, model grants, and the OpenAI-compatible proxy contract are owned by web-console; the fallback context-window and max-tokens values here only fill catalog gaps. No open work here.
+Quota accounting, model grants, and the OpenAI-compatible proxy contract are owned by web-console; the fallback context-window and max-tokens values here only fill catalog gaps. No runtime invariant companion is published: proxy routing and catalog lookup are covered directly by the package's behavior tests, with no independently maintained observation that can diverge. No open work here.
 
 </details>

@@ -114,6 +114,6 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-配额记账、模型授权与 OpenAI 兼容代理契约由 web-console 拥有；这里的兜底 context-window 与 max-tokens 值只补目录缺口。本包无未决工作。
+配额记账、模型授权与 OpenAI 兼容代理契约由 web-console 拥有；这里的兜底 context-window 与 max-tokens 值只补目录缺口。不发布运行时不变量伴随导出：代理路由与目录查找由本包行为测试直接覆盖，没有会分叉的独立维护观测。本包无未决工作。
 
 </details>

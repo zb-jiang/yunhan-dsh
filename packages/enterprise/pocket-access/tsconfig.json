@@ -15,7 +15,6 @@
     { "path": "../user-identity-context" },
     { "path": "../../client/connection/tsconfig.host.json" },
     { "path": "../../host/webserver" },
-    { "path": "../../runtime-diagnostics/invariants" },
     { "path": "../../settings/settings" },
     { "path": "../../subprocess/subprocess" },
     { "path": "../../util/home-paths" }

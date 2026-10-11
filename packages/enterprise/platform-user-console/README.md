@@ -46,7 +46,7 @@ This section explains the design decisions and points at the code; the observabl
 
 ### The self-read contract
 
-The provider assumes the Web Console `GET /api/users/me` endpoint returns the `ApiResponse` envelope (`{ success, data, error }`) whose `data` is the camelCase governance record (`id`, `authSubject`, `loginName`, `displayName`, `email`, `status`, `platformRoles`, `createdAt`, and the optional approval/disable/lock trail fields). Unknown fields such as `orgUnits` are ignored. There is no runtime invariant package: the provider is a thin transport adapter that verifies JWTs locally and reads one backend endpoint per request, with no durable relation to check.
+The provider assumes the Web Console `GET /api/users/me` endpoint returns the `ApiResponse` envelope (`{ success, data, error }`) whose `data` is the camelCase governance record (`id`, `authSubject`, `loginName`, `displayName`, `email`, `status`, `platformRoles`, `createdAt`, and the optional approval/disable/lock trail fields). Unknown fields such as `orgUnits` are ignored. No runtime invariant companion is published: the provider is a thin transport adapter that verifies JWTs locally and reads one backend endpoint per request, with no durable relation to check.
 
 </details>
 

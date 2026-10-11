@@ -112,6 +112,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Identity verification itself (JWT validation, user lookup, status checks) is owned by dsh-platform-user; this package is route plumbing plus the two event touchpoints. No open work here.
+Identity verification itself (JWT validation, user lookup, status checks) is owned by dsh-platform-user; this package is route plumbing plus the two event touchpoints. No runtime invariant companion is published: the routes are thin plumbing over platform-user verification, with behavior covered directly by the package's endpoint tests. No open work here.
 
 </details>

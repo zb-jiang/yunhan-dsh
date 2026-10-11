@@ -100,6 +100,6 @@ Prompt 预填仅在草稿为空时经会话草稿路径写入；失败以侧栏�
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-文件行级上传 slot `sidebar.files.entry.action` 是企业 deviation，与上游的 header-action slot 并存；动它之前先看仓库 AGENTS.md 的 merge-preserve notes。此处无未决工作。
+文件行级上传 slot `sidebar.files.entry.action` 是企业 deviation，与上游的 header-action slot 并存；动它之前先看仓库 AGENTS.md 的 merge-preserve notes。不发布运行时不变量伴随导出：UI 只渲染 store 状态并注册 slots，没有会与组件测试分叉的独立维护观测。此处无未决工作。
 
 </details>

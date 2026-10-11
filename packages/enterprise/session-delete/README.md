@@ -107,6 +107,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The delete order mirrors the registry's own archive flow in reverse; if unarchive semantics change there, this sequence changes with them. No open work here.
+The delete order mirrors the registry's own archive flow in reverse; if unarchive semantics change there, this sequence changes with them. No runtime invariant companion is published: the ordered delete sequence is covered directly by the package's behavior tests, with no independently maintained observation that can diverge. No open work here.
 
 </details>

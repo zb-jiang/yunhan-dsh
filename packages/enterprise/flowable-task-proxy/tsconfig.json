@@ -8,7 +8,6 @@
     "src"
   ],
   "references": [
-    { "path": "../../host/webserver" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../host/webserver" }
   ]
 }

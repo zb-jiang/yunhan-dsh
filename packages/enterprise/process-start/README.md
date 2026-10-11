@@ -113,6 +113,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Start-variable validation and instance persistence are owned by web-console; this package forwards declarations and start requests only. No open work here.
+Start-variable validation and instance persistence are owned by web-console; this package forwards declarations and start requests only. No runtime invariant companion is published: the tools forward declarations and start requests only, with behavior covered directly by the package's behavior tests and no independently maintained observation that can diverge. No open work here.
 
 </details>

@@ -116,6 +116,6 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-检索排序——RRF 权重、jieba 词典、解析——由 web-console 拥有；本包只转发参数。本包无未决工作。
+检索排序——RRF 权重、jieba 词典、解析——由 web-console 拥有；本包只转发参数。不发布运行时不变量伴随导出：代理路由与工具参数转发由本包行为测试直接覆盖，没有会分叉的独立维护观测。本包无未决工作。
 
 </details>

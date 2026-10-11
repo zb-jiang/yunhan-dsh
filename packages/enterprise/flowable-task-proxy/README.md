@@ -110,6 +110,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Task state, claiming, and completion semantics are owned by flowable-engine; this package carries bytes only. No open work here.
+Task state, claiming, and completion semantics are owned by flowable-engine; this package carries bytes only. No runtime invariant companion is published: the proxy is stateless byte-forwarding between two prefixes, with behavior covered directly by the package's proxy tests. No open work here.
 
 </details>

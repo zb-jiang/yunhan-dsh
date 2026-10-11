@@ -112,6 +112,6 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-身份验证本身（JWT 校验、用户查询、状态检查）由 dsh-platform-user 负责；本包只是路由管道加两个事件触点。此处无未竟工作。
+身份验证本身（JWT 校验、用户查询、状态检查）由 dsh-platform-user 负责；本包只是路由管道加两个事件触点。不发布运行时不变量伴随导出：路由只是 platform-user 校验之上的薄管道，行为由本包端点测试直接覆盖。此处无未竟工作。
 
 </details>

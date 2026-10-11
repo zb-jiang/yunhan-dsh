@@ -49,9 +49,9 @@ This section explains the design decisions and points at the code; the observabl
 
 The seam validates role names, rejects duplicate roles, and rejects invalid status transitions before the provider is called, so a malformed request never reaches the backend adapter.
 
-### An empty invariant companion
+### No runtime invariant companion
 
-The `./invariant` export registers package ownership only: the seam owns one active provider slot and a single read entry point, with no independent event stream or durable relation outside the provider-backed record itself.
+No runtime invariant companion is published: the seam owns one active provider slot and a single read entry point, with no independent event stream or durable relation outside the provider-backed record itself, and the pre-provider validation lives in the same module the behavior tests cover directly.
 
 </details>
 

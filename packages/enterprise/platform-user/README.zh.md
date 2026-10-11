@@ -49,9 +49,9 @@ kind: "package-reference"
 
 seam 会在调用 provider 之前校验角色名、拒绝重复角色并拒绝非法状态迁移，畸形请求永远到不了后端适配器。
 
-### 空的 invariant 伴随包
+### 无运行时不变量伴随导出
 
-`./invariant` 导出只登记包所有权：seam 拥有唯一 provider 槽位和单一读取入口，在 provider 承载的记录之外没有独立事件流或可检查的持久关系。
+不发布运行时不变量伴随导出：seam 拥有唯一 provider 槽位和单一读取入口，在 provider 承载的记录之外没有独立事件流或可检查的持久关系；provider 之前的校验与被行为测试直接覆盖的校验在同一模块内。
 
 </details>
 
