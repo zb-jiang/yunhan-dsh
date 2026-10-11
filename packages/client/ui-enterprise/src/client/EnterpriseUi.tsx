@@ -26,7 +26,8 @@ function getSupabaseClient(): Promise<SupabaseClient> {
   if (supabaseClient !== null) return Promise.resolve(supabaseClient)
   if (supabaseInitPromise !== null) return supabaseInitPromise
   supabaseInitPromise = (async () => {
-    const res = await fetch('api/enterprise/auth/config')
+    // no-store:config 是 volatile 每次现读,浏览器缓存会让设置面板改完 Supabase 后读到旧值
+    const res = await fetch('api/enterprise/auth/config', { cache: 'no-store' })
     const config = await res.json() as { url: string; anonKey: string }
     supabaseClient = createClient(config.url, config.anonKey, {
       // 会话化:session 持久化在 localStorage,access token 到期前由 supabase-js

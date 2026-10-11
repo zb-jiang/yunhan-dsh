@@ -120,6 +120,8 @@ LLM 管理菜单集中模型接入、额度配置与用量分析：近一年消�
 
 三端（员工端、管理控制台、流程引擎）各自用 Supabase JWKS 本地验签 JWT，无共享密钥；认证之外的所有数据都落在企业自己的本地 PostgreSQL，不出内网。员工浏览器访问服务器一律经本地 DSH 服务代理转发，不直连。新业务系统按 SOR 接入范式（服务密钥 + 白名单端点）逐一挂进流程。
 
+<a id="quick-start"></a>
+
 ## 快速上手
 
 ### 环境要求
@@ -129,6 +131,8 @@ LLM 管理菜单集中模型接入、额度配置与用量分析：近一年消�
 - 本地 PostgreSQL（需 pgvector、pg\_trgm、pg\_jieba 扩展）
 - 一个 Supabase 项目（仅用于认证签发 JWT + 知识库文件 Storage）
 - 一个 LLM API Key（DeepSeek 或任意 OpenAI 兼容供应商）
+
+<a id="start"></a>
 
 ### 启动
 

@@ -31,6 +31,7 @@ kind: "package-group"
 | [`platform-user/`](platform-user/README.zh.md) | 平台用户治理记录接缝（注册、审批、角色、禁用、锁定、恢复） |
 | [`platform-user-api/`](platform-user-api/README.zh.md) | 员工端的 HTTP 认证端点与配置投影 |
 | [`platform-user-console/`](platform-user-console/README.zh.md) | harness 服务器的只读治理身份提供者：JWT 验证加平台用户记录自读 |
+| [`pocket-access/`](pocket-access/README.zh.md) | 带配对与同账号闸门的手机访问 LAN 代理 |
 | [`process-start/`](process-start/README.zh.md) | 流程启动工具，以服务端附加令牌的方式发起流程实例 |
 | [`session-delete/`](session-delete/README.zh.md) | 归档会话产物删除 |
 | [`skill-sync/`](skill-sync/README.zh.md) | 守护进程，把员工待办任务引用的 skill 预装进本地缓存 |

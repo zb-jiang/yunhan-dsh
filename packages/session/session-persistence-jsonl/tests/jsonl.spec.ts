@@ -2785,7 +2785,7 @@ describe('JsonlSessionPersistence: discardPendingSession (deletion path)', () =>
     const m = meta('tracker-claimed')
     // The create claim itself holds the id: the deletion path must refuse.
     tracker.registerCreated(m, SessionLogOffset(0))
-    expect(() => tracker.discardPending(m.id)).toThrow(SessionAlreadyOwnedError)
+    expect(() => { tracker.discardPending(m.id) }).toThrow(SessionAlreadyOwnedError)
     // The refused discard keeps the registration: the claim's session stays observable.
     expect(tracker.hasPending(m.id)).toBe(true)
     tracker.releaseClaim(m.id)
@@ -2795,7 +2795,7 @@ describe('JsonlSessionPersistence: discardPendingSession (deletion path)', () =>
 
   it('tracker-level: a discard for an unknown id is a silent no-op', () => {
     const tracker = new JsonlBackendTracker('test')
-    expect(() => tracker.discardPending(SessionId('never-created'))).not.toThrow()
+    expect(() => { tracker.discardPending(SessionId('never-created')) }).not.toThrow()
   })
 
   it('refuses while the created handle is still open, and is a no-op once it closed unmaterialized', async () => {
@@ -2807,12 +2807,12 @@ describe('JsonlSessionPersistence: discardPendingSession (deletion path)', () =>
     expect((await ctx.sessionPersistence.list()).map(s => s.header.id)).toContain(m.id)
     // The open write handle holds the id: the deletion path must not drop a
     // registration whose later materializing write would resurrect the session.
-    expect(() => ctx.sessionPersistence.discardPendingSession(m.id)).toThrow(SessionAlreadyOwnedError)
+    expect(() => { ctx.sessionPersistence.discardPendingSession(m.id) }).toThrow(SessionAlreadyOwnedError)
     // Closing the creator without appending erases the registration itself;
     // the deletion-path discard then has nothing left and stays silent.
     await handle.close()
     expect(persistence.hasPendingSession(m.id)).toBe(false)
     expect((await ctx.sessionPersistence.list()).map(s => s.header.id)).not.toContain(m.id)
-    expect(() => ctx.sessionPersistence.discardPendingSession(m.id)).not.toThrow()
+    expect(() => { ctx.sessionPersistence.discardPendingSession(m.id) }).not.toThrow()
   })
 })

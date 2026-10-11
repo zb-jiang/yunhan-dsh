@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-session-delete` 向本地 webserver 添加一条路由：`POST /api/enterprise/sessions/delete` 永久删除一个已归档会话。归档成员身份是安全闸门 —— 已归档会话没有进行中的写入 —— 因此端点丢弃本进程的「已创建未落盘」登记、删除 JSONL 工件目录、丢弃会话的投影缓存记录（不清掉它，会话清单会继续返回已删除的会话）、把 id 从每个 workspace 的记账清单摘除、并从注册表全局归档集中移除。全部步骤成功后端点补发 `api-session/removed` 事件 —— 已连接客户端的会话列表 store 在 baseline 之外只凭这一个信号增量移除条目，而冷删除没有 live 生命周期，不补发的话被删会话会一直留在客户端界面直到重启。写句柄仍持有该 id 时（典型：本进程里先前对话遗留的 live agent），端点在触碰磁盘之前就以 409 拒绝；重启应用释放句柄后重试即可收敛。删除是收敛的：当持久化里找不到 snapshot（工件已被外部删除）或工件目录缺失时，调用跳过目录删除，直接清记账。插件不携带任何配置，也不注册任何模型可见内容。
+`dsh-session-delete` 向本地 webserver 添加一条路由：`POST /api/enterprise/sessions/delete` 永久删除一个已归档会话。归档成员身份是安全闸门，已归档会话没有进行中的写入。端点丢弃进程内的 pending 登记、删除 JSONL 工件目录与投影缓存记录、把 id 从每个 workspace 摘除、取消归档，并补发 `api-session/removed` 事件让已连接客户端立即移除列表行。写句柄仍持有该 id 时，端点在触碰磁盘之前以 409 拒绝；工件缺失时跳过目录删除，重试即收敛。无配置，不注册任何模型可见内容。
 
 ## 目录
 

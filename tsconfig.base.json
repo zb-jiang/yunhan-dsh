@@ -448,6 +448,8 @@
       "@deepseek-ai/dsh-platform-user-api/invariant": ["./packages/enterprise/platform-user-api/src/invariant.ts"],
       "@deepseek-ai/dsh-platform-user-console": ["./packages/enterprise/platform-user-console/src"],
       "@deepseek-ai/dsh-plugin-package-inventory-deepseek": ["./packages/llm/plugin-package-inventory-deepseek/src"],
+      "@deepseek-ai/dsh-pocket-access": ["./packages/enterprise/pocket-access/src"],
+      "@deepseek-ai/dsh-pocket-access/invariant": ["./packages/enterprise/pocket-access/src/invariant.ts"],
       "@deepseek-ai/dsh-process-start": ["./packages/enterprise/process-start/src"],
       "@deepseek-ai/dsh-ptc-runtime": ["./packages/ptc-runtime/ptc-runtime/src"],
       "@deepseek-ai/dsh-ptc-runtime-node": ["./packages/ptc-runtime/ptc-runtime-node/src"],

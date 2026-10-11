@@ -21,7 +21,8 @@
  * 声明,经 ctx.slots.inject 延迟到声明后注册。
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
-import { registerUserTextDecorator } from '@deepseek-ai/dsh-client-ui-primitives'
+import { createElement } from 'react'
+import { IconApiOutlineMedium, IconPhoneOutlineMedium, registerUserTextDecorator } from '@deepseek-ai/dsh-client-ui-primitives'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -32,11 +33,14 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar-files/client'
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 // Type-only: 拉入 settings 域的 SlotMap 声明('settings.section' 座位类型)。
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import { EnterpriseOverlay } from './EnterpriseUi.tsx'
 import { ARCHIVE_TAB_ID, ARCHIVE_TAB_KIND, EnterpriseWorkbench } from './enterprise-workbench.ts'
 import { EnterpriseServicesSection } from './EnterpriseServicesSection.tsx'
+import { PocketAccessSection } from './pocket/PocketAccessSection.tsx'
+import { PocketPairingExpired } from './pocket/PocketPairingExpired.tsx'
 import { createEnterpriseServicesAccess } from './enterprise-services-access.ts'
 import { KnowledgeWorkbench } from './knowledge-workbench.ts'
 import { buildKbDocsSource } from './kb-trigger-source.ts'
@@ -57,7 +61,7 @@ import type {
 
 export const inject = [
   'slots', 'sessions', 'workspaces', 'uiWorkspace', 'layout', 'conversation', 'inputTriggers', 'sidebarRight',
-  'sidebarRightTabs', 'remote', 'remote.workspaceFiles', 'remote.settings',
+  'sidebarRightTabs', 'remote', 'remote.workspaceFiles', 'remote.settings', 'connection',
 ]
 
 export function apply(ctx: ClientContext): void {
@@ -103,6 +107,19 @@ export function apply(ctx: ClientContext): void {
       inject: () => ({ services: createEnterpriseServicesAccess(ctx.remote.settings) }),
     },
     EnterpriseOverlay,
+  )
+
+  // 手机配对失效页:连接断开后经代理闸门探测配对状态,失效/被拒时盖住整帧
+  // (order 60 晚于认证遮罩,DOM 靠后盖住一切)。PC 直连不经代理闸门,永不触发。
+  const connection = ctx.get('connection') as ConnectionHandle
+  ctx.slots.register(
+    {
+      name: 'shell.overlay',
+      id: 'enterprise-pocket-expired',
+      order: 60,
+      inject: () => ({ connectionState: connection.state }),
+    },
+    PocketPairingExpired,
   )
 
   // 待办队列:原生 sidebar 的 enterprise nav 座位。
@@ -157,8 +174,18 @@ export function apply(ctx: ClientContext): void {
     id: 'enterprise-services',
     order: 30,
     label: () => '企业服务配置',
+    icon: () => createElement(IconApiOutlineMedium, { size: 16 }),
     inject: () => ({ load: servicesAccess.load, save: servicesAccess.save }),
   }, EnterpriseServicesSection))
+
+  // 手机访问:settings.section 座位(M1:状态轮询+总开关+局域网卡)。
+  ctx.slots.inject('settings.section', () => ctx.slots.register({
+    name: 'settings.section',
+    id: 'pocket-access',
+    order: 31,
+    label: () => '手机访问',
+    icon: () => createElement(IconPhoneOutlineMedium, { size: 16 }),
+  }, PocketAccessSection))
 
   // 已归档会话的「删除会话」三件套:菜单第一项(order 50,官方条目 100-400)
   // + 行悬停按钮 + shell.overlay 确认对话框;发起与确认经共享的 deleteRequest

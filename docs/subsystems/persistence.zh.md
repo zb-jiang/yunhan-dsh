@@ -408,6 +408,17 @@ abstract stat(id: SessionId, options?: SessionPersistenceStatOptions): Promise<S
  * @returns one snapshot per stored session.
  */
 abstract list(options?: SessionPersistenceListOptions): Promise<readonly SessionPersistenceSnapshot[]>
+
+/**
+ * Drop this process's created-but-unmaterialized registration for one
+ * session (deletion path); backends that track no such registrations have
+ * nothing to discard and keep this default. Refuses while the session is
+ * still claimed for writing: the archive gate must already have excluded
+ * every live writer.
+ * @param _id - the session whose pending registration is dropped.
+ * @throws {SessionAlreadyOwnedError} when a write claim or handle holds the id.
+ */
+discardPendingSession(_id: SessionId): void
 ```
 
 Types: [SessionId](core.zh.md)

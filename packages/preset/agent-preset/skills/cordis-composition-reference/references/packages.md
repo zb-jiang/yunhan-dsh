@@ -187,6 +187,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-platform-user` | no | Platform-user governance seam (ctx.platformUsers) for enterprise account approval, roles, and status management |
 | `@deepseek-ai/dsh-platform-user-api` | yes | HTTP API routes for platform-user authentication (/auth/me, /auth/config) |
 | `@deepseek-ai/dsh-platform-user-console` | yes | Web-Console-backed read-only provider for the platform-user seam (JWKS JWT verify + /api/users/me self-read) |
+| `@deepseek-ai/dsh-pocket-access` | yes | Pocket Access: controlled phone entry surface for the employee DSH — pairing-gated reverse proxy over the local webserver with same-account identity mirroring |
 | `@deepseek-ai/dsh-process-start` | yes | Employee-side process start via AI conversation: model-facing dsh_process_list/dsh_process_start_form/dsh_process_start tools over web-console REST |
 | `@deepseek-ai/dsh-session-delete` | no | HTTP endpoint that permanently deletes one archived session (JSONL artifact directory, pending registration, projection-cache record, plus workspace registry bookkeeping) |
 | `@deepseek-ai/dsh-skill-sync` | yes | Enterprise skill distribution: periodic required-skill scan against flowable-engine, download from SkillHub into a dedicated cache root, and injection into ctx.skills |

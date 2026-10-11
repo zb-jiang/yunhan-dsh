@@ -96,6 +96,26 @@
     - id: session-delete
       name: '@deepseek-ai/dsh-session-delete'
 
+    # 手机访问代理：总开关开启时在 0.0.0.0:3081 起动 LAN 代理（双闸门：
+    # 配对 cookie + 同账号 Bearer），管理路由 /api/enterprise/pocket/* 仅
+    # loopback；bindPort 被占用自动顺延，实际端口进设置页与二维码。
+    - id: pocket-access
+      name: '@deepseek-ai/dsh-pocket-access'
+      config:
+        bindPort: !!js Number(process.env.POCKET_BIND_PORT ?? 3081)
+
+    # 目录选择 pin browse：web-app 的 directory-picker 行是 -auto，boot 时按
+    # 宿主解析（loopback + win32 → native），而 native 表面走 Electron
+    # showOpenDialog——Pocket Access 手机页面调 pick 时对话框弹在 PC 屏幕上
+    # （auto 的 Known Limitations 明确记录了这一限制，等按客户端自适应的
+    # 部署出现；企业版正是同时服务 PC 与手机的部署）。改为直接组合 browse
+    # 表面（应用内自绘目录浏览器，走 list/createDirectory，无 OS chooser），
+    # 手机与 PC 同一交互；disable+insert 的写法照 apps/web 的 pin overlay。
+    - id: directory-picker-browse
+      name: '@deepseek-ai/dsh-host-directory-picker-browse'
+    - id: ui-directory-picker-browse
+      name: '@deepseek-ai/dsh-client-ui-directory-picker-browse'
+
     - id: ui-enterprise
       name: '@deepseek-ai/dsh-client-ui-enterprise'
 
@@ -103,3 +123,8 @@
 # profileContext.name 计算），企业层用同 id 补丁行覆盖为常开。
 - id: ui-sidebar-browser
   disabled: false
+
+# 目录选择 -auto：见上方 pin browse 注释——boot 时解析无法按客户端区分，
+# 企业层禁用 auto 行，改由 insert 的 browse backend+surface 两行接管。
+- id: directory-picker
+  disabled: true

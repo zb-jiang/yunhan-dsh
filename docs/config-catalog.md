@@ -1662,7 +1662,7 @@ export interface Config {
 
 - `inject`: `llm` · `currentUser`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/enterprise/llm-access/src/index.ts:57`](../packages/enterprise/llm-access/src/index.ts)
+- `source`: [`packages/enterprise/llm-access/src/index.ts:63`](../packages/enterprise/llm-access/src/index.ts)
 
 ```ts config-catalog
 /** 插件配置,全部来自 enterprise profile 的 cordis.yml config 段。 */
@@ -2454,6 +2454,40 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-plugin-package-inventory-deepseek -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-pocket-access -->
+<a id="deepseek-aidsh-pocket-access"></a>
+
+## `@deepseek-ai/dsh-pocket-access`
+
+- `inject`: `webServer` · `currentUser` · `platformUsers` · `connection` · `settings` · `subprocess`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/enterprise/pocket-access/src/index.ts:51`](../packages/enterprise/pocket-access/src/index.ts)
+
+```ts config-catalog
+/** 插件配置，全部来自 enterprise profile 的 cordis.yml config 段。 */
+export interface Config {
+  /** 总开关；volatile:管理面板可改，改后即启停代理并持久化。 */
+  enabled: Volatile<boolean>
+  /** 代理监听端口；被占用时自动顺延。 */
+  bindPort: number
+  /** 局域网接入开关；volatile:管理面板可改。 */
+  lanEnabled: Volatile<boolean>
+  /** 手动局域网地址覆盖；volatile:管理面板可改，'' 表示自动探测。 */
+  lanIpOverride: Volatile<string>
+  /** WS 心跳注入开关（重启生效）。 */
+  heartbeatEnabled: boolean
+  /** 公网隧道开关意愿；volatile:管理面板可改，实际运行由隧道状态机表达。 */
+  tunnelEnabled: Volatile<boolean>
+  /** 隧道模式 quick|named；volatile:管理面板可改，改动只影响下次启动。 */
+  tunnelMode: Volatile<'quick' | 'named'>
+  /** 命名隧道地址；volatile:管理面板可改，改动只影响下次启动。 */
+  tunnelHostname: Volatile<string>
+  /** 显式 cloudflared 可执行路径；'' 表示走 PATH 探测（程序不做下载，PATH 无可执行文件时报错），改后重启生效。 */
+  cloudflaredPath: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-pocket-access -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-process-start -->
 <a id="deepseek-aidsh-process-start"></a>

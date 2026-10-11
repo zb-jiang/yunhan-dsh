@@ -874,6 +874,13 @@ const SERVICE_ROLES: ServiceRole[] = [
     mode: 'service',
     note: 'Periodically downloads the signed-in employee required skills to a local cache and offers an ensureInstalled entry point for todo skillRefs.',
   },
+  {
+    key: 'pocketAccess',
+    pkg: 'pocket-access',
+    title: 'Phone-facing reverse proxy over the local webserver',
+    mode: 'service',
+    note: 'Publishes the employee webserver to paired phones on the LAN or through an optional tunnel, admitting only paired-device cookies or same-account bearer tokens; management routes drive pairing, revocation, and the tunnel lifecycle.',
+  },
 ]
 
 function generatedHeader(title: string): string[] {

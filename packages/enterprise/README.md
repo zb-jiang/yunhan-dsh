@@ -31,6 +31,7 @@ The enterprise group hosts the employee-facing platform layer: auth endpoints ve
 | [`platform-user/`](platform-user/README.md) | Governance-record seam for platform users (register, approve, roles, disable, lock, restore) |
 | [`platform-user-api/`](platform-user-api/README.md) | HTTP auth endpoints and configuration projection for the employee client |
 | [`platform-user-console/`](platform-user-console/README.md) | Read-only governance identity provider for harness servers: JWT verification plus self-read of platform-user records |
+| [`pocket-access/`](pocket-access/README.md) | Phone-access LAN proxy with pairing and same-account gates |
 | [`process-start/`](process-start/README.md) | Process-start tool launching workflow instances with server-side token attachment |
 | [`session-delete/`](session-delete/README.md) | Archived-session artifact deletion |
 | [`skill-sync/`](skill-sync/README.md) | Daemon pre-installing skills referenced by the employee's pending tasks into the local cache |

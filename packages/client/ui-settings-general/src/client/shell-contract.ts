@@ -7,6 +7,7 @@
  * The settings SLOT types (what registrants contribute) stay in ui-settings.
  */
 import type { ConnectionState } from '@deepseek-ai/dsh-client-connection/client'
+import type { ReactNode } from 'react'
 import type {
   HostObservable, InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime,
 } from '@deepseek-ai/dsh-client-ui-slots'
@@ -25,6 +26,8 @@ export interface SettingsSectionRow {
   id: string
   order: number
   label: string
+  /** Contributor nav glyph, when the registration declared one (undefined falls back to the shell's id mapping). */
+  icon?: ReactNode
 }
 
 /** One ordered onboarding step projected from a slot registration. */

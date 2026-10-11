@@ -145,6 +145,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   currentUser: 'enterprise.md',
   platformUsers: 'enterprise.md',
   skillSync: 'enterprise.md',
+  pocketAccess: 'enterprise.md',
 }
 
 /**
@@ -951,6 +952,7 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   WebTerminalId: 'Browser terminal identity is owned by packages/api/terminal-controller/README.md',
   PlatformUser: 'enterprise governance user record is owned by packages/enterprise/platform-user/README.md',
   PlatformUserProvider: 'enterprise platform-user provider contract is owned by packages/enterprise/platform-user/README.md',
+  PocketAccessSnapshot: 'service-local status snapshot is owned by packages/enterprise/pocket-access/src/index.ts',
 }
 
 /** Repository data policy consumed by the Cordis catalog projector. */

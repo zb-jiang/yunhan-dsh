@@ -71,6 +71,88 @@ getUserByToken(accessToken: string): Promise<PlatformUser>
 
 Source: [`packages/enterprise/platform-user/src/index.ts`](../../packages/enterprise/platform-user/src/index.ts)
 
+<a id="ctxpocketaccess--pocketaccessservice"></a>
+
+### `ctx.pocketAccess` — `PocketAccessService`
+
+手机访问代理服务：持有配对/身份/握手/LAN 探测与代理生命周期， 供管理路由与宿主消费（`ctx.pocketAccess`）。
+
+```ts cordis-catalog
+/** 启动代理（已运行则幂等返回）。 */
+async enable(): Promise<void>
+
+/** 停止代理（未运行则幂等返回）；总开关关闭同时手动停隧道（删自动恢复标记）。 */
+async disable(): Promise<void>
+
+/**
+ * 启停到目标状态并持久化总开关（volatile 热更新由 settings 域完成）。
+ * 持久化先于启停：写失败（非 volatile 字段污染等）保持原状不产生半启停态。
+ * @param value - 目标总开关状态；true 启动代理，false 停止代理并同时停隧道。
+ */
+async setEnabled(value: boolean): Promise<void>
+
+/**
+ * 更新局域网接入开关（volatile 持久化）。关闭时立即踢掉全部活跃隧道：
+ * 已建立的 WS 不再经过请求入口的开关检查，不踢则手机端对关闭无感知；
+ * 手机端 WS 断开后由失效探测器经闸门 403 渲染「局域网访问已关闭」失效页。
+ * @param value - 局域网接入目标状态；false 立即断开全部活跃 WS 隧道。
+ */
+async setLanEnabled(value: boolean): Promise<void>
+
+/** 更新手动局域网地址覆盖（volatile 持久化；'' 恢复自动探测）。
+ * @param ip - 手动指定的局域网地址（原样持久化，不校验格式）；'' 表示清除覆盖、恢复自动探测。
+ */
+async setLanOverride(ip: string): Promise<void>
+
+/**
+ * 启动公网隧道：同步校验（抛 TunnelRequestError → 路由 400）后 fire-and-forget 启动。
+ * 就绪等待（含 cloudflared 解析与子进程启动）可能长达数十秒，不阻塞路由——快照先回
+ * state=starting，UI 轮询观察 running/error。开关意愿 tunnelEnabled 置 true 持久化；
+ * 启动失败保持 true + state=error，UI 可重试。
+ * @param disclaimer - 用户已确认隧道免责声明；false 时同步校验失败，不启动。
+ */
+startTunnel(disclaimer: boolean): void
+
+/** 停止公网隧道：先撤开关意愿再停进程并删自动恢复标记。 */
+async stopTunnel(): Promise<void>
+
+/**
+ * 更新隧道模式与命名地址（volatile 持久化；只影响下次启动）。
+ * hostname 非空时经归一化校验后存归一化值；空串清空。
+ * @param options - 待更新字段；mode 非法或 hostname 无法归一化抛 TunnelRequestError，两字段均缺省同样抛错。
+ */
+async setTunnelConfig(options: { mode?: string | undefined; hostname?: string | undefined }): Promise<void>
+
+/** 设置命名隧道 Token（'' 清除；否则写入 tunnel-token.json 0600）。
+ * @param token - 命名隧道的 Cloudflare access token；'' 表示清除已存 token。
+ */
+async setTunnelToken(token: string): Promise<void>
+
+/** 随宿主卸载的隧道清理：终止进程但保留自动恢复标记（下次启动自动拉起）。 */
+async disposeTunnel(): Promise<void>
+
+/** 状态快照（二维码按内容缓存，生成失败为 null 不阻塞快照）。
+ * @returns 设置页轮询用的完整状态快照；LAN/配对二维码字段生成失败或无地址为 null。
+ */
+async snapshot(): Promise<PocketAccessSnapshot>
+
+/** 生成新配对码（作废旧码），返回码与过期时间。
+ * @returns 新配对码及其过期时刻（epoch 毫秒）；同时使此前的活跃配对码失效。
+ */
+createPairingCode(): { code: string; expiresAt: number }
+
+/** 吊销设备并立即断开该设备活跃 WS 隧道；设备不存在返回 false。
+ * @param deviceId - 待吊销的已配对设备 id。
+ * @returns 设备存在且吊销成功为 true；设备不存在为 false（不断开任何连接）。
+ */
+async revokeDevice(deviceId: string): Promise<boolean>
+
+/** 员工登出联动：清空全部已配对设备并断开全部活跃 WS 隧道。 */
+async clearAllDevices(): Promise<void>
+```
+
+Source: [`packages/enterprise/pocket-access/src/index.ts`](../../packages/enterprise/pocket-access/src/index.ts)
+
 <a id="ctxskillsync--skillsyncservice"></a>
 
 ### `ctx.skillSync` — `SkillSyncService`

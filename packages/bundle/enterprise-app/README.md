@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The enterprise profile bundle as a patch layer over [`dsh-web-app`](../web-app/README.md), shipped in the `enterprise` profile (`dsh --profile enterprise`). The package is a static patch-list carrier with no runtime API of its own: it inserts the platform-user seam and its Web-Console-backed provider, the browser-facing `/auth` routes, the flowable-engine task proxy, enterprise skill sync, knowledge-base tools, process-start tools, and the enterprise client-UI row.
+The enterprise profile bundle as a patch layer over [`dsh-web-app`](../web-app/README.md), shipped in the `enterprise` profile (`dsh --profile enterprise`). The package is a static patch-list carrier with no runtime API of its own: it inserts the platform-user seam and its Web-Console-backed provider, the browser-facing `/auth` routes, the flowable-engine task proxy, enterprise skill sync, knowledge-base tools, process-start tools, and the enterprise client-UI row, and it pins the directory-picker interaction to the in-app browse surface.
 
 ## Table of Contents
 
@@ -36,6 +36,9 @@ Launch the employee surface with `dsh --profile enterprise`; the composition is 
 | `skill-sync` | a periodic daemon that preinstalls required SkillHub skills |
 | `knowledge` | the `/api/enterprise/kb` proxy plus the `kb_search`/`kb_read`/`kb_list` tools |
 | `process-start` | the `dsh_process_list`/`dsh_process_start_form`/`dsh_process_start` tools |
+| `pocket-access` | the phone-access LAN proxy behind the pairing and same-account gates |
+| `directory-picker-browse` + `ui-directory-picker-browse` | the in-app directory browser pinned in place of the boot-resolved picker, so Pocket Access phones pick workspace directories inside the page instead of raising the chooser on the host screen |
+| `directory-picker` (disabled) | the web-app `-auto` row, which cannot tell a phone from the local display at boot; the browse pair above replaces it |
 | `ui-enterprise` | the enterprise client-UI branch (layout, task workbench) |
 
 A deployment changes endpoints through the environment or a profile-level patch. A patch replaces a row's whole `config`, so an overriding patch must restate every key it owns.

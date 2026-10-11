@@ -758,6 +758,12 @@ export interface StoredFactory {
 export type SlotLabel = string | (() => string)
 
 /**
+ * A list-entry display icon: a thunk returning the glyph ReactNode,
+ * re-evaluated per read like a thunked {@link SlotLabel}.
+ */
+export type SlotIcon = () => ReactNode
+
+/**
  * Kind shape fields carried in register options (keyed dispatch key; list
  * id/order/label; chain select/priority; non-chain priority = cell shadowing rank).
  */
@@ -775,6 +781,8 @@ export type KindOptions<
       id: string
       order?: number
       label?: SlotLabel
+      /** Nav glyph for list rows that display one (see {@link SlotIcon}); owners render it next to the label. */
+      icon?: SlotIcon
       /** Cell shadowing rank (ascending, default 0, lowest renders; same id + same priority throws — see {@link SlotCore.register}). */
       priority?: number
     }
@@ -840,7 +848,7 @@ type BaseOptions<
  */
 export interface StoredEntry {
   component: unknown
-  options: { key?: string; id?: string; order?: number; label?: SlotLabel; priority?: number }
+  options: { key?: string; id?: string; order?: number; label?: SlotLabel; icon?: SlotIcon; priority?: number }
   /** Chain routing selector (type-erased like `inject`; present exactly on chain-slot entries). */
   select?: ((owner: never) => unknown) | undefined
   /** Registrant business face; positional params derive from the declaration (sessionId?, actions?). */
@@ -878,6 +886,7 @@ interface ErasedOptions {
   id?: string | undefined
   order?: number | undefined
   label?: SlotLabel | undefined
+  icon?: SlotIcon | undefined
   select?: ((owner: never) => unknown) | undefined
   priority?: number | undefined
   children?: Record<string, SlotSpec<SlotEntryDef>> | undefined
@@ -1265,6 +1274,7 @@ export class SlotCore {
         ...(options.id !== undefined ? { id: options.id } : {}),
         ...(options.order !== undefined ? { order: options.order } : {}),
         ...(options.label !== undefined ? { label: options.label } : {}),
+        ...(options.icon !== undefined ? { icon: options.icon } : {}),
         ...(options.priority !== undefined ? { priority: options.priority } : {}),
       },
       ...(options.select !== undefined ? { select: options.select } : {}),

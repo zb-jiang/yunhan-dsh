@@ -1,0 +1,202 @@
+/* 手机访问设置页样式：卡片化布局，沿用设置面板的留白与字号节奏。 */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 560px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsh-border, #d0d7de);
+  border-radius: 10px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsh-text-muted, #656d76);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fact dt {
+  font-size: 11px;
+  color: var(--dsh-text-muted, #656d76);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lanBody {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.qr {
+  flex: none;
+  border: 1px solid var(--dsh-border, #d0d7de);
+  border-radius: 8px;
+}
+
+.lanInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.url {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.overrideRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.overrideInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--dsh-border, #d0d7de);
+  border-radius: 8px;
+}
+
+.message {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsh-text-muted, #656d76);
+}
+
+.pairingBody {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.pairingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pairingCode {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.deviceTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.deviceTable th,
+.deviceTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsh-border, #d0d7de);
+  text-align: left;
+  word-break: break-word;
+}
+
+.deviceTable th {
+  font-weight: 500;
+  color: var(--dsh-text-muted, #656d76);
+}
+
+.deviceUa {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deviceEmpty {
+  color: var(--dsh-text-muted, #656d76);
+  text-align: center;
+}
+
+.identityId {
+  margin: 0;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+
+.tunnelError {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 8%, transparent);
+  border-radius: 8px;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.modeRow {
+  display: flex;
+  gap: 8px;
+}
+
+.tunnelForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tokenSet {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.disclaimerText {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.disclaimerText:last-child {
+  margin-bottom: 0;
+}

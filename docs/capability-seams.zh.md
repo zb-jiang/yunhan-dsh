@@ -289,6 +289,8 @@ flowchart LR
   pkg_platform_user_console["platform-user-console"]
   pkg_platform_user_api["platform-user-api"]
   svc_skillSync["ctx.skillSync<br/>Enterprise skill distribution daemon"]
+  pkg_pocket_access["pocket-access"]
+  svc_pocketAccess["ctx.pocketAccess<br/>Phone-facing reverse proxy over the local webserver"]
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -374,6 +376,7 @@ flowchart LR
   pkg_platform_user_console --> svc_platformUsers
   pkg_plugin_manager --> svc_pluginManager
   pkg_plugin_package_inventory_deepseek --> svc_deepseekLlmApiExtensions
+  pkg_pocket_access --> svc_pocketAccess
   pkg_ptc_runtime --> svc_ptcRuntime
   pkg_ptc_runtime_node --> svc_ptcRuntime
   pkg_pwsh_local --> svc_shell
@@ -695,5 +698,6 @@ flowchart LR
 | `ctx.currentUser` | `service` | [`user-identity-context`](../packages/enterprise/user-identity-context) | - | [`skill-sync`](../packages/enterprise/skill-sync), [`process-start`](../packages/enterprise/process-start), [`llm-access`](../packages/enterprise/llm-access), [`knowledge`](../packages/enterprise/knowledge) | - | 进程内存储，由 platform-user/verified 与 platform-user/signout 事件驱动；企业调用方读取身份与 bearer token，以登录员工的身份执行操作。 |
 | `ctx.platformUsers` | `seam` | [`platform-user`](../packages/enterprise/platform-user) | [`platform-user-console`](../packages/enterprise/platform-user-console) | [`platform-user-console`](../packages/enterprise/platform-user-console), [`platform-user-api`](../packages/enterprise/platform-user-api) | - | console provider 通过 JWKS 本地验签 Supabase Auth JWT 并解析治理记录；auth API 消费该读取入口。 |
 | `ctx.skillSync` | `service` | [`skill-sync`](../packages/enterprise/skill-sync) | - | - | - | 周期性把登录员工所需的 skill 下载到本地缓存，并为 todo 的 skillRefs 提供 ensureInstalled 入口。 |
+| `ctx.pocketAccess` | `service` | [`pocket-access`](../packages/enterprise/pocket-access) | - | - | - | 把员工桌面 webserver 发布给局域网或可选隧道中的配对手机，只放行携带配对设备 cookie 或同账号 Bearer 令牌的请求；管理路由负责配对、吊销与隧道生命周期。 |
 
 维护模式：混合模式。服务从 Cordis 声明中发现；接口、实现和消费方角色在 `scripts/gen-doc-graphs.ts` 中分类，并设有完整性守卫。

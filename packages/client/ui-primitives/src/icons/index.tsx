@@ -864,6 +864,23 @@ export const IconApiOutlineMedium = (props: IconProps) => (
   <IconApiOutlineArtwork {...props} strokeWidth={ICON_MEDIUM_STROKE} />
 )
 
+const IconPhoneOutlineArtwork = ({ size = 16, className, strokeWidth }: WeightedIconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" strokeWidth={strokeWidth}>
+    <path d="M5.5 1.5H10.5C11.0523 1.5 11.5 1.94772 11.5 2.5V13.5C11.5 14.0523 11.0523 14.5 10.5 14.5H5.5C4.94772 14.5 4.5 14.0523 4.5 13.5V2.5C4.5 1.94772 4.94772 1.5 5.5 1.5Z" stroke="currentColor" />
+    <path d="M8 12.6C8.33137 12.6 8.6 12.3314 8.6 12C8.6 11.6686 8.33137 11.4 8 11.4C7.66863 11.4 7.4 11.6686 7.4 12C7.4 12.3314 7.66863 12.6 8 12.6Z" fill="currentColor" />
+  </svg>
+)
+
+/** Regular one-pixel IconPhoneOutline artwork. */
+export const IconPhoneOutlineRegular = (props: IconProps) => (
+  <IconPhoneOutlineArtwork {...props} strokeWidth={ICON_REGULAR_STROKE} />
+)
+
+/** Medium IconPhoneOutline artwork with a 1.3px stroke. */
+export const IconPhoneOutlineMedium = (props: IconProps) => (
+  <IconPhoneOutlineArtwork {...props} strokeWidth={ICON_MEDIUM_STROKE} />
+)
+
 const IconPersonalizationOutlineArtwork = ({ size = 16, className, strokeWidth }: WeightedIconProps) => (
   <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" strokeWidth={strokeWidth}>
     <path d="M3.25 7.16357C3.20417 7.32247 3.17778 7.48993 3.17773 7.66357C3.17773 7.83698 3.20336 8.00486 3.24902 8.16357H1.85742V7.16357H3.25ZM14.1426 8.16357H6.71484C6.76052 8.00485 6.78613 7.837 6.78613 7.66357C6.78609 7.48991 6.75971 7.32249 6.71387 7.16357H14.1426V8.16357Z" fill="currentColor" />

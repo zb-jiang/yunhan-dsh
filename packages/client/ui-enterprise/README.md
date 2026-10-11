@@ -32,6 +32,7 @@ This package is the `./client` bundle of the enterprise web client: the host-sid
 | Seat | Component | Role |
 |---|---|---|
 | `shell.overlay` | EnterpriseOverlay | auth gate: login page, service-config dialog, blocked states (pending approval, disabled, locked) |
+| `shell.overlay` | PocketPairingExpired | pocket pairing-expiry page: probes the proxy gate once disconnected and covers the frame when the pairing is revoked/expired, LAN access is off, or the proxy stopped responding (master switch off / desktop down); the probe carries a short timeout (a TCP failure against a dead listener can hang tens of seconds in real networks), the stopped-responding page keeps polling and unmounts itself once the proxy is back, while the other conclusions are terminal; reachable only through the proxy, so the PC connects directly and never triggers it |
 | `sidebar.nav` | TaskQueueSidebar | todo + completed queue in the native sidebar's enterprise branch |
 | `sidebar.right.pane.tab` | TaskArchivePanel | the archive tab (two-stage: type declaration plus keyed body) |
 | `conversation.input.left` / `conversation.input.dock` | KbPickerButton / KbChipsDock | knowledge-document picker entry and selected-doc chips |

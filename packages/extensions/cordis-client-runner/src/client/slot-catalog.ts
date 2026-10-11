@@ -2695,6 +2695,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     occupants: [
       'client-ui-agent-preset AgentPresetSection id \'agent-presets\'',
       'client-ui-enterprise EnterpriseServicesSection id \'enterprise-services\'',
+      'client-ui-enterprise PocketAccessSection id \'pocket-access\'',
       'client-ui-settings-account AccountSection id \'account\'',
       'client-ui-settings-general GeneralSection id \'general\'',
       'client-ui-settings-models ModelsSection id \'models\'',
@@ -2808,6 +2809,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     occupants: [
       'client-ui-chat QuotaNoticeHost id \'chat.quota-notice\'',
       'client-ui-enterprise EnterpriseOverlay id \'enterprise\'',
+      'client-ui-enterprise PocketPairingExpired id \'enterprise-pocket-expired\'',
       'client-ui-enterprise DeleteSessionConfirmDialog id \'enterprise-delete-session\'',
       'client-ui-plugin-manager PluginRefreshToast id \'plugin-manager.refresh-toast\'',
       'client-ui-schedule ScheduleDeleteToast id \'schedule.delete-toast\'',

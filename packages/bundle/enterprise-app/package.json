@@ -51,6 +51,9 @@
     "@deepseek-ai/dsh-process-start": "workspace:*",
     "@deepseek-ai/dsh-llm-access": "workspace:*",
     "@deepseek-ai/dsh-session-delete": "workspace:*",
+    "@deepseek-ai/dsh-pocket-access": "workspace:*",
+    "@deepseek-ai/dsh-host-directory-picker-browse": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-directory-picker-browse": "workspace:*",
     "@deepseek-ai/dsh-client-ui-enterprise": "workspace:*"
   },
   "peerDependencies": {

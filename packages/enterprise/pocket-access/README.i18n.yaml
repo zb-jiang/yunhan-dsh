@@ -1,0 +1,58 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/enterprise/pocket-access/README.md
+/:
+  en: ff26e4e020883719
+  zh: 48e2f049e7b613ab
+/deepseek-ai-dsh-pocket-access:
+  en: f27479fbce784614
+  zh: d582c2681d7afc77
+/deepseek-ai-dsh-pocket-access/summary:
+  en: e12a3524e4086a4b
+  zh: e30dbe4e2c61a292
+/deepseek-ai-dsh-pocket-access/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f14f34fce35a8d90
+/deepseek-ai-dsh-pocket-access/use-this-package:
+  en: 06aa0557ad6c31f5
+  zh: 9fa79fbc22c4193b
+/deepseek-ai-dsh-pocket-access/use-this-package/configuration:
+  en: caf6bdf85f9018b9
+  zh: 4be13b3fad24e5d1
+/deepseek-ai-dsh-pocket-access/use-this-package/management-routes:
+  en: 6c249e04e0d70edb
+  zh: c5a501358b3b375f
+/deepseek-ai-dsh-pocket-access/use-this-package/audit-reporting:
+  en: 9c7810b67109178c
+  zh: f31767827fec5909
+/deepseek-ai-dsh-pocket-access/understand-the-implementation:
+  en: bbcdfe5f62cf53a0
+  zh: 91636dd8b39e7883
+/deepseek-ai-dsh-pocket-access/understand-the-implementation/the-proxy-pipeline:
+  en: c95a23e2625419c5
+  zh: ff2e833ddc56838b
+/deepseek-ai-dsh-pocket-access/understand-the-implementation/paired-devices-and-pairing-codes:
+  en: 5530e3bf7273bfd8
+  zh: 4f5d945db0eb0d57
+/deepseek-ai-dsh-pocket-access/understand-the-implementation/tunnel-modes-and-lifecycle:
+  en: 5b78836c89b6d97c
+  zh: 83d7254af367c879
+/deepseek-ai-dsh-pocket-access/understand-the-implementation/audit-reporting-and-the-backlog:
+  en: 4e22ee5e9020b278
+  zh: 65e3b199bb3f8783
+/deepseek-ai-dsh-pocket-access/further-exploration:
+  en: 51acdf3d0aae0184
+  zh: f0f3466e983224a2
+/deepseek-ai-dsh-pocket-access/model-experience:
+  en: 34072cfd81c8066a
+  zh: 38c9cc6fe3bd96f8
+/deepseek-ai-dsh-pocket-access/model-experience/kv-cache-effect:
+  en: fe9ced13c055bd3c
+  zh: b1c985a9c00eab18
+/deepseek-ai-dsh-pocket-access/known-limitations-and-deferred-work:
+  en: 9a3ce911a23bbe1c
+  zh: cdb6d617bcba3769
+/deepseek-ai-dsh-pocket-access/known-limitations-and-deferred-work/dev-note:
+  en: 8653bb8cedc49ff5
+  zh: c9c797c2d1694175

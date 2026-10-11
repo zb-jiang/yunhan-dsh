@@ -33,11 +33,11 @@ const escapeState = vi.hoisted(() => ({ active: false }))
 // 本地绑定不受影响，落盘仍在真实 root 下。
 vi.mock('@deepseek-ai/dsh-session-persistence-jsonl', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@deepseek-ai/dsh-session-persistence-jsonl')>()
-  const { join: pathJoin } = await import('node:path')
+  const pathModule = await import('node:path')
   return {
     ...actual,
     sessionDir(root: string, cwd: string | undefined, id: SessionId) {
-      if (escapeState.active) return pathJoin(root, '..', 'escaped-session')
+      if (escapeState.active) return pathModule.join(root, '..', 'escaped-session')
       return actual.sessionDir(root, cwd, id)
     },
   }
@@ -88,7 +88,9 @@ function stubWorkspace(options: StubWorkspaceOptions): Workspace {
     attachSession: () => Promise.resolve(),
     insertSessionBefore: () => Promise.resolve(),
     detachSession: (sessionId: SessionId) => {
-      if (options.rejection !== undefined) return Promise.reject(options.rejection)
+      // rejection 可能是故意透传的 raw 值（非 Error）；as Error 仅为满足 reject-errors 规则。
+      // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- Promise.reject 参数本就接受 unknown，断言只为让 reject 值带上 Error 类型
+      if (options.rejection !== undefined) return Promise.reject(options.rejection as Error)
       options.detached.push(sessionId)
       return Promise.resolve()
     },
@@ -268,7 +270,8 @@ describe('请求校验与路由注册', () => {
   it('拒绝非 POST 请求（GET）', async () => {
     const response = await server.request('GET')
     expect(response.status).toBe(405)
-    expect(await response.json()).toMatchObject({ error: expect.stringContaining('is not supported; use POST') })
+    const body = (await response.json()) as { error: string }
+    expect(body.error).toContain('is not supported; use POST')
   })
 
   it('method 缺失时按 405 拒绝', async () => {
@@ -300,7 +303,8 @@ describe('请求校验与路由注册', () => {
   it('拒绝删除未归档会话', async () => {
     const response = await server.request('POST', JSON.stringify({ sessionId: 'ghost' }))
     expect(response.status).toBe(409)
-    expect(await response.json()).toMatchObject({ error: expect.stringContaining("session 'ghost' is not archived") })
+    const body = (await response.json()) as { error: string }
+    expect(body.error).toContain("session 'ghost' is not archived")
   })
 })
 
@@ -387,10 +391,9 @@ describe('真实 JSONL 持久化下的删除流程', () => {
       try {
         const busy = await server.request('POST', JSON.stringify({ sessionId: 'pending-id' }))
         expect(busy.status).toBe(409)
-        expect(await busy.json()).toMatchObject({
-          error: expect.stringContaining('active write handle'),
-          code: 'session-in-use',
-        })
+        const body = (await busy.json()) as { error: string; code: string }
+        expect(body.error).toContain('active write handle')
+        expect(body.code).toBe('session-in-use')
         // 拒绝时不触碰任何记账：归档集保持原样，等待释放后重试。
         expect(registry.unarchived).toEqual([])
         // 拒绝路径不广播移除：客户端条目保留，与磁盘状态一致。
@@ -421,7 +424,8 @@ describe('真实 JSONL 持久化下的删除流程', () => {
     try {
       const busy = await server.request('POST', JSON.stringify({ sessionId: 'held' }))
       expect(busy.status).toBe(409)
-      expect(await busy.json()).toMatchObject({ code: 'session-in-use' })
+      const body = (await busy.json()) as { code: unknown }
+      expect(body).toMatchObject({ code: 'session-in-use' })
     } finally {
       await server.close()
       await handle.close()
@@ -453,7 +457,8 @@ describe('真实 JSONL 持久化下的删除流程', () => {
     try {
       const response = await server.request('POST', JSON.stringify({ sessionId: 'escape' }))
       expect(response.status).toBe(500)
-      expect(await response.json()).toMatchObject({ error: expect.stringContaining('escaped the persistence root') })
+      const body = (await response.json()) as { error: string }
+      expect(body.error).toContain('escaped the persistence root')
     } finally {
       await server.close()
     }
@@ -515,7 +520,8 @@ describe('persistenceRoot 探测', () => {
     try {
       const response = await server.request('POST', JSON.stringify({ sessionId: 'probe-target' }))
       expect(response.status).toBe(500)
-      expect(await response.json()).toMatchObject({ error: expect.stringContaining(message) })
+      const body = (await response.json()) as { error: string }
+      expect(body.error).toContain(message)
       expect(registry.unarchived).toEqual([])
     } finally {
       await server.close()

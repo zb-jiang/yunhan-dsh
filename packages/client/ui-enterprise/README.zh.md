@@ -32,6 +32,7 @@ kind: "package-reference"
 | 座位 | 组件 | 角色 |
 |---|---|---|
 | `shell.overlay` | EnterpriseOverlay | 认证门：登录页、服务配置弹层、阻断态（待审批、已禁用、已锁定） |
+| `shell.overlay` | PocketPairingExpired | 手机配对失效页：连接断开后经代理闸门探测，配对被撤销/失效、局域网关闭或代理停止应答（总开关关闭/电脑关机）时盖住整帧；探测带短超时（对已死监听端口的 TCP 失败在真实网络里可挂数十秒），停止应答的失效页会持续轮询，代理恢复后自动消失，其余结论为终态（仅手机端经代理可达，PC 直连不触发） |
 | `sidebar.nav` | TaskQueueSidebar | 原生侧栏 enterprise 分支中的待办 + 已完成队列 |
 | `sidebar.right.pane.tab` | TaskArchivePanel | 档案标签页（两阶段：类型声明 + keyed 主体） |
 | `conversation.input.left` / `conversation.input.dock` | KbPickerButton / KbChipsDock | 知识文档选择入口与已选文档 chips |

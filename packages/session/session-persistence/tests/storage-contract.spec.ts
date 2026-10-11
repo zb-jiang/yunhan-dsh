@@ -344,6 +344,6 @@ describe('SessionPersistence.discardPendingSession default', () => {
     await ctx.plugin(TestPersistence)
     // The deletion path calls this on every stored id, including ids a
     // backend without pending registrations has never seen.
-    expect(() => ctx.sessionPersistence.discardPendingSession(SessionId('never-tracked'))).not.toThrow()
+    expect(() => { ctx.sessionPersistence.discardPendingSession(SessionId('never-tracked')) }).not.toThrow()
   })
 })

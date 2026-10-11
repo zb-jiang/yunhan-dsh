@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-企业 profile bundle，作为叠在 [`dsh-web-app`](../web-app/README.zh.md) 之上的 patch 层，随 `enterprise` profile 交付（`dsh --profile enterprise`）。本包是静态 patch 清单载体，自身没有运行时 API：插入平台用户缝及其 Web-Console 后端 provider、浏览器侧 `/auth` 路由、flowable-engine 任务代理、企业 skill 分发、知识库工具、流程发起工具与企业 client-UI 行。
+企业 profile bundle，作为叠在 [`dsh-web-app`](../web-app/README.zh.md) 之上的 patch 层，随 `enterprise` profile 交付（`dsh --profile enterprise`）。本包是静态 patch 清单载体，自身没有运行时 API：插入平台用户缝及其 Web-Console 后端 provider、浏览器侧 `/auth` 路由、flowable-engine 任务代理、企业 skill 分发、知识库工具、流程发起工具与企业 client-UI 行，并把目录选择交互 pin 到应用内 browse 表面。
 
 ## 目录
 
@@ -36,6 +36,9 @@ kind: "package-bundle"
 | `skill-sync` | 周期 daemon，预装 SkillHub 要求的 skill |
 | `knowledge` | `/api/enterprise/kb` 代理，加 `kb_search`/`kb_read`/`kb_list` 工具 |
 | `process-start` | `dsh_process_list`/`dsh_process_start_form`/`dsh_process_start` 工具 |
+| `pocket-access` | 配对与同账号双闸门之后的手机访问 LAN 代理 |
+| `directory-picker-browse` + `ui-directory-picker-browse` | pin 应用内目录浏览器替代 boot 解析的 picker，让 Pocket Access 手机在页面内选工作区目录，而不是在宿主屏幕上弹出对话框 |
+| `directory-picker`（禁用） | web-app 的 `-auto` 行，boot 时无法区分手机与本地显示器；由上方 browse 两行替代 |
 | `ui-enterprise` | 企业 client-UI 分支（布局、待办工作台） |
 
 部署通过环境变量或 profile 级 patch 修改端点。patch 替换目标行的整个 `config`，因此覆盖 patch 必须重述其拥有的每个键。

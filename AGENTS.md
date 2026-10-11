@@ -6,9 +6,7 @@ DeepSeek Harness is an all-plugin Cordis agent harness. Read [docs/architecture.
 
 Public APIs are pre-stable; update every consumer. Follow [version/status](docs/session-format-status.md) and [type acknowledgements](docs/cookbook/reviewing-persistence-type-changes.md). [Adjacent migration](.agents/notes/implemented/architecture/2026-08-31-released-session-format-migrations.md) may add a version-named successor but never move, overwrite, or delete committed generations; predecessors imply neither fallback nor downgrade support. SQLite uses monotonic `SCHEMA_VERSION`.
 
-Acknowledge [declared persistence-type changes](docs/cookbook/reviewing-persistence-type-changes.md).
-
-Record each externally perceptible breaking change immediately in an [upgrade guide](.agents/skills/dsh-create-upgrade-guide/SKILL.md).
+Acknowledge [declared persistence-type changes](docs/cookbook/reviewing-persistence-type-changes.md) and record each externally perceptible breaking change immediately in an [upgrade guide](.agents/skills/dsh-create-upgrade-guide/SKILL.md).
 
 **Application launch.** Only `dsh` profiles launch supported Node apps; package bins, demos, and public SDK argv escapes are forbidden ([rule](docs/architecture.md#application-launch)).
 
@@ -17,59 +15,6 @@ Record each externally perceptible breaking change immediately in an [upgrade gu
 ```
 vendor/      Vendored Cordis (vendor/README.md)
 packages/    @deepseek-ai/dsh-<pkg> workspaces at packages/<group>/<pkg>/
-  core/                 agent/session API
-  api/                  remote BFF
-  typert/               type graphs
-  llm/                  model providers
-  shell/                command execution
-  subprocess/           child-process management
-  ssh/                  SSH execution providers
-  terminal/             persistent terminals
-  ptc-runtime/          PTC execution
-  sandbox/              process confinement
-  deliverables/         turn deliverables
-  fs/                   filesystem access
-  lsp/                  language servers
-  skill/                skill loading
-  web/                  search/fetch tools
-  computer-use/         computer interaction
-  browser-use/          browser interaction
-  compaction/           context compaction
-  context/              request context
-  subagent/             delegated agents
-  jobs/                 background jobs
-  bundle/               profile bundles
-  workflow/             workflow execution
-  webhook/              webhook ingress
-  todo/                 todo_write tool
-  plan/                 logged planning
-  goal/                 session goals
-  schedule/             scheduled follow-ups
-  preset/               agent composition
-  guard/                loop/tool guards
-  extensions/           runtime self-modification
-  hooks/                Claude Code/Codex bridges
-  session/              durable sessions
-  session-query/        browsing/search/export
-  attachment/           binary attachments
-  spill/                output spill
-  storage/              non-session storage
-  workspace/            workspace entities
-  feedback/             human feedback
-  identity/             anonymous identity
-  settings/             user settings
-  credentials/          credentials/authorization
-  acp/                  automation-only ACP
-  interaction/          human interaction
-  boot/                 application boot
-  sdk/                  JSON-RPC SDK
-  host/                 GUI host
-  client/               GUI client
-  mcp/                  external tools
-  experimental/         pre-stable prototypes; public by default with explicit private exceptions
-  test-support/         test infrastructure
-  runtime-diagnostics/  runtime invariants
-  util/                 zero-dependency utilities
 python/      Python SDK/runtime (python/README.md)
 native/      @deepseek-ai/node-addon-system source (native/README.md)
 benchmarks/  performance gates
@@ -104,7 +49,7 @@ pnpm run test:docs      # quick documentation checks (no build; doc-quick aggreg
 pnpm run website:build  # VitePress build (doubles as dead-link check)
 pnpm dsh --profile headless "task"  # run one task from source (needs DEEPSEEK_API_KEY)
 pnpm run demo:ptc -- "task"  # headless PTC mode run (needs key)
-pnpm run dev:web | dev:desktop  # build, then launch; Web also rebuilds client bundles on edits. start:web | start:desktop skip the build
+pnpm run dev:web | dev:desktop  # build, then launch; start:web | start:desktop skip the build
 make web|dev-web|desktop|dev-desktop|build  # the same commands; ARGS='--no-open' forwards options
 ```
 
@@ -118,14 +63,13 @@ Before pushing, follow [dsh-pre-push-checks](.agents/skills/dsh-pre-push-checks/
 
 - Match evidence to the surface: focused behavior tests, model/user-output snapshots, `doc-sync` for docs, built smokes for published paths, and real-API e2e for providers.
 - Never default to the full suite or repeat a passing check for commit or push. CI owns exhaustive coverage and the platform matrix; rehearse all locally only by explicit request, for CI diagnosis, or for an irreducibly repository-wide change.
-- `test:coverage`, not `test`, is the CI coverage gate ([why](docs/testing.md)).
 - **Web browser automation and GIF recording:** launch with `pnpm dsh web --patch apps/web/tests/pin-browse-picker.overlay.yml` to use the [in-page directory picker](apps/web/tests/pin-browse-picker.overlay.yml); omit this override only when testing native picker behavior explicitly.
 
 ## Secrets / .env
 
 Windows packaging/signing: [required reading](apps/desktop/README.md#windows-ev-signing).
 
-Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and root `.env`. cordis.yml allows `!!js` (never `!js`) under plugin `config` and entry `disabled`; other metadata stays literal, so conditional composition also uses overlays ([primer](docs/cordis-primer.md#loader-configuration)). Never commit credentials. CI e2e skips without a key; [testing.md](docs/testing.md) owns key policy.
+Real-API tests/demos read `DEEPSEEK_API_KEY`, optional `DEEPSEEK_BASE_URL`, and root `.env`. cordis.yml allows `!!js` (never `!js`) under plugin `config` and entry `disabled`; other metadata stays literal, conditional composition uses overlays ([primer](docs/cordis-primer.md#loader-configuration)). Never commit credentials. CI e2e skips without a key; [testing.md](docs/testing.md) owns key policy.
 
 ## Conventions
 
@@ -176,7 +120,7 @@ Everything compiles under `strict: true` with `noImplicitAny`; every remaining `
 
 Comments and docs state complete contracts and context, not reasoning transcripts. Use direct, concrete terms. Do not use metaphors. Before writing `contract`, `boundary`, or `shape`, ask whether a more exact term names the subject: write `response fields`, `JSON validation`, or `ESM exports` instead of `response shape`, `validation boundary`, or `module shape`. Keep `contract` for preconditions, postconditions, invariants, compatibility promises, and other obligations that callers, callees, implementers, providers, producers, or consumers rely on. Keep a literal process, wire, security, transaction, or lifecycle boundary. Do not narrate control flow or tests, preserve review history, or restate code. Keep behavior, failure, timing, ownership, and safe-use facts; link the rationale. Use [dsh-prose-standard](.agents/skills/dsh-prose-standard/SKILL.md) for decisions. Wire mechanically checkable invariants into an executed top-level gate and prove each changed acceptance path rejects an invalid case. Use narrow, justified exceptions instead of disabling a rule globally.
 
-Docs accompany every code change: update affected README and JSDoc contracts together. Routine bilingual work follows [docs/AGENTS.md](docs/AGENTS.md); only explicit user invocation may run `dsh-translate-docs`. Current-state prose, one physical line per paragraph, one home per fact, and word budgets live there.
+Docs accompany every code change: update affected README and JSDoc contracts together. Routine bilingual work follows [docs/AGENTS.md](docs/AGENTS.md); only explicit user invocation may run `dsh-translate-docs`.
 
 ## Editing these instructions
 
@@ -188,18 +132,4 @@ Docs accompany every code change: update affected README and JSDoc contracts tog
 
 ## Upstream merge-preserve deviations
 
-Core `packages/` normally tracks upstream verbatim; the deviations below are deliberate and must survive every upstream merge. On conflict, keep the local form unless the upstream change supersedes the reason recorded here.
-
-- `packages/core/tools/src/index.ts` — `TOOL_RUNTIME_SCHEDULER` is a namespaced **string** key, not `Symbol()`. Source launches load plugin entries from `lib/` through the cordis loader while tsconfig `paths` resolves the same package's cross-package imports to `src/`, so two module instances coexist and a Symbol key never matches (`ctx.tools[TOOL_RUNTIME_SCHEDULER]` is `undefined`; every tool call dies with `Cannot read properties of undefined (reading 'prepare')`). Upstream's own test and launch paths are plane-consistent, so they never observe this. Reverting to a Symbol reintroduces the crash under `pnpm dsh` with a built `lib/`.
-
-- `scripts/translation-pairing.manifest.json` — the `excluded` list carries `docs/plans/` and `apps/web-console/frontend/README.md`. Enterprise design documents and the web-console frontend README are enterprise-local, Chinese-untranslated by decision; the corpus-wide bilingual gate would otherwise reject them. When merging an upstream change to this manifest, keep these entries alongside upstream additions.
-
-- `packages/client/ui-sidebar-right/src/client/session-views.ts` — `SidebarSessionViews.mount()` returns a no-op disposer for a reference that is no longer in `viewsByReference` (pruned view or post-shutdown), instead of throwing. Upstream throws `Sidebar Session view reference is no longer owned` in React's commit phase (RightbarRoot's `mountView` layout effect); the slot error boundary catches it and unmounts the whole `rightbar` slot entry with no retry, so one rapid session switch (`openSession` → `replaceMain` retention publish → `publishMain` → `select` → prune of a view whose React commit is still in flight) permanently kills the right sidebar until reload, while the persisted `expanded=true` hides the expand button. On merge, verify the throw has not returned: after merging, grep `session-views.ts` for `no longer owned` (expect absent) and rerun `cd packages/client/ui-sidebar-right && node ../../node_modules/pnpm/bin/pnpm.cjs bundle`. Suitable for an upstream PR.
-
-- `packages/client/ui-sidebar-files/` — the enterprise per-file-row action slot `sidebar.files.entry.action` (trailing controls on each listed file row; `ui-enterprise` KbUploadAction occupies it — design in [.agents/notes/implemented/architecture/2026-09-12-file-row-action-slot.md](.agents/notes/implemented/architecture/2026-09-12-file-row-action-slot.md)) coexists with upstream's `sidebar.right.tab.files.actions` (header workspace-directory actions): they are different slots, never a rename. On merge, keep both: `FilesBody.tsx` holds one union `PropsRenderSlots<'sidebar.files.entry.action' | 'sidebar.right.tab.files.actions'>` plus both dispatch sites (row-level `renderAction`, header `renderSlot`), `index.ts` registers both under `children`, `tests/mount.client.tsx` keeps a single recording `renderSlot` that filters to the entry-action key, and `apply.client.spec.ts` asserts both children.
-
-- `packages/session/session-persistence/src/index.ts`, `packages/session/session-persistence-jsonl/src/{index,storage}.ts`, `packages/session/session-projection-cache/src/index.ts` — new deletion-path APIs: `SessionPersistence.discardPendingSession` (default no-op; JSONL override drops the tracker's created-but-unmaterialized registration, refusing while a write claim holds the id) and `SessionProjectionCache.drop` (durable per-record removal). Upstream's delete story has no consumer for these, but without them a session deleted through the enterprise delete endpoint stays listed: the JSONL backend's `list()` serves pending in-process registrations by contract even when the artifact directory is gone, and the projection cache keeps serving the cached listing row, so the deleted session reappears in the client ("删除成功" then back under 未分组). All three changes are purely additive (default no-op, new methods); on merge, if upstream grows its own deletion lifecycle, prefer upstream's and retire these. Suitable for an upstream PR.
-
-### Upstream merge procedure (enterprise fork)
-
-After merging upstream `master`, resolve `pnpm-lock.yaml` with upstream's version, then expect a plain `pnpm install` to re-resolve: upstream's lock lacks the enterprise packages' importers, and filling them can pull freshly published type packages into the tree. Drifted `@types/*` or micromark-family versions break `typecheck` with two-version type clashes — `micromark-util-types` is pinned to 2.0.2 in `pnpm-workspace.yaml` overrides for exactly this (pnpm 11 no longer reads `pnpm` fields from `package.json`). When typecheck reports dependency-shaped type errors after an install, diff the working-tree lock against `HEAD` before touching code; and because `tsc -b` replays stale `.tsbuildinfo` diagnostics after pnpm relinks dependencies, clean with `tsc -b tsconfig.host.json --clean` (then `tsconfig.client.json`) and rebuild. Never leave the regenerated lock uncommitted — it carries the enterprise importers, and losing it to a checkout or stash recreates the whole failure.
+Core `packages/` normally tracks upstream verbatim; the enterprise fork's deliberate deviations and their merge procedure live in [.agents/UPSTREAM-MERGE.md](.agents/UPSTREAM-MERGE.md). Apply it on every upstream merge: preserve each listed deviation; keep the local form unless the upstream change supersedes the recorded reason.

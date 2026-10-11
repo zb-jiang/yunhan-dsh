@@ -1771,6 +1771,86 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'pocketAccess',
+    summary: '手机访问代理服务：持有配对/身份/握手/LAN 探测与代理生命周期， 供管理路由与宿主消费（`ctx.pocketAccess`）。',
+    description: '手机访问代理服务：持有配对/身份/握手/LAN 探测与代理生命周期， 供管理路由与宿主消费（`ctx.pocketAccess`）。',
+    methods: [
+      {
+        signature: 'async enable(): Promise<void>',
+        description: '启动代理（已运行则幂等返回）。',
+        parameters: [],
+      },
+      {
+        signature: 'async disable(): Promise<void>',
+        description: '停止代理（未运行则幂等返回）；总开关关闭同时手动停隧道（删自动恢复标记）。',
+        parameters: [],
+      },
+      {
+        signature: 'async setEnabled(value: boolean): Promise<void>',
+        description: '启停到目标状态并持久化总开关（volatile 热更新由 settings 域完成）。 持久化先于启停：写失败（非 volatile 字段污染等）保持原状不产生半启停态。',
+        parameters: [{ name: 'value', description: '目标总开关状态；true 启动代理，false 停止代理并同时停隧道。' }],
+      },
+      {
+        signature: 'async setLanEnabled(value: boolean): Promise<void>',
+        description: '更新局域网接入开关（volatile 持久化）。关闭时立即踢掉全部活跃隧道： 已建立的 WS 不再经过请求入口的开关检查，不踢则手机端对关闭无感知； 手机端 WS 断开后由失效探测器经闸门 403 渲染「局域网访问已关闭」失效页。',
+        parameters: [{ name: 'value', description: '局域网接入目标状态；false 立即断开全部活跃 WS 隧道。' }],
+      },
+      {
+        signature: 'async setLanOverride(ip: string): Promise<void>',
+        description: '更新手动局域网地址覆盖（volatile 持久化；\'\' 恢复自动探测）。',
+        parameters: [{ name: 'ip', description: '手动指定的局域网地址（原样持久化，不校验格式）；\'\' 表示清除覆盖、恢复自动探测。' }],
+      },
+      {
+        signature: 'startTunnel(disclaimer: boolean): void',
+        description: '启动公网隧道：同步校验（抛 TunnelRequestError → 路由 400）后 fire-and-forget 启动。 就绪等待（含 cloudflared 解析与子进程启动）可能长达数十秒，不阻塞路由——快照先回 state=starting，UI 轮询观察 running/error。开关意愿 tunnelEnabled 置 true 持久化； 启动失败保持 true + state=error，UI 可重试。',
+        parameters: [{ name: 'disclaimer', description: '用户已确认隧道免责声明；false 时同步校验失败，不启动。' }],
+      },
+      {
+        signature: 'async stopTunnel(): Promise<void>',
+        description: '停止公网隧道：先撤开关意愿再停进程并删自动恢复标记。',
+        parameters: [],
+      },
+      {
+        signature: 'async setTunnelConfig(options: { mode?: string | undefined; hostname?: string | undefined }): Promise<void>',
+        description: '更新隧道模式与命名地址（volatile 持久化；只影响下次启动）。 hostname 非空时经归一化校验后存归一化值；空串清空。',
+        parameters: [{ name: 'options', description: '待更新字段；mode 非法或 hostname 无法归一化抛 TunnelRequestError，两字段均缺省同样抛错。' }],
+      },
+      {
+        signature: 'async setTunnelToken(token: string): Promise<void>',
+        description: '设置命名隧道 Token（\'\' 清除；否则写入 tunnel-token.json 0600）。',
+        parameters: [{ name: 'token', description: '命名隧道的 Cloudflare access token；\'\' 表示清除已存 token。' }],
+      },
+      {
+        signature: 'async disposeTunnel(): Promise<void>',
+        description: '随宿主卸载的隧道清理：终止进程但保留自动恢复标记（下次启动自动拉起）。',
+        parameters: [],
+      },
+      {
+        signature: 'async snapshot(): Promise<PocketAccessSnapshot>',
+        description: '状态快照（二维码按内容缓存，生成失败为 null 不阻塞快照）。',
+        parameters: [],
+        returns: '设置页轮询用的完整状态快照；LAN/配对二维码字段生成失败或无地址为 null。',
+      },
+      {
+        signature: 'createPairingCode(): { code: string; expiresAt: number }',
+        description: '生成新配对码（作废旧码），返回码与过期时间。',
+        parameters: [],
+        returns: '新配对码及其过期时刻（epoch 毫秒）；同时使此前的活跃配对码失效。',
+      },
+      {
+        signature: 'async revokeDevice(deviceId: string): Promise<boolean>',
+        description: '吊销设备并立即断开该设备活跃 WS 隧道；设备不存在返回 false。',
+        parameters: [{ name: 'deviceId', description: '待吊销的已配对设备 id。' }],
+        returns: '设备存在且吊销成功为 true；设备不存在为 false（不断开任何连接）。',
+      },
+      {
+        signature: 'async clearAllDevices(): Promise<void>',
+        description: '员工登出联动：清空全部已配对设备并断开全部活跃 WS 隧道。',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'productAnalytics',
     summary: 'Authenticated event intake; disabled instances do not inspect identity or accept new events.',
     description: 'Authenticated event intake; disabled instances do not inspect identity or accept new events.',
@@ -2160,6 +2240,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'options', description: 'optional cancellation.' }],
         returns: 'one snapshot per stored session.',
       },
+      {
+        signature: 'discardPendingSession(_id: SessionId): void',
+        description: 'Drop this process\'s created-but-unmaterialized registration for one session (deletion path); backends that track no such registrations have nothing to discard and keep this default. Refuses while the session is still claimed for writing: the archive gate must already have excluded every live writer.',
+        parameters: [{ name: '_id', description: 'the session whose pending registration is dropped.' }],
+        throws: ['{SessionAlreadyOwnedError} when a write claim or handle holds the id.'],
+      },
     ],
   },
   {
@@ -2172,6 +2258,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'The zero-I/O listing read: whole values viewed straight from the stored rows (version-matching keys only) of the record bound to the caller\'s lifecycle. The header is the only identity witness a listing holds, so this face matches the lifecycle identity (`formatVersion`, `createdAt`, `cwd`, `isSeeded`) and not the inherited cut: within one format generation the cut is fixed at fork time, so it distinguishes no lifecycle the other fields do not, and a viewed value never seeds a fold. The view is as stale as the last durable checkpoint but never wrong and never from an unrelated log. Its `asOfSeq` is the lowest watermark among the served rows: the stored record\'s own position, which the header cannot relate to the log the caller later opens. The Session list therefore labels the block as cached, and the client lets every value the connected Session produces supersede it whatever this number says.',
         parameters: [{ name: 'meta', description: 'the listed session\'s header (identity witness; no log read).' }, { name: 'keys', description: 'optional projection keys required by the caller\'s audience.' }],
         returns: 'the viewed block, or `undefined` when no usable row exists for this lifecycle at the current Session format.',
+      },
+      {
+        signature: 'async drop(id: SessionId): Promise<void>',
+        description: 'Drop one session\'s cached checkpoint record (deletion path): the record is removed durably and the id stops appearing as a cached listing row.',
+        parameters: [{ name: 'id', description: 'the session whose record is removed.' }],
+        returns: 'resolution once the record is durably removed; an absent record resolves silently.',
       },
       {
         signature: 'cachedPredecessorTitle(meta: SessionHeader): ProjectionSnapshot | undefined',
@@ -5989,6 +6081,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PackageResult {\n    exitCode: number;\n    output: string;\n    truncated: boolean;\n    logPath: string;\n    kind?: PluginInstallFailureKind;\n    timedOut?: boolean;\n    incompatible?: IncompatiblePlugin[];\n}',
   },
   {
+    name: 'PairedDeviceSource',
+    declaration: 'export type PairedDeviceSource = \'lan\' | \'wan\';',
+  },
+  {
     name: 'PeerAdmission',
     declaration: 'export type PeerAdmission = {\n    readonly peer: PeerScope;\n} | {\n    readonly rejection: 401 | 403;\n};',
   },
@@ -6083,6 +6179,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PluginSpecInspection',
     declaration: 'export type PluginSpecInspection = {\n    readonly status: \'accepted\';\n    readonly kind: InstallSpecKind;\n    readonly name?: string;\n    readonly version?: string;\n    readonly description?: string;\n    readonly bundle: boolean | null;\n    readonly registry: Registry;\n    readonly host?: string;\n} | {\n    readonly status: \'refused\';\n    readonly problem: PluginInspectProblem;\n    readonly reason: string;\n    readonly registries?: Registry[];\n};',
+  },
+  {
+    name: 'PocketAccessSnapshot',
+    declaration: 'export interface PocketAccessSnapshot {\n    enabled: boolean;\n    proxyPort: number | null;\n    upstreamPort: number | null;\n    handshakeAvailable: boolean;\n    lan: {\n        enabled: boolean;\n        url: string | null;\n        qr: string | null;\n        candidates: string[];\n        override: string;\n    };\n    devices: Array<{\n        id: string;\n        createdAt: number;\n        lastSeenAt: number;\n        ua: string;\n        source: PairedDeviceSource | null;\n    }>;\n    pairing: {\n        code: string | null;\n        expiresAt: number | null;\n        qr: string | null;\n    };\n    identity: {\n        currentUserId: string | null;\n    };\n    tunnel: TunnelSnapshot;\n}',
   },
   {
     name: 'PostToolDecision',
@@ -7819,6 +7919,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TranscriptionRequest',
     declaration: 'export interface TranscriptionRequest {\n    readonly audioBase64: string;\n    readonly providerId?: SpeechProviderId;\n    readonly language?: string;\n}',
+  },
+  {
+    name: 'TunnelMode',
+    declaration: 'export type TunnelMode = \'quick\' | \'named\';',
+  },
+  {
+    name: 'TunnelSnapshot',
+    declaration: 'export interface TunnelSnapshot {\n    enabled: boolean;\n    state: TunnelState;\n    mode: TunnelMode;\n    url: string | null;\n    hostname: string;\n    tokenSet: boolean;\n    detail: string;\n    startedAt: number;\n}',
+  },
+  {
+    name: 'TunnelState',
+    declaration: 'export type TunnelState = \'idle\' | \'starting\' | \'running\' | \'error\';',
   },
   {
     name: 'TurnEndCancelCause',

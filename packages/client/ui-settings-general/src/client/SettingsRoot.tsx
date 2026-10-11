@@ -28,13 +28,14 @@ const RECOVERY_CONFIRMATION_MS = 2_000
 /** Minimum visible time for the connecting pill; shorter attempts read as flicker. */
 const CONNECTING_MIN_VISIBLE_MS = 800
 
-/** Nav glyph by section id; unknown ids fall back to the settings gear. */
-function navIcon(id: string) {
-  if (id === 'account') return <IconUserOutlineMedium className={css.navIcon} size={16} />
-  if (id === 'models') return <IconDataOutlineMedium className={css.navIcon} size={16} />
-  if (id === 'agent-presets') return <IconAgentPresetOutlineMedium className={css.navIcon} size={16} />
-  if (id === 'plugins') return <IconPersonalizationOutlineMedium className={css.navIcon} size={16} />
-  if (id === 'archived-sessions') return <IconArchiveOutlineMedium className={css.navIcon} size={16} />
+/** Nav glyph for a section row: a contributor-declared icon first, then the built-in id mapping, then the settings gear. */
+function navIcon(row: SettingsSectionRow) {
+  if (row.icon !== undefined) return <span className={css.navIcon}>{row.icon}</span>
+  if (row.id === 'account') return <IconUserOutlineMedium className={css.navIcon} size={16} />
+  if (row.id === 'models') return <IconDataOutlineMedium className={css.navIcon} size={16} />
+  if (row.id === 'agent-presets') return <IconAgentPresetOutlineMedium className={css.navIcon} size={16} />
+  if (row.id === 'plugins') return <IconPersonalizationOutlineMedium className={css.navIcon} size={16} />
+  if (row.id === 'archived-sessions') return <IconArchiveOutlineMedium className={css.navIcon} size={16} />
   return <IconSettingsOutlineMedium className={css.navIcon} size={16} />
 }
 
@@ -81,7 +82,7 @@ function SettingsPanel({ rows, renderSlot, activeId, onSelect, onClose }: PanelP
                 data-modal-autofocus={row.id === active ? '' : undefined}
                 onClick={() => { onSelect(row.id) }}
               >
-                {navIcon(row.id)}
+                {navIcon(row)}
                 <span className={css.navLabel}>{row.label}</span>
               </button>
             ))}

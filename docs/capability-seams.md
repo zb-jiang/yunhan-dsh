@@ -287,6 +287,8 @@ flowchart LR
   pkg_platform_user_console["platform-user-console"]
   pkg_platform_user_api["platform-user-api"]
   svc_skillSync["ctx.skillSync<br/>Enterprise skill distribution daemon"]
+  pkg_pocket_access["pocket-access"]
+  svc_pocketAccess["ctx.pocketAccess<br/>Phone-facing reverse proxy over the local webserver"]
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -372,6 +374,7 @@ flowchart LR
   pkg_platform_user_console --> svc_platformUsers
   pkg_plugin_manager --> svc_pluginManager
   pkg_plugin_package_inventory_deepseek --> svc_deepseekLlmApiExtensions
+  pkg_pocket_access --> svc_pocketAccess
   pkg_ptc_runtime --> svc_ptcRuntime
   pkg_ptc_runtime_node --> svc_ptcRuntime
   pkg_pwsh_local --> svc_shell
@@ -693,5 +696,6 @@ flowchart LR
 | `ctx.currentUser` | `service` | [`user-identity-context`](../packages/enterprise/user-identity-context) | - | [`skill-sync`](../packages/enterprise/skill-sync), [`process-start`](../packages/enterprise/process-start), [`llm-access`](../packages/enterprise/llm-access), [`knowledge`](../packages/enterprise/knowledge) | - | In-process store fed by the platform-user/verified and platform-user/signout events; enterprise callers read the identity and bearer token to act as the signed-in employee. |
 | `ctx.platformUsers` | `seam` | [`platform-user`](../packages/enterprise/platform-user) | [`platform-user-console`](../packages/enterprise/platform-user-console) | [`platform-user-console`](../packages/enterprise/platform-user-console), [`platform-user-api`](../packages/enterprise/platform-user-api) | - | The console provider verifies Supabase Auth JWTs locally via JWKS and resolves the governance record; the auth API consumes the read entry point. |
 | `ctx.skillSync` | `service` | [`skill-sync`](../packages/enterprise/skill-sync) | - | - | - | Periodically downloads the signed-in employee required skills to a local cache and offers an ensureInstalled entry point for todo skillRefs. |
+| `ctx.pocketAccess` | `service` | [`pocket-access`](../packages/enterprise/pocket-access) | - | - | - | Publishes the employee webserver to paired phones on the LAN or through an optional tunnel, admitting only paired-device cookies or same-account bearer tokens; management routes drive pairing, revocation, and the tunnel lifecycle. |
 
 Maintenance mode: hybrid: services are discovered from Cordis declarations; interface/implementation/consumer roles are classified in `scripts/gen-doc-graphs.ts` with a completeness guard.
