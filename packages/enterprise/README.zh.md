@@ -43,4 +43,4 @@ kind: "package-group"
 ## 延伸阅读
 
 - [企业架构 v5](../../docs/plans/dsh_enterprise_architecture_v5.html) — 部署架构与产品决策。
-- [内部通行证 SSO 设计](../../docs/plans/2026-09-29-internal-pass-sso-design.md) — 身份类包背后的认证流程。
+- [SSO 认证中心方案设计](../../docs/plans/2026-10-11-sso-auth-center-design.md) — 身份类包背后的认证流程。

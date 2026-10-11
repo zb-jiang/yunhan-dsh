@@ -61,7 +61,7 @@ seam 会在调用 provider 之前校验角色名、拒绝重复角色并拒绝�
 ## 延伸阅读
 
 - [dsh-platform-user-console](../platform-user-console/README.zh.md) — 挂进本缝的 Web Console provider。
-- [内部通行证 SSO 设计](../../../docs/plans/2026-09-29-internal-pass-sso-design.md) — 本缝服务的 Supabase 身份模型。
+- [SSO 认证中心方案设计](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — 本缝服务的 Supabase 身份模型。
 
 -----
 

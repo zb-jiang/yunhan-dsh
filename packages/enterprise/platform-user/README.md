@@ -61,7 +61,7 @@ No runtime invariant companion is published: the seam owns one active provider s
 ## Further Exploration
 
 - [dsh-platform-user-console](../platform-user-console/README.md) — the Web Console provider that mounts into this seam.
-- [Internal pass SSO design](../../../docs/plans/2026-09-29-internal-pass-sso-design.md) — the Supabase-based identity model this seam serves.
+- [SSO auth center design](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — the Supabase-based identity model this seam serves.
 
 -----
 

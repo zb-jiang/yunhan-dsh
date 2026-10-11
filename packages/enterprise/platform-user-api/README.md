@@ -82,7 +82,7 @@ A secret-typed config field is permanently masked once read over the wire, so th
 ## Further Exploration
 
 - [Enterprise group README](../README.md) — the sibling enterprise packages and how the two profiles compose them.
-- [Internal SSO design](../../../docs/plans/2026-09-29-internal-pass-sso-design.md) — the Supabase-based identity model these endpoints serve.
+- [SSO auth center design](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — the Supabase-based identity model these endpoints serve.
 
 -----
 

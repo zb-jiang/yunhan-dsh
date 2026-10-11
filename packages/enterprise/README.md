@@ -43,4 +43,4 @@ The enterprise group hosts the employee-facing platform layer: auth endpoints ve
 ## Related documentation
 
 - [Enterprise architecture v5](../../docs/plans/dsh_enterprise_architecture_v5.html) — deployment architecture and product decisions.
-- [Internal pass SSO design](../../docs/plans/2026-09-29-internal-pass-sso-design.md) — the auth flow behind the identity packages.
+- [SSO auth center design](../../docs/plans/2026-10-11-sso-auth-center-design.md) — the auth flow behind the identity packages.

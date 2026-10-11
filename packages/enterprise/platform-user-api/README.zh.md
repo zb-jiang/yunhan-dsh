@@ -82,7 +82,7 @@ kind: "package-reference"
 ## 延伸阅读
 
 - [企业组 README](../README.zh.md) — 同组企业包及两个 profile 如何组合它们。
-- [内部通行证 SSO 设计](../../../docs/plans/2026-09-29-internal-pass-sso-design.md) — 这些端点服务的基于 Supabase 的身份模型。
+- [SSO 认证中心方案设计](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — 这些端点服务的基于 Supabase 的身份模型。
 
 -----
 
