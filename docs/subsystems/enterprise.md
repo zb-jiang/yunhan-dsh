@@ -131,6 +131,9 @@ async setTunnelToken(token: string): Promise<void>
 /** 随宿主卸载的隧道清理：终止进程但保留自动恢复标记（下次启动自动拉起）。 */
 async disposeTunnel(): Promise<void>
 
+/** 审计缓冲生命周期收尾：清重试定时器并等在途上报落地。 */
+auditDispose(): Promise<void>
+
 /** 状态快照（二维码按内容缓存，生成失败为 null 不阻塞快照）。
  * @returns 设置页轮询用的完整状态快照；LAN/配对二维码字段生成失败或无地址为 null。
  */

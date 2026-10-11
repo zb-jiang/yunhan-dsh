@@ -2462,7 +2462,7 @@ export interface Config {
 
 - `inject`: `webServer` · `currentUser` · `platformUsers` · `connection` · `settings` · `subprocess`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/enterprise/pocket-access/src/index.ts:51`](../packages/enterprise/pocket-access/src/index.ts)
+- `source`: [`packages/enterprise/pocket-access/src/index.ts:53`](../packages/enterprise/pocket-access/src/index.ts)
 
 ```ts config-catalog
 /** 插件配置，全部来自 enterprise profile 的 cordis.yml config 段。 */
@@ -2485,6 +2485,8 @@ export interface Config {
   tunnelHostname: Volatile<string>
   /** 显式 cloudflared 可执行路径；'' 表示走 PATH 探测（程序不做下载，PATH 无可执行文件时报错），改后重启生效。 */
   cloudflaredPath: string
+  /** 审计上报目标 web-console 基地址；volatile:每次上报现读，'' 走 env WEB_CONSOLE_URL 或默认本机地址。 */
+  webConsoleBaseUrl: Volatile<string>
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-pocket-access -->

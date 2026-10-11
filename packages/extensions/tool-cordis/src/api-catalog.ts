@@ -1826,6 +1826,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [],
       },
       {
+        signature: 'auditDispose(): Promise<void>',
+        description: '审计缓冲生命周期收尾：清重试定时器并等在途上报落地。',
+        parameters: [],
+      },
+      {
         signature: 'async snapshot(): Promise<PocketAccessSnapshot>',
         description: '状态快照（二维码按内容缓存，生成失败为 null 不阻塞快照）。',
         parameters: [],
@@ -6182,7 +6187,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'PocketAccessSnapshot',
-    declaration: 'export interface PocketAccessSnapshot {\n    enabled: boolean;\n    proxyPort: number | null;\n    upstreamPort: number | null;\n    handshakeAvailable: boolean;\n    lan: {\n        enabled: boolean;\n        url: string | null;\n        qr: string | null;\n        candidates: string[];\n        override: string;\n    };\n    devices: Array<{\n        id: string;\n        createdAt: number;\n        lastSeenAt: number;\n        ua: string;\n        source: PairedDeviceSource | null;\n    }>;\n    pairing: {\n        code: string | null;\n        expiresAt: number | null;\n        qr: string | null;\n    };\n    identity: {\n        currentUserId: string | null;\n    };\n    tunnel: TunnelSnapshot;\n}',
+    declaration: 'export interface PocketAccessSnapshot {\n    enabled: boolean;\n    proxyPort: number | null;\n    upstreamPort: number | null;\n    handshakeAvailable: boolean;\n    lan: {\n        enabled: boolean;\n        url: string | null;\n        qr: string | null;\n        candidates: string[];\n        override: string;\n    };\n    devices: Array<{\n        id: string;\n        createdAt: number;\n        lastSeenAt: number;\n        ua: string;\n        source: PairedDeviceSource | null;\n    }>;\n    pairing: {\n        code: string | null;\n        expiresAt: number | null;\n        qr: string | null;\n    };\n    identity: {\n        currentUserId: string | null;\n    };\n    tunnel: TunnelSnapshot;\n    audit: {\n        backlog: number;\n    };\n}',
   },
   {
     name: 'PostToolDecision',

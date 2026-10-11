@@ -50,7 +50,11 @@ export interface PocketAuditEvent {
   occurredAt: number
 }
 
-/** audit-backlog.jsonl 落盘路径。 */
+/**
+ * audit-backlog.jsonl 落盘路径。
+ *
+ * @returns backlog JSONL 文件路径（DSH home 目录下）。
+ */
 export function auditBacklogFilePath(): string {
   return dshHomePath(POCKET_ACCESS_DIR_NAME, AUDIT_BACKLOG_FILE_NAME)
 }
@@ -207,7 +211,11 @@ export class AuditBacklog {
     private readonly now: () => number = Date.now,
   ) {}
 
-  /** backlog 当前事件数（等待启动加载完成后读取）。 */
+  /**
+   * backlog 当前事件数。
+   *
+   * @returns 等待启动加载完成后的内存清单长度。
+   */
   async backlogCount(): Promise<number> {
     await this.ensureLoaded()
     return this.events.length
