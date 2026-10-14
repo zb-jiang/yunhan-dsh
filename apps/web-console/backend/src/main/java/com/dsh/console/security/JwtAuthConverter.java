@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  * 构造 {@link AuthContext} 作为 principal。记录不存在时 JIT 插入
  * pending_approval 行(替代表迁本地 PG 前 Supabase auth.users 上的注册 trigger)。
  *
- * <p>如治理记录不存在(JIT 未建档,email claim 缺失)或 status 非 active,
+ * <p>如治理记录不存在(JIT 建档后 recheck 仍为空)或 status 非 active,
  * 仍构造 AuthContext(roles=空),由 Controller 路由或方法级 RBAC 注解拒绝访问,
  * 不在此处抛异常(避免 token 验证与治理状态校验耦合)。
  */
@@ -75,21 +75,32 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
      * JIT 建档:JWT 验证通过但 platform_users 无记录时插入 pending_approval 行。
      *
      * <p>替代原 Supabase auth.users 注册 trigger(表迁本地 PG 后 trigger 不再存在)。
-     * login_name/display_name 优先取 JWT user_metadata,缺省兜底 email / email 本地部分,
-     * 与原 trigger 的 COALESCE 分支一致。email claim 缺失(匿名/手机号注册)无法满足表
-     * NOT NULL,不建档,返回 empty 维持无记录降级。
+     * login_name 取 user_metadata.login_name,兜底 email,再兜底 sub。display_name
+     * 取值链:{@code displayName} claim(2026-10-14 实测钉钉登录 token,Casdoor 的
+     * {@code name} claim 是登录名,显示名在顶层 displayName claim)→ 标准 OIDC
+     * {@code name} claim(其他 IdP 的全名;Supabase 顶层无此 claim)
+     * → user_metadata.display_name → email 本地部分 → sub。email claim 缺失
+     * (认证中心不下发 email,如钉钉 unionId 登录)仍建档:email 列存 NULL,
+     * login_name/display_name 兜底
+     * sub(unionId 等认证主体全局唯一,不会撞 login_name 唯一约束)。
      */
     private Optional<UserDto> jitInsert(Jwt jwt, String authSubject) {
         String email = jwt.getClaimAsString("email");
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
+        boolean hasEmail = email != null && !email.isBlank();
+        String emailOrSubject = hasEmail ? email : authSubject;
+        String localPartOrSubject = hasEmail
+            ? (email.contains("@") ? email.substring(0, email.indexOf('@')) : email)
+            : authSubject;
         Map<String, Object> metadata = jwt.getClaimAsMap("user_metadata");
-        String loginName = metadataString(metadata, "login_name", email);
-        String displayName = metadataString(metadata, "display_name",
-            email.contains("@") ? email.substring(0, email.indexOf('@')) : email);
+        String loginName = metadataString(metadata, "login_name", emailOrSubject);
+        // Casdoor 的 name claim 是登录名,显示名在 displayName claim
+        String displayName = firstNonBlank(
+            localPartOrSubject,
+            jwt.getClaimAsString("displayName"),
+            jwt.getClaimAsString("name"),
+            metadataString(metadata, "display_name", null));
         log.info("[JwtAuth] JIT inserting pending_approval row for sub={}", authSubject);
-        userJdbcRepository.insertPending(authSubject, loginName, displayName, email);
+        userJdbcRepository.insertPending(authSubject, loginName, displayName, hasEmail ? email : null);
         return userJdbcRepository.findByAuthSubject(authSubject);
     }
 
@@ -99,6 +110,21 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
         }
         Object value = metadata.get(key);
         return value instanceof String s && !s.isBlank() ? s : fallback;
+    }
+
+    /**
+     * 返回候选中第一个非空白值,全空时返回兜底值。
+     * @param fallback 全部候选为 null 或空白时返回的值
+     * @param candidates 按优先级排列的候选值,可含 null/空白
+     * @return 第一个非空白候选,否则 fallback
+     */
+    private static String firstNonBlank(String fallback, String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isBlank()) {
+                return candidate;
+            }
+        }
+        return fallback;
     }
 
     /**

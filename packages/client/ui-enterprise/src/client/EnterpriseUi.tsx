@@ -1,8 +1,26 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import clsx from 'clsx'
 import { BrandWordmark } from '@deepseek-ai/dsh-client-ui-primitives'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { EnterpriseServicesSection, type EnterpriseServicesInjected } from './EnterpriseServicesSection.tsx'
+import {
+  buildOidcAuthorizeUrl,
+  clearAuthSession,
+  completeOidcCallback,
+  fetchAuthConfig,
+  getAuthMode,
+  getOidcIssuer,
+  readOidcCallback,
+  readOidcLoginSuccessMessage,
+  readToken,
+  setAuthMode,
+  setOidcIssuer,
+  setOidcRelayUrl,
+  tryOidcRefresh,
+  writeToken,
+  type AuthMode,
+  type AuthWebConfig,
+} from './auth-session.ts'
 import css from './EnterpriseUi.module.css'
 
 type PlatformUserStatus = 'pending_approval' | 'active' | 'disabled' | 'locked'
@@ -26,9 +44,8 @@ function getSupabaseClient(): Promise<SupabaseClient> {
   if (supabaseClient !== null) return Promise.resolve(supabaseClient)
   if (supabaseInitPromise !== null) return supabaseInitPromise
   supabaseInitPromise = (async () => {
-    // no-store:config 是 volatile 每次现读,浏览器缓存会让设置面板改完 Supabase 后读到旧值
-    const res = await fetch('api/enterprise/auth/config', { cache: 'no-store' })
-    const config = await res.json() as { url: string; anonKey: string }
+    const config = await fetchAuthConfig()
+    if (config.mode !== 'supabase') throw new Error('当前为认证中心登录模式，无需 Supabase 客户端')
     supabaseClient = createClient(config.url, config.anonKey, {
       // 会话化:session 持久化在 localStorage,access token 到期前由 supabase-js
       // 自动用 refresh token 换新,长驻页面与后台服务不再因 1 小时过期而 401
@@ -43,9 +60,9 @@ function getSupabaseClient(): Promise<SupabaseClient> {
           void refreshAuthUser()
         }
       } else if (event === 'SIGNED_OUT') {
-        // 本页登出(switchAccount 已清理过,幂等)或其他标签页登出经 storage 同步过来
-        clearToken()
-        setAuthSnapshot({ currentUser: null, loading: false })
+        // 本页登出(logout 已清理过,幂等)或其他标签页登出经 storage 同步过来
+        clearAuthSession()
+        setAuthSnapshot({ currentUser: null, loading: false, mode: 'supabase', loginError: null })
       }
     })
     return supabaseClient
@@ -55,32 +72,35 @@ function getSupabaseClient(): Promise<SupabaseClient> {
 
 /**
  * 用当前 token 重拉 /me 刷新用户快照(TOKEN_REFRESHED 后由监听器调用)。
- * 刚续期的新 token 仍被拒(401)说明会话已失效(账号被禁用/吊销),回登录页;
- * 网络类瞬时失败保留当前快照,等下一次续期再同步。
+ * 401 时 OIDC 模式先用 refresh_token 换新 id_token 重试一次(带 retried 防死循环),
+ * 仍被拒说明会话已失效(账号被禁用/吊销),回登录页;网络类瞬时失败保留当前快照。
  */
-async function refreshAuthUser(): Promise<void> {
+async function refreshAuthUser(retried = false): Promise<void> {
   const token = readToken()
   if (token === null) return
   try {
     const res = await fetch('api/enterprise/auth/me', { headers: { authorization: `Bearer ${token}` } })
     if (res.status === 401) {
-      clearToken()
-      setAuthSnapshot({ currentUser: null, loading: false })
+      if (!retried && getAuthMode() === 'oidc' && await tryOidcRefresh()) {
+        await refreshAuthUser(true)
+        return
+      }
+      clearAuthSession()
+      setAuthSnapshot({ currentUser: null, loading: false, mode: getAuthMode(), loginError: null })
       return
     }
     if (!res.ok) return
     const user = await res.json() as PlatformUserRow
-    setAuthSnapshot({ currentUser: user, loading: false })
+    setAuthSnapshot({ currentUser: user, loading: false, mode: getAuthMode(), loginError: null })
   } catch { /* 网络失败:保留当前状态,下一次 TOKEN_REFRESHED 再同步 */ }
 }
 
 // ── Auth store (module-level, shared across Nav + Overlay) ──
 
-const TOKEN_KEY = 'dsh.enterprise.token'
+/** mode 随 loading→resolved 一次性落定,驱动 AuthPanel 在邮箱密码卡与企业账号卡间切换。 */
+type AuthSnapshot = { currentUser: PlatformUserRow | null; loading: boolean; mode: AuthMode; loginError: string | null }
 
-type AuthSnapshot = { currentUser: PlatformUserRow | null; loading: boolean }
-
-let authSnapshot: AuthSnapshot = { currentUser: null, loading: true }
+let authSnapshot: AuthSnapshot = { currentUser: null, loading: true, mode: 'supabase', loginError: null }
 const authListeners = new Set<() => void>()
 let authInitialized = false
 
@@ -96,18 +116,6 @@ function getAuthSnapshot(): AuthSnapshot {
 function setAuthSnapshot(next: AuthSnapshot): void {
   authSnapshot = next
   authListeners.forEach((fn) => { fn() })
-}
-
-function readToken(): string | null {
-  return window.localStorage.getItem(TOKEN_KEY)
-}
-
-function writeToken(token: string): void {
-  window.localStorage.setItem(TOKEN_KEY, token)
-}
-
-function clearToken(): void {
-  window.localStorage.removeItem(TOKEN_KEY)
 }
 
 async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
@@ -127,21 +135,51 @@ async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit): Promi
 async function initAuth(): Promise<void> {
   if (authInitialized) return
   authInitialized = true
-  const token = readToken()
-  if (token === null) {
-    setAuthSnapshot({ currentUser: null, loading: false })
+  let config: AuthWebConfig
+  try {
+    config = await fetchAuthConfig()
+  } catch (e) {
+    setAuthMode('supabase')
+    setAuthSnapshot({ currentUser: null, loading: false, mode: 'supabase', loginError: e instanceof Error ? e.message : String(e) })
     return
   }
-  try {
-    // 先等 supabase 恢复本地会话(getSession 内部等待初始化,access token 已过期
-    // 时自动用 refresh token 续期并经 TOKEN_REFRESHED 写回 TOKEN_KEY),再调 /me
-    const client = await getSupabaseClient()
-    await client.auth.getSession()
-    const user = await fetchJson<PlatformUserRow>('/api/enterprise/auth/me')
-    setAuthSnapshot({ currentUser: user, loading: false })
-  } catch {
-    clearToken()
-    setAuthSnapshot({ currentUser: null, loading: false })
+  setAuthMode(config.mode)
+  setOidcIssuer(config.mode === 'oidc' ? config.issuer : '')
+  // relay 中转基地址:仅 Pocket Access 手机端登录(非 loopback)使用,空串=未启用
+  setOidcRelayUrl(config.mode === 'oidc' ? config.relayUrl : '')
+  // OIDC 回调:认证中心 302 回 SPA 根路径 ?code=&state=,完成令牌交换后走下方统一 /me
+  const callback = readOidcCallback()
+  if (config.mode === 'oidc' && callback !== null) {
+    try {
+      await completeOidcCallback(callback)
+    } catch (e) {
+      setAuthSnapshot({ currentUser: null, loading: false, mode: config.mode, loginError: e instanceof Error ? e.message : String(e) })
+      return
+    }
+  }
+  const token = readToken()
+  if (token === null) {
+    setAuthSnapshot({ currentUser: null, loading: false, mode: config.mode, loginError: null })
+    return
+  }
+  if (config.mode === 'supabase') {
+    try {
+      // 先等 supabase 恢复本地会话(getSession 内部等待初始化,access token 已过期
+      // 时自动用 refresh token 续期并经 TOKEN_REFRESHED 写回 TOKEN_KEY),再调 /me
+      const client = await getSupabaseClient()
+      await client.auth.getSession()
+    } catch {
+      clearAuthSession()
+      setAuthSnapshot({ currentUser: null, loading: false, mode: config.mode, loginError: null })
+      return
+    }
+  }
+  await refreshAuthUser()
+  // /me 网络失败时 refreshAuthUser 保留快照(loading);initAuth 无自动续期兜底,
+  // 回登录页避免卡在「检查登录状态」
+  if (getAuthSnapshot().loading) {
+    clearAuthSession()
+    setAuthSnapshot({ currentUser: null, loading: false, mode: config.mode, loginError: null })
   }
 }
 
@@ -160,7 +198,7 @@ export function useAuth() {
     // oxlint-enable typescript/no-unnecessary-condition -- restore the rule after the wire-boundary guard
     writeToken(accessToken)
     const user = await fetchJson<PlatformUserRow>('/api/enterprise/auth/me')
-    setAuthSnapshot({ currentUser: user, loading: false })
+    setAuthSnapshot({ currentUser: user, loading: false, mode: 'supabase', loginError: null })
   }, [])
 
   const register = useCallback(async (email: string, password: string, loginName: string, displayName: string) => {
@@ -175,14 +213,14 @@ export function useAuth() {
     if (data.session?.access_token !== undefined) {
       writeToken(data.session.access_token)
       const user = await fetchJson<PlatformUserRow>('/api/enterprise/auth/me')
-      setAuthSnapshot({ currentUser: user, loading: false })
+      setAuthSnapshot({ currentUser: user, loading: false, mode: 'supabase', loginError: null })
     } else {
       // No session - show login prompt
       throw new Error('注册成功，请使用新账号登录')
     }
   }, [])
 
-  const switchAccount = useCallback(async () => {
+  const logout = useCallback(async () => {
     // 先带旧 token 通知本地 webserver 失效身份缓存(此时尚未清 TOKEN_KEY),
     // 再清本地与 supabase 会话;SIGNED_OUT 监听里的清理是幂等的
     const token = readToken()
@@ -192,15 +230,18 @@ export function useAuth() {
         headers: token === null ? {} : { authorization: `Bearer ${token}` },
       })
     } catch { /* 缓存自愈：下一次 /me 会重建身份 */ }
-    clearToken()
+    clearAuthSession()
+    setAuthSnapshot({ currentUser: null, loading: false, mode: getAuthMode(), loginError: null })
+    // OIDC 模式留在 DSH 登录页,不整页跳认证中心;认证中心会话仍留在浏览器,
+    // 但下次登录的 iframe 流带 prompt=login 强制重新认证,不会被静默重登同一账号
+    if (getAuthMode() === 'oidc') return
     try {
       const client = await getSupabaseClient()
       await client.auth.signOut()
     } catch { /* ignore signout errors */ }
-    setAuthSnapshot({ currentUser: null, loading: false })
   }, [])
 
-  return { ...snapshot, login, register, switchAccount }
+  return { ...snapshot, login, register, logout }
 }
 
 // ── Auth panel (login / register card) ──
@@ -285,7 +326,67 @@ function Field({
   )
 }
 
+/** 认证中心登录卡:展示 loginError,一个大按钮打开内嵌认证中心的登录弹层。 */
+function OidcLoginPanel({
+  loginError,
+  onOidcLogin,
+}: {
+  loginError: string | null
+  onOidcLogin: () => void | Promise<void>
+}) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <div className={css.authForm}>
+      {(loginError ?? error) !== null && (
+        <div className={css.authError} role="alert">
+          <AlertIcon />
+          <span>{loginError ?? error}</span>
+        </div>
+      )}
+      <button
+        type="button"
+        className={css.authSubmitButton}
+        disabled={loading}
+        onClick={() => {
+          setLoading(true)
+          setError(null)
+          // openOidcFrame 同步返回且失败已落到 loginError;Promise.resolve 兼容
+          // 异步包装调用,完成后复位 loading(弹层已打开或错误已展示)
+          void Promise.resolve(onOidcLogin()).catch((e: unknown) => {
+            setError(e instanceof Error ? e.message : String(e))
+          }).finally(() => { setLoading(false) })
+        }}
+      >
+        {loading && <span className={css.spinner} aria-hidden />}
+        {loading ? '正在打开登录窗口…' : '使用企业账号登录'}
+      </button>
+      <div className={css.hint}>账号由企业认证中心统一管理，无需在本页注册。</div>
+    </div>
+  )
+}
+
+/** 登录卡路由:按认证模式渲染企业账号跳转卡或邮箱密码表单(无自身状态)。 */
 function AuthPanel({
+  mode,
+  loginError,
+  onLogin,
+  onRegister,
+  onOidcLogin,
+}: {
+  mode: AuthMode
+  loginError: string | null
+  onLogin: (email: string, password: string) => Promise<void>
+  onRegister: (email: string, password: string, loginName: string, displayName: string) => Promise<void>
+  onOidcLogin: () => void | Promise<void>
+}) {
+  if (mode === 'oidc') {
+    return <OidcLoginPanel loginError={loginError} onOidcLogin={onOidcLogin} />
+  }
+  return <PasswordAuthPanel onLogin={onLogin} onRegister={onRegister} />
+}
+
+function PasswordAuthPanel({
   onLogin,
   onRegister,
 }: {
@@ -501,8 +602,78 @@ function ServiceConfigSheet({
 // ── Overlay (right panel) ──
 
 export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesInjected }) {
-  const { currentUser, loading, login, register, switchAccount } = useAuth()
+  const { currentUser, loading, mode, loginError, login, register, logout } = useAuth()
   const [configOpen, setConfigOpen] = useState(false)
+  /** 非 null 时弹 Modal 内嵌认证中心登录页(iframe),null 收起。 */
+  const [oidcFrameUrl, setOidcFrameUrl] = useState<string | null>(null)
+  /** iframe 引用:load 后读其地址提取授权码,兜住认证中心不发 postMessage 的第三方扫码路径。 */
+  const frameRef = useRef<HTMLIFrameElement | null>(null)
+
+  const openOidcFrame = useCallback(() => {
+    void (async () => {
+      try {
+        // iframe 内嵌登录:授权 URL 带 popup=iframe,认证中心登录成功不 302 而是向本页 postMessage。
+        // 恒带 prompt=login:认证中心会话仍可能在(退出只清了 DSH 侧),强制重新认证
+        // 防静默重登同一账号,也兜住"切换账号"场景;首次登录无认证中心会话,无影响
+        setOidcFrameUrl(await buildOidcAuthorizeUrl({ promptLogin: true, popupIframe: true }))
+      } catch (e) {
+        setAuthSnapshot({ currentUser: null, loading: false, mode: getAuthMode(), loginError: e instanceof Error ? e.message : String(e) })
+      }
+    })()
+  }, [])
+
+  /** 拿到授权码后的公共续程:state 校验、令牌交换、重拉 /me 推进认证状态;postMessage 与 iframe load 两条路径共用。 */
+  const handleOidcCode = useCallback((callback: { code: string; state: string }) => {
+    void (async () => {
+      try {
+        await completeOidcCallback(callback)
+        await refreshAuthUser()
+        // /me 网络失败时 refreshAuthUser 保留 loading 快照,与 initAuth 一致兜底回登录页
+        if (getAuthSnapshot().loading) {
+          clearAuthSession()
+          setAuthSnapshot({ currentUser: null, loading: false, mode: getAuthMode(), loginError: null })
+        }
+        // 收起 Modal:active 用户的登录页随之整体卸载,显式置 null 不影响结果;
+        // pending/blocked 用户登录页不卸载,必须显式收起 iframe,否则卡在"登录成功"页
+        setOidcFrameUrl(null)
+      } catch (e) {
+        setAuthSnapshot({ currentUser: null, loading: false, mode: getAuthMode(), loginError: e instanceof Error ? e.message : String(e) })
+        setOidcFrameUrl(null)
+      }
+    })()
+  }, [])
+
+  useEffect(() => {
+    if (oidcFrameUrl === null) return
+    const onMessage = (event: MessageEvent) => {
+      const callback = readOidcLoginSuccessMessage(event, getOidcIssuer())
+      if (callback !== null) handleOidcCode(callback)
+    }
+    window.addEventListener('message', onMessage)
+    return () => { window.removeEventListener('message', onMessage) }
+  }, [oidcFrameUrl, handleOidcCode])
+
+  /**
+   * iframe load 兜底:账号密码路径认证中心会 postMessage(走上面的 onMessage),但钉钉等
+   * 第三方 Provider 扫码路径拿到 code 后直接把 iframe 导航到 redirect_uri、不发消息。
+   * 导航回本站后与父页面同源,这里读其地址提取 code/state;仍停在认证中心(跨源)或
+   * 加载失败页时读取抛 SecurityError,静默等下一跳。load 派发早于 iframe 内 SPA 的
+   * initAuth 网络往返,sessionStorage 一次性凭据由本页先取先删。
+   */
+  const onFrameLoad = useCallback(() => {
+    const frame = frameRef.current
+    if (frame === null) return
+    let href: string
+    try {
+      href = frame.contentWindow?.location.href ?? ''
+    } catch {
+      return
+    }
+    const params = new URLSearchParams(new URL(href, window.location.origin).search)
+    const code = params.get('code')
+    const state = params.get('state')
+    if (code !== null && state !== null) handleOidcCode({ code, state })
+  }, [handleOidcCode])
 
   const authState = useMemo<'loading' | 'anonymous' | 'pending' | 'blocked' | 'active'>(() => {
     if (loading) return 'loading'
@@ -548,24 +719,32 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
           <div className={css.authPageHeader}>
             <div className={css.authCardTitle}>
               {authState === 'loading' && '检查登录状态'}
-              {authState === 'anonymous' && '登录或注册'}
+              {authState === 'anonymous' && (mode === 'oidc' ? '企业账号登录' : '登录或注册')}
               {authState === 'pending' && '等待审批'}
               {authState === 'blocked' && '账号不可用'}
             </div>
             <div className={css.authCardSubtitle}>
               {authState === 'loading' && '正在确认你的企业身份信息...'}
-              {authState === 'anonymous' && '使用企业账号进入当前工作台。'}
+              {authState === 'anonymous' && (mode === 'oidc' ? '通过企业认证中心验证身份后进入工作台。' : '使用企业账号进入当前工作台。')}
               {authState === 'pending' && '你的账号已注册成功，等待系统管理员审批后才能进入平台。'}
               {authState === 'blocked' && `当前账号已${currentUser?.status === 'disabled' ? '禁用' : '锁定'}，请联系管理员处理。`}
             </div>
           </div>
-          {authState === 'anonymous' && <AuthPanel onLogin={login} onRegister={register} />}
+          {authState === 'anonymous' && (
+            <AuthPanel
+              mode={mode}
+              loginError={loginError}
+              onLogin={login}
+              onRegister={register}
+              onOidcLogin={openOidcFrame}
+            />
+          )}
           {(authState === 'pending' || authState === 'blocked') && (
             <div className={css.authBlockedActions}>
               <button
                 type="button"
                 className={css.authSecondaryButton}
-                onClick={() => { void switchAccount() }}
+                onClick={() => { void logout() }}
               >
                 切换账号
               </button>
@@ -578,6 +757,34 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
       </div>
       {configOpen && services !== undefined && (
         <ServiceConfigSheet services={services} onClose={() => { setConfigOpen(false) }} />
+      )}
+      {oidcFrameUrl !== null && (
+        <div
+          className={clsx(css.configSheetRoot, css.configSheetRootMounted)}
+          onClick={(event) => { if (event.target === event.currentTarget) setOidcFrameUrl(null) }}
+          role="presentation"
+        >
+          <div className={css.configSheet} role="dialog" aria-modal="true" aria-label="企业账号登录">
+            <div className={css.configSheetHeader}>
+              <div className={css.configSheetTitle}>企业账号登录</div>
+              <button
+                type="button"
+                className={css.configSheetClose}
+                onClick={() => { setOidcFrameUrl(null) }}
+                aria-label="关闭"
+              >
+                <CloseIcon />
+              </button>
+            </div>
+            <iframe
+              ref={frameRef}
+              className={css.oidcFrame}
+              src={oidcFrameUrl}
+              title="企业认证中心登录"
+              onLoad={onFrameLoad}
+            />
+          </div>
+        </div>
       )}
     </div>
   )

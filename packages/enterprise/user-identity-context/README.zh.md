@@ -32,7 +32,7 @@ kind: "package-reference"
 | `POST /api/enterprise/auth/signout`（platform-user-api） | 发射 `platform-user/signout` |
 | `platform-user/verified` 事件（本插件订阅） | `ctx.currentUser.observe(user)` |
 | `platform-user/signout` 事件（本插件订阅） | `ctx.currentUser.clear()` |
-| 员工端 `switchAccount`（ui-enterprise） | 退出登录时调用 signout 端点 |
+| 员工端 `logout`（ui-enterprise） | 退出登录时调用 signout 端点 |
 
 存储为空（尚未登录或已退出）时不向模型请求注入任何内容；已登录但令牌尚未就绪时，省略令牌段。
 

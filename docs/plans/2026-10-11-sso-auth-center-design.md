@@ -73,7 +73,9 @@
 | ④-路径一 | 客户 IdP 自有           | 客户 IdP（AD FS/Keycloak/Entra ID/Authing 等，标准 OIDC）                | 客户已有 IdP            | 配置切换    |
 | ④-路径二 | 客户 IdP 自有           | Supabase Auth 联邦客户 IdP（原生支持 Keycloak/Entra ID/Okta/generic OIDC） | 客户已有 IdP 且接受联邦中间层   | 零改动     |
 
-> 组合①②③为"云汉提供认证中心"的三种标准组合；组合④为"客户已有认证中心"的两种接入路径。同一部署同一时刻只启用一种组合。
+> **部署级单 issuer 前提（2026-10-13 与产品确认）**：issuer/IdP 是企业层面的 IT 基础设施，**一套云汉部署只接一套 issuer/IdP，全部组件统一**——员工端与 web-console 前端两个 RP、三个 RS 验签点，读的是同一个 issuer 的同一个 JWKS；管理员与员工是同一套登录。provider 是整套部署级别的三选一配置：企业已有 IdP 则全组件接入企业 IdP（组合④），没有则用云汉自带 Casdoor（组合②③；组合① Supabase 保留为 demo）。不存在"管理员走 Supabase、员工走 Casdoor"的双 issuer 混合部署。
+>
+> 组合①②③为"云汉提供认证中心"的三种标准组合；组合④为"客户已有认证中心"的两种接入路径。
 
 ### 3.3 决策记录
 
@@ -95,10 +97,10 @@
 
 ```
 员工端 ──OIDC 授权码+PKCE──→ 认证中心（可配置）
-                              │ 组合① Supabase Auth
-                              │ 组合②③ Casdoor ──扫码联邦──→ 钉钉/飞书（身份源）
-                              │ 组合④ 客户 IdP
-                              ↓ 签发 ID Token + JWKS
+web-console 前端 ──OIDC 授权码+PKCE──↗      │ 组合① Supabase Auth
+（两个 RP 发起登录，redirect_uri 各自登记）  │ 组合②③ Casdoor ──扫码联邦──→ 钉钉/飞书（身份源）
+                                            │ 组合④ 客户 IdP
+                                            ↓ 签发 ID Token + JWKS
 员工端持 JWT ──→ 本地 webserver ──转发──→ flowable-engine / web-console 后端
 
 三处验签点（员工端 profile / web-console / engine）
@@ -151,18 +153,24 @@
 | 5  | JwtAuthConverter 放宽 email 必填（unionId 场景 email 可空）                                                | `apps/web-console/backend/.../security/JwtAuthConverter.java`  | 0.5 人日           |
 | 6  | SSO 配置模型：认证中心类型 + issuer/JWKS/clientId 参数，misconfiguration fails loud                            | 企业配置层                                                          | 1 人日             |
 | 7  | 员工端登录 UI 增加 OIDC 模式（授权码+PKCE 回环；保留 Supabase 模式）                                                  | `packages/client/ui-enterprise/src/client/EnterpriseUi.tsx`    | 2\~3 人日          |
-| 8  | Casdoor 部署与钉钉/飞书 provider 配置手册（含 IM 开放平台应用登记指引）                                                  | `docs/plans/`                                                  | 1 人日             |
-| 9  | auth\_subject 值域兼容与行为测试/快照                                                                       | 测试                                                             | 2\~3 人日          |
-| 合计 | <br />                                                                                           | <br />                                                         | **8.5\~10.5 人日** |
+| 8  | **web-console 前端 OIDC 化（第二 RP，2026-10-13 补录——平台管理后台同样是员工登录入口）**：登录页按 provider 分支（oidc=企业账号登录跳转、supabase=邮箱密码+注册）、PKCE 回环回调、会话存储与 401 先刷新重试；Register 仅 supabase 模式保留（casdoor/客户 IdP 的注册发生在钉钉/飞书 APP，平台侧首登 JIT 建档+审批即开户） | `apps/web-console/frontend/src/{auth,pages,api}`               | 2\~3 人日          |
+| 9  | web-console 后端认证下发与令牌交换端点（`GET /api/auth/config` 按 provider 分支 + `GET /api/auth/oidc/authorize` 302 + `POST /api/auth/oidc/token`、`/oidc/refresh` 经 Java 侧换 token 避开浏览器 CORS；均 permitAll），SSO 参数来自同一组部署级环境变量 | `apps/web-console/backend/.../{config,security}`               | 1 人日             |
+| 10 | Casdoor 部署与钉钉/飞书 provider 配置手册（含 IM 开放平台应用登记指引）                                                  | `docs/plans/`                                                  | 1 人日             |
+| 11 | auth\_subject 值域兼容与行为测试/快照                                                                       | 测试                                                             | 2\~3 人日          |
+| 12 | **expense-sor 前后端 OIDC 化（第三 RP，2026-10-13 补录——费控报销 SOR 员工登录入口）**：后端复制 web-console 已验证模式（SsoAuthProperties 三选一校验、`GET /api/auth/oidc/{authorize,token,refresh}` 授权代理、`JwtDecoders.fromIssuerLocation` discovery 验签、permitAll `/api/auth/**`），config 下传复用既有 `GET /api/ui-config` 按 mode 分支（不新增 `/api/auth/config`，维持单一下传通道）；前端 Vue 原生 JS 双模式（oidc=企业账号登录 PKCE 回环 + 401 刷新重放一次、supabase=邮箱密码保留）；差异点：headless 兼容——supabase 模式下 issuer/supabaseUrl 全空不 fails loud（web-console 同场景抛错），供无 SSO 配置的单元/冒烟环境启动；oidc 验签走 discovery 默认 RS256（不兼容 ES256 客户 IdP） | `apps/expense-ctrl/expense-sor/{src/main/java,src/main/resources/static}` | 1.5\~2 人日 |
+| 合计 | <br />                                                                                           | <br />                                                         | **13\~16.5 人日** |
 
 ### 5.2 SSO 配置模型（契约示意，字段名实施时定）
+
+**配置源只有一份：部署级环境变量**（`SSO_PROVIDER` / `SSO_ISSUER` / `SSO_JWKS_URL` / `SSO_CLIENT_ID` / `SSO_SCOPES`，员工端配在 DSH 后台 Node 进程、web-console 配在其 Java 后端、expense-sor 配在其 Java 后端，同一部署取值相同）。浏览器页面读不到环境变量，因此各后端提供运行时 config 端点把解析后的值下发给自己的前端（员工端 `GET /api/enterprise/auth/config`，web-console `GET /api/auth/config`，expense-sor 复用既有 `GET /api/ui-config` 按 mode 分支下传、不新增独立端点）——下发通道不是第二套配置。
 
 ```yaml
 sso:
   provider: supabase | casdoor | customer-oidc   # 认证中心三选一，misconfiguration 在加载期报错
   issuer: https://...                            # 必填：认证中心 issuer
   jwksUrl: https://.../.well-known/jwks.json     # 可选：缺省按 OIDC 发现从 issuer 推导
-  clientId: ...                                  # 员工端 RP 注册的 client id
+  clientId: ...                                  # RP 共享注册的 client id：员工端与 web-console 前端
+                                                 # 可用同一个 client，redirect_uri 各自登记
   scopes: openid profile                         # 缺省即可
 ```
 
@@ -178,6 +186,8 @@ sso:
 | 开户审批  | pending\_approval → active | 不变；未导入员工首登只建待审批影子档案（关闭自注册）     |
 | 禁用/锁定 | status 四态                  | 不变；禁用后认证中心侧拒绝续期/登录             |
 | 角色管理  | platformRoles 三角色          | 不变                             |
+
+注册入口按 provider 分支（2026-10-13 确认）：`supabase` 模式保留邮箱密码注册页（demo 场景无 IM，需自建开户入口）；`casdoor`/客户 IdP 模式只有登录、无注册页——钉钉/飞书用户的注册发生在 IM APP 侧，平台侧首登 JIT 建 `pending_approval` 影子档案 + 管理员审批即开户，与上表"开户审批"行同一语义。
 
 ### 6.2 auth\_subject 语义与值域
 
@@ -259,6 +269,8 @@ platform_user_id  ↔  sor_id（哪个 SOR）  ↔  sor_user_id（在那边的�
 | S4 | 员工端登录 UI OIDC 模式（授权码+PKCE 回环；Supabase 模式保留为组合①）                                          | S1/S3                         |
 | S5 | 飞书 provider 验证（照抄钉钉链路）                                                                   | S1                            |
 | S6 | auth\_subject 值域口径 + 行为测试/快照 + 部署手册                                                      | S2\~S4                        |
+| S7 | web-console 前端 OIDC 化（第二 RP：登录页按 provider 分支 + PKCE 回环 + 401 刷新重试；Java 侧 config/authorize/token/refresh 端点；Register 仅 supabase 模式） | S1/S3                        |
+| S8 | expense-sor 前后端 OIDC 化（第三 RP：授权代理端点 + `/api/ui-config` 单通道下传 + Vue 前端 PKCE 回环；headless 兼容——supabase 模式全空配置可启动；`mvn test` 17 用例已过） | S1/S3                        |
 
 ***
 

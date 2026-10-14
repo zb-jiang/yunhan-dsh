@@ -2,7 +2,8 @@ import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
 import { Alert, App, Button, Card, Form, Input, Typography } from 'antd'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { getSupabaseClient } from '../lib/supabase'
+import { useAuth } from '../auth/AuthContext'
 import { BrandMark } from '../components/Brand'
 
 interface RegisterForm {
@@ -13,16 +14,20 @@ interface RegisterForm {
 }
 
 /**
- * 用户注册页。
+ * 用户注册页(仅 supabase 模式)。
  *
  * 注册走 Supabase Auth;Supabase 创建 auth.users 记录后,setup guide §4 trigger
  * 自动在 public.platform_users 插入 pending_approval 记录,等待平台管理员审批。
  * 注册成功后,后端 /api/users/me 返回 null(或 401 pending),前端 RequireAuth
  * 会把用户引导到 /pending 页面;所以这里注册成功后直接跳登录页。
+ *
+ * OIDC 模式(casdoor/客户 IdP)不支持自助注册:账号在认证中心/企业 IM 侧管理,
+ * 渲染提示卡并引导去登录。
  */
 export default function RegisterPage() {
   const navigate = useNavigate()
   const { message } = App.useApp()
+  const { mode } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
@@ -35,7 +40,8 @@ export default function RegisterPage() {
     setLoading(true)
     setError(null)
     try {
-      const { error: signUpError, data } = await supabase.auth.signUp({
+      const client = await getSupabaseClient()
+      const { error: signUpError, data } = await client.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -65,6 +71,31 @@ export default function RegisterPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (mode === 'oidc') {
+    return (
+      <div className="auth-shell">
+        <Card style={{ width: 420 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <BrandMark variant="auth" />
+            <Typography.Title level={3} style={{ marginBottom: 4 }}>
+              注册账号
+            </Typography.Title>
+            <Typography.Text type="secondary">云汉企业AI协同平台</Typography.Text>
+          </div>
+          <Alert
+            type="info"
+            showIcon
+            message="本部署不支持自助注册"
+            description="企业账号由认证中心统一管理。如需开通账号,请联系企业管理员;或使用企业 IM(钉钉/飞书)账号直接登录。"
+          />
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            已有账号? <Link to="/login">去登录</Link>
+          </div>
+        </Card>
+      </div>
+    )
   }
 
   return (

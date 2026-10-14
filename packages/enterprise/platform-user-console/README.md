@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-platform-user-console` is the Web Console provider of the platform-user seam: it registers into `ctx.platformUsers`, verifies the caller's Supabase Auth JWT locally with JWKS, then reads that user's governance record from the Web Console backend (`GET /api/users/me`) using the caller's own bearer token. It pairs with dsh-platform-user, which resolves the provider by auth method, and holds no service key — every read is the user's own identity.
+`dsh-platform-user-console` is the Web Console provider of the platform-user seam: it registers into `ctx.platformUsers`, verifies the caller's auth-center JWT locally with JWKS, then reads that user's governance record from the Web Console backend (`GET /api/users/me`) using the caller's own bearer token. It pairs with dsh-platform-user, which resolves the provider by auth method, and holds no service key — every read is the user's own identity.
 
 ## Table of Contents
 
@@ -27,10 +27,13 @@ English | [中文](README.zh.md)
 Register this plugin in a profile whose webserver sits behind the enterprise web client. Plugin contract:
 
 - `inject = ['platformUsers']`
-- `Config`
-  - `supabaseUrl` — Supabase project URL; only its Auth issuer is used for JWT verification
-  - `webConsoleBaseUrl` — Web Console backend base URL, default `http://127.0.0.1:8080`
-- `apply(ctx, config)` — resolves config, creates the JWKS key store, and registers the provider
+- `Config` — all five fields required, volatile, filled by the enterprise-app patch from environment variables (`SSO_*`, `WEB_CONSOLE_URL`)
+  - `provider` — auth center type: `supabase / casdoor / customer-oidc`
+  - `supabaseUrl` — Supabase project URL; under supabase its only role is deriving the issuer (`<url>/auth/v1`) when `issuer` is empty
+  - `issuer` — auth-center issuer URL; non-supabase providers require it non-empty; an empty resolved issuer (nothing configured yet) mounts an "unconfigured" provider that rejects requests
+  - `jwksUrl` — JWKS endpoint; empty derives `<issuer>/.well-known/jwks.json`
+  - `webConsoleBaseUrl` — Web Console backend base URL serving `GET /api/users/me`
+- `apply(ctx, config)` — resolves config (invalid values fail at load), mounts the provider, and re-mounts it on every `loader/volatile-update`; a volatile update with invalid values keeps the previous provider
 
 dsh-platform-user resolves the registered provider by auth method, so no other package imports this one directly.
 
@@ -83,6 +86,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The `ApiResponse` envelope and the camelCase governance-record fields read from `GET /api/users/me` are a contract with the web-console backend (`apps/web-console`); renaming a field must update both sides. The JWKS key store is created once in `apply` from the Auth issuer of `config.supabaseUrl` alone. No open work here.
+The `ApiResponse` envelope and the camelCase governance-record fields read from `GET /api/users/me` are a contract with the web-console backend (`apps/web-console`); renaming a field must update both sides. The provider mounts in `apply` from the resolved issuer (explicit `issuer`, or derived from `supabaseUrl` under supabase) and re-mounts on every successful `loader/volatile-update`; an empty resolved issuer mounts an "unconfigured" provider that rejects requests until real coordinates arrive. No open work here.
 
 </details>

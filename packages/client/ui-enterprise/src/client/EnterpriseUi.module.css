@@ -523,3 +523,11 @@
   overflow-y: auto;
   padding: 4px 22px 18px;
 }
+
+/* iframe 内嵌登录弹层的主体(复用 configSheet 遮罩与框体)。 */
+.oidcFrame {
+  display: block;
+  width: 100%;
+  height: min(600px, 62vh);
+  border: none;
+}

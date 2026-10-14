@@ -128,7 +128,7 @@ function TaskGroupSection<T>({ group, expandedKey, onToggle, renderRow }: {
 
 /** 待办队列 nav 座位(见模块文档)。 */
 export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces }: TaskQueueSidebarProps) {
-  const { currentUser, loading: authLoading, switchAccount } = useAuth()
+  const { currentUser, loading: authLoading, logout } = useAuth()
   const tasks = useSnapshot(workbench.tasks)
   const bindings = useSnapshot(workbench.bindings)
   // 工作区列表:工作空间选择弹窗的选项来源(创建/删除后实时刷新)。
@@ -302,7 +302,7 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces }
             {currentUser?.displayName ?? ''}
           </span>
           {/* oxlint-enable typescript/no-unnecessary-condition */}
-          <button type="button" className={css.logout} onClick={() => { void switchAccount() }}>
+          <button type="button" className={css.logout} onClick={() => { void logout() }}>
             退出
           </button>
         </div>

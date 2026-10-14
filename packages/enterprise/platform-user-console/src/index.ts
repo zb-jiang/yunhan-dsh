@@ -1,7 +1,8 @@
 /**
- * Web Console provider for `ctx.platformUsers`: verifies Supabase Auth JWTs
- * locally via JWKS and reads the caller's governance record from the Web
- * Console backend (`GET /api/users/me`) with the user's bearer token.
+ * Web Console provider for `ctx.platformUsers`: verifies auth-center JWTs
+ * locally via JWKS (provider/issuer/JWKS URL resolved through the shared SSO
+ * config model) and reads the caller's governance record from the
+ * Web Console backend (`GET /api/users/me`) with the user's bearer token.
  * Governance writes live in the Web Console backend.
  *
  * @module @deepseek-ai/dsh-platform-user-console
@@ -14,10 +15,13 @@ import { createRemoteJWKSet, jwtVerify } from 'jose'
 import type {} from '@deepseek-ai/dsh-platform-user'
 import {
   PlatformUserError,
+  resolveSsoSettings,
   type PlatformUser,
   type PlatformRole,
   type PlatformUserProvider,
   type PlatformUserStatus,
+  type ResolvedSsoSettings,
+  type SsoSettingsInput,
 } from '@deepseek-ai/dsh-platform-user'
 
 /** Cordis plugin name used by loader diagnostics. */
@@ -31,21 +35,28 @@ export const inject = ['platformUsers']
 
 /** Plugin config for the Web-Console-backed provider. */
 export interface Config {
+  /** 认证中心类型 supabase | casdoor | customer-oidc,缺省 supabase;volatile:设置面板可改,即时生效。 */
+  provider: Volatile<string>
   /** Supabase project URL; only its Auth issuer is used for JWT verification;volatile:设置面板可改,即时生效。 */
   supabaseUrl: Volatile<string>
+  /** 认证中心 JWT issuer,为空时按 Supabase 约定推导 `<supabaseUrl>/auth/v1`;volatile:设置面板可改,即时生效。 */
+  issuer: Volatile<string>
+  /** JWKS 端点,为空时按 OIDC 约定推导 `<issuer>/.well-known/jwks.json`;volatile:设置面板可改,即时生效。 */
+  jwksUrl: Volatile<string>
   /** Web Console backend base URL serving `GET /api/users/me`;volatile:设置面板可改,即时生效。 */
   webConsoleBaseUrl: Volatile<string>
 }
 
 export const Config = z.object({
+  provider: z.string().required().volatile(),
   supabaseUrl: z.string().required().volatile(),
+  issuer: z.string().required().volatile(),
+  jwksUrl: z.string().required().volatile(),
   webConsoleBaseUrl: z.string().required().volatile(),
 })
 
 /** Complete config after schemastery applies defaults. */
-export interface ResolvedConfig {
-  /** Supabase project URL; only its Auth issuer is used for JWT verification. */
-  supabaseUrl: string
+export interface ResolvedConfig extends ResolvedSsoSettings {
   /** Web Console backend base URL without a trailing slash. */
   webConsoleBaseUrl: string
 }
@@ -59,12 +70,20 @@ function requireNonEmpty(name: string, value: string): string {
 
 /**
  * Resolve the runtime spec from a plain config snapshot.
+ *
+ * <p>SSO 部分校验与推导委托共享模型 {@link resolveSsoSettings}(provider 缺省
+ * supabase;非 supabase 时 issuer 必须显式给出,fails loud;supabase 未配置时
+ * issuer 为空串,由 {@link apply} 以「未配置」provider 顶替)。webConsoleBaseUrl
+ * 必填,本插件是纯 RS 验签点,不消费 clientId/scopes。
+ *
  * @param config - plain config values(Volatile 字段请先经 {@link snapshotConfig} 解包)。
- * @returns the fully resolved config.
+ * @returns the fully resolved config;issuer 为空串表示认证中心未配置。
  */
-export function resolveConfig(config: { supabaseUrl?: string; webConsoleBaseUrl?: string }): ResolvedConfig {
+export function resolveConfig(config: SsoSettingsInput & {
+  webConsoleBaseUrl?: string
+}): ResolvedConfig {
   return {
-    supabaseUrl: requireNonEmpty('supabaseUrl', config.supabaseUrl ?? ''),
+    ...resolveSsoSettings(config),
     webConsoleBaseUrl: requireNonEmpty(
       'webConsoleBaseUrl',
       config.webConsoleBaseUrl ?? DEFAULT_WEB_CONSOLE_BASE_URL,
@@ -77,9 +96,14 @@ export function resolveConfig(config: { supabaseUrl?: string; webConsoleBaseUrl?
  * @param config - 插件 Config(注入的 Volatile 引用)。
  * @returns 供 {@link resolveConfig} 消费的普通值快照。
  */
-export function snapshotConfig(config: Config): { supabaseUrl?: string; webConsoleBaseUrl?: string } {
+export function snapshotConfig(config: Config): SsoSettingsInput & {
+  webConsoleBaseUrl?: string
+} {
   return {
+    provider: config.provider.get(),
     supabaseUrl: config.supabaseUrl.get(),
+    issuer: config.issuer.get(),
+    jwksUrl: config.jwksUrl.get(),
     webConsoleBaseUrl: config.webConsoleBaseUrl.get(),
   }
 }
@@ -238,16 +262,16 @@ export class ConsolePlatformUserProvider implements PlatformUserProvider {
   private readonly issuer: string
 
   /**
-   * @param supabaseUrl - Supabase project URL; only the Auth issuer is used.
+   * @param issuer - 认证中心 JWT issuer(iss claim 校验值)。
    * @param webConsoleBaseUrl - Web Console backend base URL without trailing slash.
    * @param jwks - JWKS key store for JWT signature verification.
    */
   constructor(
-    supabaseUrl: string,
+    issuer: string,
     private readonly webConsoleBaseUrl: string,
     private readonly jwks: ReturnType<typeof createRemoteJWKSet>,
   ) {
-    this.issuer = `${supabaseUrl}/auth/v1`
+    this.issuer = issuer
   }
 
   async getUserByToken(accessToken: string): Promise<PlatformUser> {
@@ -277,29 +301,56 @@ export class ConsolePlatformUserProvider implements PlatformUserProvider {
 
   /** Read the caller's governance record from the Web Console backend. */
   private async readMe(accessToken: string): Promise<unknown> {
-    const response = await fetch(`${this.webConsoleBaseUrl}/api/users/me`, {
+    return fetchMeResponse(this.webConsoleBaseUrl, accessToken)
+  }
+}
+
+/**
+ * Fetch and unwrap the raw `/api/users/me` payload. Network failures and
+ * non-2xx responses both classify as `PROVIDER_REQUEST_FAILED` — the provider
+ * being unreachable is not the caller's fault, and an unclassified network
+ * TypeError would surface as 400 in platform-user-api's HTTP mapping.
+ *
+ * @param webConsoleBaseUrl - Web Console backend base URL without trailing slash.
+ * @param accessToken - caller's bearer token, forwarded verbatim.
+ * @returns the parsed JSON body (envelope included; validation happens in {@link readMeResponse}).
+ */
+export async function fetchMeResponse(
+  webConsoleBaseUrl: string,
+  accessToken: string,
+): Promise<unknown> {
+  let response: Response
+  try {
+    response = await fetch(`${webConsoleBaseUrl}/api/users/me`, {
       method: 'GET',
       headers: {
         authorization: `Bearer ${accessToken}`,
         accept: 'application/json',
       },
     })
-    const body = await response.text().catch(() => '')
-    if (!response.ok) {
-      throw new PlatformUserError(
-        `getUserByToken: /api/users/me failed: ${response.status} ${body}`,
-        'PROVIDER_REQUEST_FAILED',
-      )
-    }
-    try {
-      return JSON.parse(body)
-    } catch (error) {
-      throw new PlatformUserError(
-        `getUserByToken: invalid JSON response: ${normalizeError(error).message}`,
-        'PROVIDER_REQUEST_FAILED',
-        { cause: normalizeError(error) },
-      )
-    }
+  } catch (error) {
+    // 连接拒绝/DNS 失败等网络错误是提供方不可达,不是调用方参数问题
+    throw new PlatformUserError(
+      `getUserByToken: /api/users/me unreachable at ${webConsoleBaseUrl}: ${normalizeError(error).message}`,
+      'PROVIDER_REQUEST_FAILED',
+      { cause: normalizeError(error) },
+    )
+  }
+  const body = await response.text().catch(() => '')
+  if (!response.ok) {
+    throw new PlatformUserError(
+      `getUserByToken: /api/users/me failed: ${response.status} ${body}`,
+      'PROVIDER_REQUEST_FAILED',
+    )
+  }
+  try {
+    return JSON.parse(body)
+  } catch (error) {
+    throw new PlatformUserError(
+      `getUserByToken: invalid JSON response: ${normalizeError(error).message}`,
+      'PROVIDER_REQUEST_FAILED',
+      { cause: normalizeError(error) },
+    )
   }
 }
 
@@ -309,32 +360,30 @@ export class ConsolePlatformUserProvider implements PlatformUserProvider {
  * @param config - plugin config.
  */
 export function apply(ctx: Context, config: Config): void {
-  // provider 构造时把 JWKS 集合绑定到 supabaseUrl,无法惰性切换;
+  // provider 构造时把 JWKS 集合绑定到 issuer,无法惰性切换;
   // volatile 变更(loader/volatile-update)到达时注销旧 provider 并按新值重建。
   let unregister: (() => void) | undefined
   const mount = (): void => {
     const raw = snapshotConfig(config)
     unregister?.()
-    // 未配置合法化:登录页是首次配置入口,启动时 SUPABASE_URL 为空是合法态
-    //(patch 兜底 `?? ''`),不阻塞挂载;以"未配置"provider 顶替,登录会得到
-    // 明确的未配置错误,配置完成后 volatile-update 到达自动重建真 provider。
-    if (raw.supabaseUrl === undefined || raw.supabaseUrl.trim() === ''
-      || raw.webConsoleBaseUrl === undefined || raw.webConsoleBaseUrl.trim() === '') {
+    const resolved = resolveConfig(raw)
+    // 未配置合法化:登录页是首次配置入口,启动时认证中心未配置(issuer/supabaseUrl
+    // 均为空)是合法态,不阻塞挂载;以"未配置"provider 顶替,登录会得到明确的
+    // 未配置错误,配置完成后 volatile-update 到达自动重建真 provider。
+    if (resolved.issuer === '') {
       unregister = ctx.platformUsers.registerProvider({
         getUserByToken: () => Promise.reject(new PlatformUserError(
-          '认证服务未配置(SUPABASE_URL 为空),请在登录页「服务配置」中完成设置',
+          '认证服务未配置(issuer/supabaseUrl 均为空),请在登录页「服务配置」中完成设置',
           'PROVIDER_REQUEST_FAILED',
         )),
       })
-      ctx.logger.warn('platform-user-console: SUPABASE_URL/WEB_CONSOLE_URL 未配置,认证 provider 以未配置模式挂载')
+      ctx.logger.warn('platform-user-console: 认证中心未配置(issuer/supabaseUrl 为空),认证 provider 以未配置模式挂载')
       return
     }
-    const resolved = resolveConfig(raw)
-    const jwksUrl = `${resolved.supabaseUrl}/auth/v1/.well-known/jwks.json`
     unregister = ctx.platformUsers.registerProvider(new ConsolePlatformUserProvider(
-      resolved.supabaseUrl,
+      resolved.issuer,
       resolved.webConsoleBaseUrl,
-      createRemoteJWKSet(new URL(jwksUrl)),
+      createRemoteJWKSet(new URL(resolved.jwksUrl)),
     ))
   }
   mount()

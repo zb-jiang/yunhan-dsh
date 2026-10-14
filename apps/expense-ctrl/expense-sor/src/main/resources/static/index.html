@@ -26,13 +26,24 @@
       <!-- 初始化中 -->
       <div v-if="booting" class="loading-block">正在加载…</div>
 
-      <!-- 未配置 Supabase -->
-      <div v-else-if="!uiConfig.supabaseUrl" class="empty-block">
-        <p>Web UI 未启用:服务端未配置 Supabase 登录参数。</p>
-        <p class="muted">请设置环境变量 SOR_SUPABASE_URL 与 SOR_SUPABASE_ANON_KEY 后重启服务。</p>
+      <!-- 未配置 SSO -->
+      <div v-else-if="!uiConfig.mode" class="empty-block">
+        <p>Web UI 未启用:服务端未配置 SSO 参数。</p>
+        <p class="muted">Supabase 模式请设置 SOR_SUPABASE_URL 与 SOR_SUPABASE_ANON_KEY;
+          Casdoor/客户 IdP 模式请设置 SSO_PROVIDER、SSO_ISSUER、SSO_CLIENT_ID 后重启服务。</p>
       </div>
 
-      <!-- 登录页 -->
+      <!-- 登录页:oidc 模式(单点登录,Modal 内嵌认证中心登录页 iframe) -->
+      <div v-else-if="!me && uiConfig.mode==='oidc'" class="login-wrap">
+        <div class="login-card">
+          <h2>登录</h2>
+          <p class="muted">使用企业账号登录(单点登录)</p>
+          <p v-if="loginError" class="error">{{ loginError }}</p>
+          <button class="btn btn-primary btn-block" @click="openOidcFrame">企业账号登录</button>
+        </div>
+      </div>
+
+      <!-- 登录页:supabase 模式 -->
       <div v-else-if="!me" class="login-wrap">
         <div class="login-card">
           <h2>登录</h2>
@@ -227,6 +238,18 @@
       <!-- 未知路由兜底 -->
       <div v-else class="empty-block">页面不存在,<a href="#/list">返回列表</a></div>
     </main>
+
+    <!-- 企业账号登录 Modal:iframe 内嵌认证中心登录页(popup=iframe,登录成功向本页
+         postMessage code/state;第三方扫码路径不发消息,由 iframe onLoad 兜底) -->
+    <div class="oidc-frame-mask" v-if="oidcFrameUrl" @click.self="closeOidcFrame">
+      <div class="oidc-frame-dialog">
+        <div class="oidc-frame-head">
+          <span>企业账号登录</span>
+          <button type="button" class="btn btn-ghost btn-sm" @click="closeOidcFrame">关闭</button>
+        </div>
+        <iframe ref="oidcFrame" :src="oidcFrameUrl" title="企业认证中心登录" @load="onFrameLoad"></iframe>
+      </div>
+    </div>
 
     <!-- 全局错误提示 -->
     <div class="toast" v-if="toast">{{ toast }}</div>

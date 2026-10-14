@@ -1,4 +1,6 @@
 启动flowable
+# 钉钉/飞书员工提交待办时启用：验 Casdoor 签发的 JWT（iss=隧道域名）；不设默认 Supabase 口径，钉钉 JWT 验签失败
+$env:DSH_JWT_ISSUER="http://47fcb251.r35.cpolar.top"
 $env:SUPABASE_DB_HOST="localhost"
 $env:SUPABASE_DB_USER="postgres"
 $env:SUPABASE_DB_PASSWORD="passw0rd"
@@ -12,6 +14,11 @@ java -jar .\target\dsh-flowable-engine-0.1.0-SNAPSHOT.jar --server.port=8090
 ---------------------------------------------------------------------------------------------------------------
 
 启动web console
+$env:SSO_PROVIDER="casdoor"
+# SSO_PROVIDER为casdoor时，下面的3个SSO_*环境变量才需要设置，切回 supabase 时SSO_ISSUER必须删(Remove-Item Env:SSO_ISSUER)
+$env:SSO_ISSUER="http://47fcb251.r35.cpolar.top"            #cpolar 隧道域名,隧道重启会变,须与 Casdoor app.conf origin 一致
+$env:SSO_CLIENT_ID="4fb987a231c51fe6e215"          #与员工端可共用同一 client,redirect_uri 各自登记(web-console 填 http://localhost:8080/ 或 dev http://localhost:5173/)
+$env:SSO_SCOPES="openid"                                     #不含 openid 则 Casdoor 不签 id_token,登录必败
 $env:SUPABASE_DB_HOST="localhost"
 $env:SUPABASE_DB_USER="postgres"
 $env:SUPABASE_DB_PASSWORD="passw0rd"
@@ -64,10 +71,16 @@ java -jar skillhub-app\target\skillhub-app-0.1.0.jar --server.port=8095
 ---------------------------------------------------------------------------------------------------------------------
 
 启动DSH enterprise profile APP
+$env:SSO_PROVIDER="casdoor"
+# SSO_PROVIDER为casdoor时，下面的4个SSO_*环境变量才需要设置，切回 supabase 时SSO_ISSUER/SSO_JWKS_URL 必须删(Remove-Item Env:SSO_ISSUER / Env:SSO_JWKS_URL)
+$env:SSO_ISSUER="http://47fcb251.r35.cpolar.top"            #cpolar 隧道域名,隧道重启会变,须与 Casdoor app.conf origin 一致
+$env:SSO_CLIENT_ID="4fb987a231c51fe6e215"          #Casdoor 管理界面 → 应用 dsh-poc → Client ID
+$env:SSO_JWKS_URL="http://47fcb251.r35.cpolar.top/.well-known/jwks"   #Casdoor 无 .json 后缀,必须显式设(缺省推导会拼 .json 导致 404)
+$env:SSO_SCOPES="openid"                                     #不含 openid 则 Casdoor 不签 id_token,登录必败
 $env:SUPABASE_URL="https://tmommaaeuqnhanbtqmti.supabase.co"
 $env:SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtb21tYWFldXFuaGFuYnRxbXRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNDYxMTgsImV4cCI6MjEwMjcyMjExOH0.TRUg-O36QkIH9QbJYi9FPL6j1PucKnrulecamWRSnkI"
 $env:FLOWABLE_ENGINE_URL="http://127.0.0.1:8090"
-$env:WEB_CONSOLE_URL="http://127.0.0.1:8080"
+$env:WEB_CONSOLE_URL="http://192.168.110.27:8080"   #手机端 relay 回调须用桌面局域网 IP(手机可达);填 127.0.0.1 时手机登录 redirect_uri=mismatch;桌面本机经局域网 IP 访问自己不受影响;IP 变化须同步改
 $env:SKILL_SYNC_INTERVAL_MS=600000
 $env:SKILLHUB_URL="http://127.0.0.1:8095"
 $env:SKILLHUB_API_TOKEN="sk_It1SA2xPE_J8vRl_boCDEsRpjcD3rX6tq6tkaPkn7kA"
@@ -117,17 +130,23 @@ Invoke-RestMethod http://127.0.0.1:3190/api/backend/tasks/b7faed2f-e1cd-4ab3-82a
 ----------------------------------------------------------------------------------------------------------------------
 
 启动SOR
+$env:SSO_PROVIDER="casdoor"
+# provider=supabase 时下面3个不生效,可整段删掉
+$env:SSO_ISSUER="http://47fcb251.r35.cpolar.top"            #cpolar 隧道域名,隧道重启会变,须与 Casdoor app.conf origin 一致
+$env:SSO_CLIENT_ID="4fb987a231c51fe6e215"          #与员工端可共用同一 client,redirect_uri 各自登记(expense-sor 填 http://localhost:8091/)
+$env:SSO_SCOPES="openid"                                     #不含 openid 则 Casdoor 不签 id_token,登录必败
 $env:SOR_DB_HOST = "localhost"
 $env:SOR_DB_PORT = "5432"
 $env:SOR_DB_NAME = "expense"
 $env:SOR_DB_USER = "postgres"
 $env:SOR_DB_PASSWORD = "passw0rd"
+# 以下 SOR_JWKS_URL/SOR_JWT_ISSUER/SOR_SUPABASE_URL/SOR_SUPABASE_ANON_KEY 仅 supabase 模式生效(默认模式);切 casdoor/客户 IdP 时可整段删掉
 $env:SOR_JWKS_URL = "https://tmommaaeuqnhanbtqmti.supabase.co/auth/v1/.well-known/jwks.json"
 $env:SOR_JWT_ISSUER = "https://tmommaaeuqnhanbtqmti.supabase.co/auth/v1"
-$env:SOR_ATTACHMENT_DIR = "D:\works\deepseek-harness\apps\expense-ctrl\attachments"
-$env:SOR_SERVICE_KEY = "demo-service-key"  #SOR 服务密钥
 $env:SOR_SUPABASE_URL = "https://tmommaaeuqnhanbtqmti.supabase.co"
 $env:SOR_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtb21tYWFldXFuaGFuYnRxbXRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNDYxMTgsImV4cCI6MjEwMjcyMjExOH0.TRUg-O36QkIH9QbJYi9FPL6j1PucKnrulecamWRSnkI"
+$env:SOR_ATTACHMENT_DIR = "D:\works\deepseek-harness\apps\expense-ctrl\attachments"
+$env:SOR_SERVICE_KEY = "demo-service-key"  #SOR 服务密钥
 cd D:\works\deepseek-harness\apps\expense-ctrl\expense-sor
 mvn test
 mvn package -DskipTests

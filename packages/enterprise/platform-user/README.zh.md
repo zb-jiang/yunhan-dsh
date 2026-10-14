@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-platform-user` 是平台用户治理 Service Definition（`ctx.platformUsers`）：叠加在外部身份后端（如 Supabase Auth）之上的 Harness 侧记录。覆盖待审批注册、平台角色分配、按 auth subject 查询、管理员禁用/锁定/恢复。provider 经 `registerProvider` 挂载；seam 会在调用 provider 之前校验角色名、拒绝重复角色并拒绝非法状态迁移。
+`dsh-platform-user` 是平台用户治理 Service Definition（`ctx.platformUsers`）：叠加在外部身份后端（如 Supabase Auth）之上的 Harness 侧记录。覆盖待审批注册、平台角色分配、按 auth subject 查询、管理员禁用/锁定/恢复。provider 经 `registerProvider` 挂载；seam 会在调用 provider 之前校验角色名、拒绝重复角色并拒绝非法状态迁移。本包还导出共享 SSO 配置模型（`resolveSsoSettings`），两个消费方——Web Console provider 与员工侧 API 路由插件——都经它解析 `provider` 分支的配置。
 
 ## 目录
 
@@ -34,6 +34,10 @@ kind: "package-reference"
 - `setRoles(id, { changedBy, platformRoles })`：整体替换现有用户的平台角色集。
 - `disable(id, { disabledBy, reason? })` / `lock(id, { lockedBy, reason? })`：管理员状态变更。
 - `restore(id, { restoredBy })`：把 `disabled` 或 `locked` 用户恢复到 `active`。
+
+### 共享 SSO 配置模型
+
+[src/sso.ts](src/sso.ts) 导出 `resolveSsoSettings` 及其类型：三选一 `provider`（`supabase / casdoor / customer-oidc`）的 SSO 配置模型，含显式或推导的 `issuer` 与 `jwksUrl`、URL 校验和 `openid profile` scopes 缺省。放在这里是为了让 console provider 与 API 路由插件校验同一模型而不是各写一遍规则；`supabaseAnonKey` 与 `clientId` 留在各自消费方。
 
 -----
 
@@ -61,7 +65,7 @@ seam 会在调用 provider 之前校验角色名、拒绝重复角色并拒绝�
 ## 延伸阅读
 
 - [dsh-platform-user-console](../platform-user-console/README.zh.md) — 挂进本缝的 Web Console provider。
-- [SSO 认证中心方案设计](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — 本缝服务的 Supabase 身份模型。
+- [SSO 认证中心方案设计](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — 本缝服务的认证中心设计。
 
 -----
 

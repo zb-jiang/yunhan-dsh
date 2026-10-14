@@ -13,13 +13,13 @@ import { PLATFORM_ROLE } from '../api/types'
  * 不进入后台菜单(避免无权限调用任何业务 API)。
  */
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { session, me, loading } = useAuth()
+  const { authenticated, me, loading } = useAuth()
   const location = useLocation()
 
   if (loading) {
     return null // 或全屏 spinner
   }
-  if (!session) {
+  if (!authenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
   if (!me) {
@@ -48,9 +48,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
  * pending 状态守卫:已 active 用户访问 /pending 自动跳回 /。
  */
 export function PendingGate({ children }: { children: ReactNode }) {
-  const { session, me, loading } = useAuth()
+  const { authenticated, me, loading } = useAuth()
   if (loading) return null
-  if (!session) return <Navigate to="/login" replace />
+  if (!authenticated) return <Navigate to="/login" replace />
   if (me && me.status === 'active') {
     return <Navigate to="/" replace />
   }

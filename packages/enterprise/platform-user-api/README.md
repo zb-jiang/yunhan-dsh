@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-platform-user-api` exposes the employee-side authentication touchpoints over the local webserver: `GET /api/enterprise/auth/me` verifies a Supabase JWT and announces `platform-user/verified`, `POST /signout` announces `platform-user/signout`, `GET /config` hands the browser the Supabase URL and anon key, and `POST /connectivity-check` probes server URLs from Node where browsers cannot. The plugin holds no state; identity-cache consumers subscribe to the events.
+`dsh-platform-user-api` exposes the employee-side authentication touchpoints over the local webserver: `GET /api/enterprise/auth/me` verifies an auth-center JWT and announces `platform-user/verified`, `POST /signout` announces `platform-user/signout`, `GET /config` hands the browser the auth-center parameters branched by `provider`, and `POST /connectivity-check` probes server URLs from Node where browsers cannot. For non-supabase providers it additionally brokers the OIDC authorization-code + PKCE flow: `GET /oidc/authorize` redirects the browser to the provider's authorization endpoint, and `POST /oidc/token` / `POST /oidc/refresh` exchange codes and refresh tokens from Node so the client secret never enters the browser. The plugin holds no state; identity-cache consumers subscribe to the events.
 
 ## Table of Contents
 
@@ -29,19 +29,31 @@ Use this package on the enterprise profile as the login integration point: the b
 
 ### Minimal configuration
 
-Both fields are required with no default: a composition that omits either fails at load. They are exactly the Supabase project coordinates the browser needs to talk to Supabase Auth directly.
+The first seven fields are required with no default: a composition that omits one fails at load. The enterprise-app patch fills them from `SSO_*` environment variables, so deployments usually configure the auth center through env vars only. `provider` picks the auth center: `supabase` keeps the direct-to-Supabase browser login, `casdoor` / `customer-oidc` switch to a generic OIDC provider. `oidcRelayUrl` is optional (defaults to the empty string) and only affects the callback relay for Pocket Access phone logins.
 
 ```yaml
 - name: '@deepseek-ai/dsh-platform-user-api'
   config:
+    provider: 'supabase' # supabase / casdoor / customer-oidc
     supabaseUrl: 'https://your-project.supabase.co'
     supabaseAnonKey: 'your-anon-key'
+    issuer: ''
+    jwksUrl: ''
+    clientId: 'employee-web'
+    scopes: ''
+    oidcRelayUrl: '' # relay base URL for Pocket Access phone logins (web-console); empty = disabled
 ```
 
 | Field | Default | Meaning |
 |---|---|---|
-| `supabaseUrl` | required | Supabase project URL; volatile — the settings panel can change it without a reload |
+| `provider` | required | Auth center type: `supabase / casdoor / customer-oidc`; volatile |
+| `supabaseUrl` | required | Supabase project URL; empty is the legal "not yet configured" initial state (first-run guidance); volatile |
 | `supabaseAnonKey` | required | Supabase anon key for browser-side Supabase Auth; volatile |
+| `issuer` | required | Auth-center issuer URL; empty derives from `supabaseUrl` (`<url>/auth/v1`) under supabase; non-supabase providers require it non-empty; volatile |
+| `jwksUrl` | required | JWKS endpoint; empty derives `<issuer>/.well-known/jwks.json`; volatile |
+| `clientId` | required | RP client id registered at the auth center; non-supabase providers require it non-empty; volatile |
+| `scopes` | required | OIDC authorization-code scopes; empty falls back to `openid profile`; volatile |
+| `oidcRelayUrl` | `''` | Relay base URL for Pocket Access phone logins (web-console); non-loopback access with it non-empty points redirect_uri at its relay callback, empty disables and falls back to the root-path callback; volatile |
 
 ### What each endpoint does
 
@@ -49,8 +61,13 @@ Both fields are required with no default: a composition that omits either fails 
 |---|---|---|
 | GET | `/api/enterprise/auth/me` | Verifies the `Authorization: Bearer` JWT, returns the user record, emits `platform-user/verified` with the raw token |
 | POST | `/api/enterprise/auth/signout` | Emits `platform-user/signout`, answers 204 |
-| GET | `/api/enterprise/auth/config` | Returns `{ url, anonKey }` read fresh per request |
+| GET | `/api/enterprise/auth/config` | Returns `{ mode: 'supabase', url, anonKey }` (top-level fields kept for the current login UI) or `{ mode: 'oidc', issuer, clientId, scopes, relayUrl }`, branched by `provider`, read fresh per request; a non-supabase provider with an empty `clientId` answers 400 |
 | POST | `/api/enterprise/auth/connectivity-check` | Probes a URL from Node (any HTTP status counts as reachable), 5s timeout |
+| GET | `/api/enterprise/auth/oidc/callback` | Authorization-code callback landing point (an API path the webserver auth wall does not intercept): the iframe login reads the URL for the code, the full-page flow bounces back to the root path via an inline script; missing `code`/`state` answer 400 |
+| POST | `/api/enterprise/auth/oidc/relay-register` | OIDC mode only: forwards `{ state, returnOrigin }` to the web-console relay register endpoint (the browser never talks to web-console directly, no CORS surface); missing `oidcRelayUrl` or fields answer 400, upstream failures answer 502 |
+| GET | `/api/enterprise/auth/oidc/authorize` | OIDC mode only: resolves the provider's authorization endpoint via discovery and 302s the browser there with `code_challenge` + `state`; non-OIDC mode or missing query fields answer 400 |
+| POST | `/api/enterprise/auth/oidc/token` | OIDC mode only: exchanges `code` + `codeVerifier` for `{ token, refreshToken, expiresIn }` (token is the id_token used as Bearer); discovery or upstream failures answer 502 |
+| POST | `/api/enterprise/auth/oidc/refresh` | OIDC mode only: exchanges a refresh token for a fresh `{ token, refreshToken, expiresIn }` pair; non-OIDC mode answers 400 |
 
 -----
 
@@ -82,7 +99,7 @@ A secret-typed config field is permanently masked once read over the wire, so th
 ## Further Exploration
 
 - [Enterprise group README](../README.md) — the sibling enterprise packages and how the two profiles compose them.
-- [SSO auth center design](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — the Supabase-based identity model these endpoints serve.
+- [SSO auth center design](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — the auth-center design these endpoints serve.
 
 -----
 
@@ -104,7 +121,7 @@ These limits define what the package does not attempt. They are current constrai
 - **Events fire only on API calls** — `platform-user/verified` emits when a client fetches `/me`; there is no push channel from Supabase, and a component that never calls the endpoints never sees the login.
 - **Read-only projection** — the endpoints expose no governance write path; register, approve, disable, lock, and roles stay in web-console.
 - **Probe is a plain GET** — connectivity-check counts any HTTP status, including error pages, as reachable; it answers "is the host there", not "is the service healthy".
-- **Unauthenticated config surface** — `/config` hands out the Supabase coordinates without authentication; safe because the webserver binds to localhost, and wrong if that ever changes.
+- **Unauthenticated config surface** — `/config` hands out the auth-center coordinates without authentication; safe because the webserver binds to localhost, and wrong if that ever changes.
 
 <a id="dev-note"></a>
 ### Dev Note

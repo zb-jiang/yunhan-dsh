@@ -76,6 +76,7 @@
     "@deepseek-ai/dsh-client-ui-workspace": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/dsh-util-values": "workspace:*",
+    "@noble/hashes": "^2.3.0",
     "@supabase/supabase-js": "^2.45.0",
     "@types/react": "~18.3.1",
     "clsx": "^2.0.0",

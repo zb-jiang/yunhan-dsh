@@ -41,7 +41,7 @@ export default function PendingPage() {
           description={
             <Typography.Paragraph style={{ marginBottom: 0, marginTop: 8 }}>
               邮箱:{me?.email ?? '未知'} <br />
-              登录名:{me?.loginName ?? '未知'}
+              姓名:{me?.displayName || me?.loginName || '未知'}
             </Typography.Paragraph>
           }
           style={{ marginBottom: 16, textAlign: 'left' }}

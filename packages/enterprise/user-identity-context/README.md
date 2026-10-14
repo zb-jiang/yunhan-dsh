@@ -32,7 +32,7 @@ Consume `ctx.currentUser` from a plugin that needs the signed-in employee's iden
 | `POST /api/enterprise/auth/signout` (platform-user-api) | emits `platform-user/signout` |
 | `platform-user/verified` event (subscribed by this plugin) | `ctx.currentUser.observe(user)` |
 | `platform-user/signout` event (subscribed by this plugin) | `ctx.currentUser.clear()` |
-| Employee-client `switchAccount` (ui-enterprise) | calls the signout endpoint on sign-out |
+| Employee-client `logout` (ui-enterprise) | calls the signout endpoint on sign-out |
 
 An empty store (not signed in yet, or signed out) injects nothing into the model request; when signed in but no token is available yet, the token section is omitted.
 

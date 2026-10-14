@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-platform-user` is the platform-user governance Service Definition (`ctx.platformUsers`): the Harness-side record layered over an external identity backend such as Supabase Auth. It covers pending-approval registration, platform-role assignment, lookup by auth subject, and administrative disable/lock/restore. Providers mount through `registerProvider`; the seam validates role names, duplicate roles, and status transitions before the provider is called.
+`dsh-platform-user` is the platform-user governance Service Definition (`ctx.platformUsers`): the Harness-side record layered over an external identity backend such as Supabase Auth. It covers pending-approval registration, platform-role assignment, lookup by auth subject, and administrative disable/lock/restore. Providers mount through `registerProvider`; the seam validates role names, duplicate roles, and status transitions before the provider is called. The package also exports the shared SSO settings model (`resolveSsoSettings`) through which both consumers — the Web Console provider and the employee-side API route plugin — resolve their `provider`-branched config.
 
 ## Table of Contents
 
@@ -34,6 +34,10 @@ Consume `ctx.platformUsers` from a provider package (which mounts the backend ad
 - `setRoles(id, { changedBy, platformRoles })` — replaces the full platform-role set of an existing user.
 - `disable(id, { disabledBy, reason? })` / `lock(id, { lockedBy, reason? })` — administrative state changes.
 - `restore(id, { restoredBy })` — returns a `disabled` or `locked` user to `active`.
+
+### Shared SSO settings model
+
+[src/sso.ts](src/sso.ts) exports `resolveSsoSettings` and its types: the SSO configuration model with three-way `provider` (`supabase / casdoor / customer-oidc`), explicit-or-derived `issuer` and `jwksUrl`, URL validation, and the `openid profile` scopes fallback. It lives here so the console provider and the API route plugin validate one model instead of duplicating the rules; `supabaseAnonKey` and `clientId` stay with their consumers.
 
 -----
 
@@ -61,7 +65,7 @@ No runtime invariant companion is published: the seam owns one active provider s
 ## Further Exploration
 
 - [dsh-platform-user-console](../platform-user-console/README.md) — the Web Console provider that mounts into this seam.
-- [SSO auth center design](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — the Supabase-based identity model this seam serves.
+- [SSO auth center design](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — the auth-center design this seam serves.
 
 -----
 

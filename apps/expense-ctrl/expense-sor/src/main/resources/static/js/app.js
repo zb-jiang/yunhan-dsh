@@ -1,6 +1,12 @@
 /* 费控报销 Web UI
- * 认证链路与 headless API 完全一致:Supabase Auth 直连登录拿 JWT(access_token),
- * 所有 /api 调用带 Authorization: Bearer <token>,由 SOR 端 JWKS 验签(ES256/RS256)。
+ * 认证链路(部署级 SSO_PROVIDER 三选一,见 SSO 设计文档):
+ * - supabase 模式:supabase-js 直连 Supabase Auth 登录,access_token 写入本地存储;
+ * - oidc 模式(casdoor/customer-oidc):Modal 内嵌 iframe 加载 /api/auth/oidc/authorize
+ *   (后端授权代理,授权码 + PKCE S256,popup=iframe),登录成功认证中心 postMessage
+ *   code/state 给父页面,前端调 /api/auth/oidc/token 换 id_token;第三方扫码等不发
+ *   postMessage 的路径由 iframe onLoad 兜底读回环地址提取。
+ * 所有 /api 调用带 Authorization: Bearer <token>,由 SOR 端 JWKS 验签(ES256/RS256);
+ * oidc 模式 401 时先尝试 refresh_token 刷新并重放一次,失败才要求重新登录。
  * 人工审批写入的幂等键:processInstanceId = "manual-ui-<reportId>",activityId = "manual-ui"
  * (数据库唯一约束为 (process_instance_id, activity_id, approver_id),不带 report_id,
  *  因此 pid 必须带上单据 id,否则同一审批人全库只能写一条审批记录)。
@@ -8,7 +14,7 @@
 (function () {
   'use strict';
 
-  const { createApp, reactive, computed, ref } = Vue;
+  const { createApp, reactive, computed, ref, watch } = Vue;
 
   const STATUSES = ['opened', 'ongoing', 'approved', 'paid', 'rejected', 'cancelled'];
   const STATUS_TEXT = {
@@ -18,11 +24,47 @@
   const CATEGORIES = ['交通', '住宿', '餐饮', '办公', '其他'];
   const AMOUNT_RE = /^\d{1,10}(\.\d{1,2})?$/;
 
+  // ---------- token 存储 key ----------
+  const TOKEN_KEY = 'expense.sor.token';
+  const REFRESH_KEY = 'expense.sor.refresh';
+  const OIDC_VERIFIER_KEY = 'expense.sor.oidc.verifier';
+  const OIDC_STATE_KEY = 'expense.sor.oidc.state';
+
+  function readToken() { return localStorage.getItem(TOKEN_KEY) || ''; }
+  function writeToken(token, refreshToken) {
+    localStorage.setItem(TOKEN_KEY, token);
+    if (refreshToken) localStorage.setItem(REFRESH_KEY, refreshToken);
+    else localStorage.removeItem(REFRESH_KEY);
+  }
+  function clearAuth() {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+    sessionStorage.removeItem(OIDC_VERIFIER_KEY);
+    sessionStorage.removeItem(OIDC_STATE_KEY);
+  }
+
+  // ---------- PKCE 工具(S256) ----------
+  function base64urlEncode(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function randomBase64url(len) {
+    const bytes = new Uint8Array(len);
+    crypto.getRandomValues(bytes);
+    return base64urlEncode(bytes.buffer);
+  }
+
   createApp({
     setup() {
       // ---------- 全局状态 ----------
       const booting = ref(true);
-      const uiConfig = reactive({ supabaseUrl: '', supabaseAnonKey: '' });
+      const uiConfig = reactive({
+        mode: '',            // 'supabase' | 'oidc'(后端下传,未配置为 '')
+        supabaseUrl: '', supabaseAnonKey: '',
+        issuer: '', clientId: '', scopes: ''
+      });
       const me = ref(null);            // {sub, email, displayName}
       const route = ref('list');
       const detailId = ref(null);
@@ -58,10 +100,10 @@
       window.addEventListener('hashchange', parseHash);
 
       // ---------- API 封装(统一信封解包) ----------
-      async function api(path, options) {
+      async function api(path, options, retried) {
         const opts = Object.assign({ headers: {} }, options || {});
-        const session = supabase ? (await supabase.auth.getSession()).data.session : null;
-        if (session) opts.headers['Authorization'] = 'Bearer ' + session.access_token;
+        const token = readToken();
+        if (token) opts.headers['Authorization'] = 'Bearer ' + token;
         if (opts.body && !(opts.body instanceof FormData)) {
           opts.headers['Content-Type'] = 'application/json';
         }
@@ -70,7 +112,14 @@
         try { payload = await res.json(); } catch (e) { /* 附件等原始响应 */ }
         if (!res.ok || (payload && typeof payload.code === 'number' && payload.code !== 0)) {
           const msg = (payload && payload.message) ? payload.message : ('请求失败(HTTP ' + res.status + ')');
-          if (res.status === 401 && me.value) { forceRelogin(); }
+          if (res.status === 401) {
+            // oidc 模式:先尝试 refresh_token 刷新并重放一次;失败则要求重新登录
+            if (uiConfig.mode === 'oidc' && !retried) {
+              const refreshed = await tryOidcRefresh();
+              if (refreshed) return api(path, options, true);
+            }
+            forceRelogin();
+          }
           const err = new Error(msg);
           err.payload = payload;
           throw err;
@@ -79,8 +128,166 @@
       }
 
       function forceRelogin() {
+        clearAuth();
         me.value = null;
         loginError.value = '登录已过期,请重新登录';
+      }
+
+      // ---------- OIDC 授权码流程(后端代理,前端不直连认证中心) ----------
+      function readOidcCallback() {
+        const params = new URLSearchParams(location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        if (!code && !params.get('error')) return null;
+        return {
+          code: code, state: state,
+          error: params.get('error'),
+          errorDescription: params.get('error_description')
+        };
+      }
+
+      // 解析认证中心 iframe 内嵌登录的 postMessage(Casdoor 原生 loginSuccess:
+      // {type:"loginSuccess", data:{code,state}})。仅接受 origin 与 issuer 同源且
+      // type 匹配的事件;SilentSignin 等其他消息返回 null
+      function readOidcLoginSuccessMessage(event) {
+        if (!uiConfig.issuer || event.origin !== new URL(uiConfig.issuer).origin) return null;
+        const data = event.data;
+        if (!data || typeof data !== 'object' || data.type !== 'loginSuccess') return null;
+        const inner = data.data || {};
+        if (typeof inner.code !== 'string' || typeof inner.state !== 'string') return null;
+        return { code: inner.code, state: inner.state };
+      }
+
+      // 完成授权码交换:先取先删 sessionStorage 一次性凭据(刷新或重复投递不重放已
+      // 用过的 code),校验 state 后经后端代理换令牌并推进登录态;postMessage 与
+      // iframe load 兜底两条路径共用
+      async function completeOidcLogin(cb) {
+        const savedState = sessionStorage.getItem(OIDC_STATE_KEY);
+        const verifier = sessionStorage.getItem(OIDC_VERIFIER_KEY);
+        sessionStorage.removeItem(OIDC_STATE_KEY);
+        sessionStorage.removeItem(OIDC_VERIFIER_KEY);
+        if (!savedState || savedState !== cb.state) throw new Error('登录失败:state 校验不通过,请重试');
+        if (!verifier) throw new Error('登录失败:会话数据缺失,请重试');
+        const res = await fetch('/api/auth/oidc/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: cb.code, codeVerifier: verifier, redirectUri: location.origin + '/' })
+        });
+        const payload = await res.json().catch(() => null);
+        const data = payload && typeof payload.code === 'number' ? payload.data : payload;
+        if (!res.ok || !data || !data.token) {
+          throw new Error((payload && payload.message) || '登录失败(令牌交换失败)');
+        }
+        writeToken(data.token, data.refreshToken || '');
+        await afterLogin();
+      }
+
+      // 整页回环消费:认证中心 302 回本页(URL 带 code&state 或 error)时清 query 并续程
+      async function completeOidcCallback() {
+        const cb = readOidcCallback();
+        if (!cb) return false;
+        history.replaceState(null, '', location.pathname + location.hash);
+        if (cb.error) {
+          sessionStorage.removeItem(OIDC_STATE_KEY);
+          sessionStorage.removeItem(OIDC_VERIFIER_KEY);
+          throw new Error('登录失败:' + (cb.errorDescription || cb.error));
+        }
+        await completeOidcLogin(cb);
+        return true;
+      }
+
+      // ---------- iframe 内嵌登录(Modal) ----------
+      const oidcFrameUrl = ref(null);   // 非 null 时弹 Modal 内嵌认证中心登录页
+      const oidcFrame = ref(null);      // iframe 引用:onLoad 兜底读其地址提取授权码
+      let detachOidcMessage = null;     // message 监听摘除器(Modal 打开期间挂载)
+
+      // Modal 打开期间监听认证中心 loginSuccess 消息,关闭(含登录成败收尾)即摘除
+      watch(oidcFrameUrl, (url) => {
+        if (url !== null) {
+          const onMessage = (event) => {
+            const cb = readOidcLoginSuccessMessage(event);
+            if (cb) handleOidcCode(cb);
+          };
+          window.addEventListener('message', onMessage);
+          detachOidcMessage = () => window.removeEventListener('message', onMessage);
+        } else if (detachOidcMessage) {
+          detachOidcMessage();
+          detachOidcMessage = null;
+        }
+      });
+
+      // 打开 Modal 发起授权:不在本页 fetch 认证中心(客户 IdP CORS 无保证),授权
+      // 经后端代理 302;popup=iframe 使认证中心登录成功不 302 而是 postMessage code/state
+      async function openOidcFrame() {
+        loginError.value = '';
+        const verifier = randomBase64url(32);
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+        const challenge = base64urlEncode(digest);
+        const state = randomBase64url(16);
+        sessionStorage.setItem(OIDC_VERIFIER_KEY, verifier);
+        sessionStorage.setItem(OIDC_STATE_KEY, state);
+        const q = new URLSearchParams({
+          redirect_uri: location.origin + '/',
+          code_challenge: challenge,
+          state: state,
+          popup: 'iframe'
+        });
+        oidcFrameUrl.value = '/api/auth/oidc/authorize?' + q.toString();
+      }
+
+      function closeOidcFrame() {
+        oidcFrameUrl.value = null;
+      }
+
+      // 拿到授权码后的公共续程:换令牌推进登录态,成功收起 Modal,失败展示错误并收起
+      function handleOidcCode(cb) {
+        completeOidcLogin(cb).then(() => {
+          oidcFrameUrl.value = null;
+        }).catch((e) => {
+          loginError.value = e.message;
+          oidcFrameUrl.value = null;
+        });
+      }
+
+      // iframe load 兜底:账号密码路径认证中心会 postMessage(走 message 监听),但
+      // 钉钉等第三方 Provider 扫码路径拿到 code 后直接把 iframe 导航到 redirect_uri、
+      // 不发消息。导航回本站后与父页面同源,读其地址提取 code/state;仍停在认证中心
+      // (跨源)或加载失败页时读取抛 SecurityError,静默等下一跳。load 派发早于 iframe
+      // 内 SPA 的 boot() 网络往返(回环消费已挪到 ui-config 拉取之后),sessionStorage
+      // 一次性凭据由本页先取先删
+      function onFrameLoad() {
+        const frame = oidcFrame.value;
+        if (!frame) return;
+        let href;
+        try {
+          href = frame.contentWindow.location.href;
+        } catch (e) {
+          return;   // 跨源:iframe 仍在认证中心域名,静默等下一跳
+        }
+        const params = new URLSearchParams(new URL(href, location.origin).search);
+        const code = params.get('code');
+        const state = params.get('state');
+        if (code && state) handleOidcCode({ code: code, state: state });
+      }
+
+      async function tryOidcRefresh() {
+        const refreshToken = localStorage.getItem(REFRESH_KEY);
+        if (!refreshToken) return false;
+        try {
+          const res = await fetch('/api/auth/oidc/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: refreshToken })
+          });
+          if (!res.ok) return false;
+          const payload = await res.json().catch(() => null);
+          const data = payload && typeof payload.code === 'number' ? payload.data : payload;
+          if (!data || !data.token) return false;
+          writeToken(data.token, data.refreshToken || refreshToken);
+          return true;
+        } catch (e) {
+          return false;
+        }
       }
 
       // ---------- 登录/登出 ----------
@@ -88,6 +295,7 @@
       const loggingIn = ref(false);
       const loginError = ref('');
 
+      // 仅 supabase 模式使用(oidc 模式走 startOidcAuthorize 整页跳转)
       async function login() {
         loginError.value = '';
         loggingIn.value = true;
@@ -106,7 +314,10 @@
       }
 
       async function logout() {
-        try { await supabase.auth.signOut(); } catch (e) { /* 忽略 */ }
+        if (uiConfig.mode !== 'oidc') {
+          try { await supabase.auth.signOut(); } catch (e) { /* 忽略 */ }
+        }
+        clearAuth();
         me.value = null;
         location.hash = '#/list';
       }
@@ -325,8 +536,8 @@
       async function downloadAttachment(att) {
         try {
           const opts = {};
-          const session = (await supabase.auth.getSession()).data.session;
-          if (session) opts.headers = { 'Authorization': 'Bearer ' + session.access_token };
+          const token = readToken();
+          if (token) opts.headers = { 'Authorization': 'Bearer ' + token };
           const res = await fetch('/api/expenses/' + detailId.value + '/attachments/' + att.id, opts);
           if (!res.ok) throw new Error('下载失败(HTTP ' + res.status + ')');
           const blob = await res.blob();
@@ -361,19 +572,44 @@
       // ---------- 启动 ----------
       (async function boot() {
         try {
-          const cfg = await api('/api/ui-config');   // 匿名端点
+          // 1. 拉取 SSO 连接配置(匿名端点)。必须先于回环消费:iframe 内嵌登录时本页
+          //    即父页面,iframe 回环导航触发的 onLoad 与 iframe 内 SPA 启动几乎同时,
+          //    这段网络往返让父页面 onLoad 先行取删 sessionStorage 一次性凭据(iframe
+          //    内随后回环消费会因凭据缺失报 state 校验失败,但 Modal 即将关闭,无害)
+          const cfg = await api('/api/ui-config');
+          uiConfig.mode = cfg.mode || '';
           uiConfig.supabaseUrl = cfg.supabaseUrl || '';
           uiConfig.supabaseAnonKey = cfg.supabaseAnonKey || '';
-          if (uiConfig.supabaseUrl) {
+          uiConfig.issuer = cfg.issuer || '';
+          uiConfig.clientId = cfg.clientId || '';
+          uiConfig.scopes = cfg.scopes || '';
+
+          // 2. 处理 OIDC 登录回环(认证中心重定向回来,URL 带 code&state)
+          let oidcHandled = false;
+          try { oidcHandled = await completeOidcCallback(); }
+          catch (e) { showToast(e.message); }
+
+          if (oidcHandled) return;   // 回环已登录完成
+
+          if (uiConfig.mode === 'supabase' && uiConfig.supabaseUrl) {
             supabase = window.supabase.createClient(uiConfig.supabaseUrl, uiConfig.supabaseAnonKey);
+            supabase.auth.onAuthStateChange((event, session) => {
+              if (event === 'SIGNED_OUT') {
+                clearAuth();
+                me.value = null;
+              } else if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+                writeToken(session.access_token, session.refresh_token);
+                if (!me.value) afterLogin().catch(() => {});
+              }
+            });
             const { data } = await supabase.auth.getSession();
             if (data && data.session) {
+              writeToken(data.session.access_token, data.session.refresh_token);
               await afterLogin();
             }
-            supabase.auth.onAuthStateChange((event) => {
-              if (event === 'SIGNED_OUT') { me.value = null; }
-              if (event === 'SIGNED_IN' && !me.value) { afterLogin().catch(() => {}); }
-            });
+          } else if (uiConfig.mode === 'oidc' && readToken()) {
+            // oidc 模式:已有令牌则拉取当前用户;失效由 401 刷新链路兜底
+            try { await afterLogin(); } catch (e) { clearAuth(); }
           }
         } catch (e) {
           showToast('初始化失败:' + e.message);
@@ -387,6 +623,7 @@
         booting, uiConfig, me, route, toast, displayName,
         STATUSES, CATEGORIES,
         loginForm, loggingIn, loginError, login, logout,
+        oidcFrameUrl, oidcFrame, openOidcFrame, closeOidcFrame, onFrameLoad,
         list, loadingList, listFilter, loadList,
         createForm, creating, createError, createTotal,
         addItem, removeItem, onPickFiles, removeAttachment, submitCreate,

@@ -66,11 +66,12 @@ flowable:
 
 # DSH 自定义配置
 # Spring Security 不在 yaml 中声明 oauth2.resourceserver;
-# 由 SecurityConfig 注册 JwtDecoder 用 JwtDecoders.fromIssuerLocation() 从 Supabase OpenID 端点自动拉取 JWKS
+# 由 SecurityConfig 注册 JwtDecoder 用 JwtDecoders.fromIssuerLocation() 从认证中心 OpenID 端点自动拉取 JWKS
 dsh:
   supabase:
-    # JWT issuer claim (Supabase Auth 的 iss 为 https://<ref>.supabase.co/auth/v1)
-    jwt-issuer: ${SUPABASE_URL}/auth/v1
+    # JWT issuer claim:发证方由部署决定(Supabase Auth / Casdoor / 客户 IdP,认证中心设计 D2)
+    # DSH_JWT_ISSUER 直接指定;未设置时按 Supabase 约定从 SUPABASE_URL 推导 /auth/v1
+    jwt-issuer: ${DSH_JWT_ISSUER:${SUPABASE_URL}/auth/v1}
 
   # DSH backend task delegate 集成配置(design 2026-09-14 §6.2)
   # DshBackendClient 提交+轮询常驻 backend profile 实例:

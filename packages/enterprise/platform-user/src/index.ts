@@ -18,6 +18,16 @@ export type {
   PlatformUserStatus,
 } from './types.ts'
 
+export {
+  DEFAULT_SSO_SCOPES,
+  resolveSsoSettings,
+} from './sso.ts'
+export type {
+  ResolvedSsoSettings,
+  SsoProvider,
+  SsoSettingsInput,
+} from './sso.ts'
+
 declare module '@deepseek-ai/cordis' {
   interface Context {
     platformUsers: PlatformUserService

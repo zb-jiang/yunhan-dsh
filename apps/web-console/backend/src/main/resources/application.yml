@@ -1,6 +1,7 @@
 # DSH Web Console 后端配置
 # 环境变量:SUPABASE_URL/SUPABASE_ANON_KEY 指向 Supabase 项目(Auth+Storage),
 # SUPABASE_DB_HOST/USER/PASSWORD 指向本地 PostgreSQL,
+# SSO_PROVIDER/SSO_ISSUER/SSO_CLIENT_ID/SSO_SCOPES 为认证中心(SSO)配置,
 # KB_EMBEDDING_API_KEY/KB_RERANK_API_KEY 为知识库解析与检索管线的 embedding/rerank
 # 密钥(默认均为硅基流动控制台创建,可分别指向不同供应商),
 # 参见 docs/plans/2026-08-19-supabase-setup-guide.md 与 docs/plans/2026-09-21-local-pg-setup-guide.md
@@ -54,10 +55,24 @@ spring:
 
 # DSH 自定义配置
 dsh:
-  supabase:
-    # JWT issuer claim (Supabase Auth 的 iss 为 https://<ref>.supabase.co/auth/v1)
-    # 使用 JwtDecoders.fromIssuerLocation() 自动从 OpenID 发现端点拉取 JWKS 验证签名
-    jwt-issuer: ${SUPABASE_URL}/auth/v1
+  # 认证中心(SSO)配置——部署级唯一 SSO 配置源,员工端 DSH 读同一组 SSO_* 环境变量
+  # (设计 docs/plans/2026-10-11-sso-auth-center-design.md §5.2)。RS 验签
+  # (SecurityConfig)与 /api/auth/* RP 端点(AuthController)共用以下字段。
+  sso:
+    # supabase | casdoor | customer-oidc,缺省 supabase
+    provider: ${SSO_PROVIDER:supabase}
+    # JWT issuer claim:认证中心 issuer;未设置时 supabase 模式按约定从 SUPABASE_URL
+    # 推导 /auth/v1,casdoor/customer-oidc 模式启动即失败(绑定期校验)。
+    # DSH_JWT_ISSUER 为旧部署兼容变量,仅在不设 SSO_ISSUER 时生效。
+    issuer: ${SSO_ISSUER:${DSH_JWT_ISSUER:}}
+    # Web Console 前端 RP 在认证中心注册的 client id(与员工端可共用同一 client,
+    # redirect_uri 各自登记);casdoor/customer-oidc 模式必填
+    client-id: ${SSO_CLIENT_ID:}
+    # OIDC 授权码流程 scopes,空按 openid profile(supabase 模式忽略)
+    scopes: ${SSO_SCOPES:}
+    # Supabase 项目地址与 anon key(supabase 模式经 /api/auth/config 下发前端直连 Auth)
+    supabase-url: ${SUPABASE_URL:}
+    supabase-anon-key: ${SUPABASE_ANON_KEY:}
 
   # Flowable 引擎 REST 客户端配置
   # Web Console 后端通过 RestClient 调 Flowable REST 部署 BPMN/发起实例/查任务

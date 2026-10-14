@@ -2372,15 +2372,32 @@ export interface PlanModeConfig {
 
 - `inject`: `webServer` · `platformUsers`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/enterprise/platform-user-api/src/index.ts:37`](../packages/enterprise/platform-user-api/src/index.ts)
+- `source`: [`packages/enterprise/platform-user-api/src/index.ts:49`](../packages/enterprise/platform-user-api/src/index.ts)
 
 ```ts config-catalog
-/** 插件配置：Supabase 连接信息，用于 /auth/config 端点向前端暴露。 */
+/** 插件配置：认证中心(SSO)与 Supabase 兼容连接信息，经 /auth/config 向前端暴露。 */
 export interface Config {
-  /** Supabase 项目 URL;volatile:设置面板可改,即时生效。 */
+  /** 认证中心类型 supabase | casdoor | customer-oidc,缺省 supabase;volatile:设置面板可改,即时生效。 */
+  provider: Volatile<string>
+  /** Supabase 项目 URL(supabase 模式经 /auth/config 暴露给前端直连);volatile:设置面板可改,即时生效。 */
   supabaseUrl: Volatile<string>
-  /** Supabase anon key，前端直连 Supabase Auth 使用;volatile:设置面板可改,即时生效。 */
+  /** 认证中心 issuer,为空时 supabase 模式按 `<supabaseUrl>/auth/v1` 推导;volatile:设置面板可改,即时生效。 */
+  issuer: Volatile<string>
+  /** JWKS 端点,为空时按 OIDC 发现推导 `<issuer>/.well-known/jwks.json`;volatile:设置面板可改,即时生效。 */
+  jwksUrl: Volatile<string>
+  /** Supabase anon key，supabase 模式前端直连 Supabase Auth 使用;volatile:设置面板可改,即时生效。 */
   supabaseAnonKey: Volatile<string>
+  /** 员工端 RP 在认证中心注册的 client id,provider 非 supabase 时必填;volatile:设置面板可改,即时生效。 */
+  clientId: Volatile<string>
+  /** OIDC 授权码流程 scopes,为空时缺省 `openid profile`;volatile:设置面板可改,即时生效。 */
+  scopes: Volatile<string>
+  /**
+   * OAuth relay 中转基地址(web-console,如 `http://server:8080`);仅 Pocket Access
+   * 手机端登录(非 loopback 访问)时使用,本机登录不经过 relay;volatile:设置面板可改,
+   * 即时生效。空串=relay 未启用,手机端退回旧的根路径回调(需在认证中心为每台手机
+   * 手工登记回调地址)。
+   */
+  oidcRelayUrl: Volatile<string>
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-platform-user-api -->
@@ -2392,13 +2409,19 @@ export interface Config {
 
 - `inject`: `platformUsers`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/enterprise/platform-user-console/src/index.ts:33`](../packages/enterprise/platform-user-console/src/index.ts)
+- `source`: [`packages/enterprise/platform-user-console/src/index.ts:37`](../packages/enterprise/platform-user-console/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config for the Web-Console-backed provider. */
 export interface Config {
+  /** 认证中心类型 supabase | casdoor | customer-oidc,缺省 supabase;volatile:设置面板可改,即时生效。 */
+  provider: Volatile<string>
   /** Supabase project URL; only its Auth issuer is used for JWT verification;volatile:设置面板可改,即时生效。 */
   supabaseUrl: Volatile<string>
+  /** 认证中心 JWT issuer,为空时按 Supabase 约定推导 `<supabaseUrl>/auth/v1`;volatile:设置面板可改,即时生效。 */
+  issuer: Volatile<string>
+  /** JWKS 端点,为空时按 OIDC 约定推导 `<issuer>/.well-known/jwks.json`;volatile:设置面板可改,即时生效。 */
+  jwksUrl: Volatile<string>
   /** Web Console backend base URL serving `GET /api/users/me`;volatile:设置面板可改,即时生效。 */
   webConsoleBaseUrl: Volatile<string>
 }

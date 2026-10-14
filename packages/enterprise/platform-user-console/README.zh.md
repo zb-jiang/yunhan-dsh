@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-platform-user-console` 是 platform-user 缝的 Web Console provider：注册进 `ctx.platformUsers`，用 JWKS 本地验证调用者的 Supabase Auth JWT，再携带调用者自己的 bearer token 从 Web Console 后端（`GET /api/users/me`）读取该用户的治理记录。它与按认证方式解析 provider 的 dsh-platform-user 配对，自身不持有服务密钥——每次读取都是用户本人的身份。
+`dsh-platform-user-console` 是 platform-user 缝的 Web Console provider：注册进 `ctx.platformUsers`，用 JWKS 本地验证调用者的认证中心 JWT，再携带调用者自己的 bearer token 从 Web Console 后端（`GET /api/users/me`）读取该用户的治理记录。它与按认证方式解析 provider 的 dsh-platform-user 配对，自身不持有服务密钥——每次读取都是用户本人的身份。
 
 ## 目录
 
@@ -27,10 +27,13 @@ kind: "package-reference"
 把本插件注册进 webserver 位于企业 Web 客户端之后的 profile。插件契约：
 
 - `inject = ['platformUsers']`
-- `Config`
-  - `supabaseUrl` — Supabase 项目 URL；仅其 Auth issuer 用于 JWT 验证
-  - `webConsoleBaseUrl` — Web Console 后端基地址，默认 `http://127.0.0.1:8080`
-- `apply(ctx, config)` — 解析配置，创建 JWKS key store，注册 provider
+- `Config` — 五个字段全部必填、volatile，由 enterprise-app patch 用环境变量（`SSO_*`、`WEB_CONSOLE_URL`）填充
+  - `provider` — 认证中心类型：`supabase / casdoor / customer-oidc`
+  - `supabaseUrl` — Supabase 项目 URL；supabase 模式下唯一作用是 `issuer` 为空时推导 issuer（`<url>/auth/v1`）
+  - `issuer` — 认证中心 issuer URL；非 supabase 提供方必须非空；解析结果为空（尚未配置任何坐标）时挂载「未配置」provider，拒绝所有请求
+  - `jwksUrl` — JWKS 端点；为空时按 `<issuer>/.well-known/jwks.json` 推导
+  - `webConsoleBaseUrl` — 服务 `GET /api/users/me` 的 Web Console 后端基地址
+- `apply(ctx, config)` — 解析配置（非法值加载期失败）、挂载 provider，并在每次 `loader/volatile-update` 时重挂载；volatile 更新携带非法值时沿用旧 provider
 
 dsh-platform-user 按认证方式解析已注册的 provider，因此没有其他包直接 import 本包。
 
@@ -83,6 +86,6 @@ JWT 验证与 `/api/users/me` 自读发生在解析请求身份的阶段，先�
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-本 provider 从 `GET /api/users/me` 读取的 `ApiResponse` 信封与 camelCase 治理记录字段是同 web-console 后端（`apps/web-console`）的契约；字段改名必须两侧同步。JWKS key store 在 `apply` 中一次性创建，只使用 `config.supabaseUrl` 的 Auth issuer。此处无未竟工作。
+本 provider 从 `GET /api/users/me` 读取的 `ApiResponse` 信封与 camelCase 治理记录字段是同 web-console 后端（`apps/web-console`）的契约；字段改名必须两侧同步。provider 在 `apply` 中按解析后的 issuer（显式 `issuer`，或 supabase 模式下从 `supabaseUrl` 推导）挂载，并在每次成功的 `loader/volatile-update` 时重挂载；解析结果为空时挂载「未配置」provider，拒绝请求直到真实坐标到达。此处无未竟工作。
 
 </details>

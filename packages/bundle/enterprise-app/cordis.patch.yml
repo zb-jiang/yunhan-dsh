@@ -22,18 +22,33 @@
 
     # Web-Console-backed provider：JWKS 本地验 JWT 后经 web-console
     # /api/users/me 读治理记录（platform_users 已迁本地 PG，不再直连 Supabase 读表）。
+    # SSO provider 三选一（supabase | casdoor | customer-oidc，缺省 supabase）：
+    # 非 supabase 时 issuer 必填（无推导），jwksUrl 留空按 OIDC 发现推导。
     - id: platform-user-console
       name: '@deepseek-ai/dsh-platform-user-console'
       config:
+        provider: !!js process.env.SSO_PROVIDER ?? 'supabase'
         supabaseUrl: !!js process.env.SUPABASE_URL ?? ''
+        issuer: !!js process.env.SSO_ISSUER ?? ''
+        jwksUrl: !!js process.env.SSO_JWKS_URL ?? ''
         webConsoleBaseUrl: !!js process.env.WEB_CONSOLE_URL ?? 'http://127.0.0.1:8080'
 
-    # HTTP API 路由，注册 /api/enterprise/auth 前缀路由。
+    # HTTP API 路由，注册 /api/enterprise/auth 前缀路由。/auth/config 按
+    # provider 分支：supabase 返回 url/anonKey（前端直连），OIDC 返回
+    # issuer/clientId/scopes（授权码流程 RP 参数，非 supabase 时 clientId 必填）。
+    # oidcRelayUrl 复用 WEB_CONSOLE_URL：relay 基地址即 web-console，空串=
+    # 未启用（Pocket Access 手机端登录退回根路径回调）。
     - id: platform-user-api
       name: '@deepseek-ai/dsh-platform-user-api'
       config:
+        provider: !!js process.env.SSO_PROVIDER ?? 'supabase'
         supabaseUrl: !!js process.env.SUPABASE_URL ?? ''
+        issuer: !!js process.env.SSO_ISSUER ?? ''
+        jwksUrl: !!js process.env.SSO_JWKS_URL ?? ''
         supabaseAnonKey: !!js process.env.SUPABASE_ANON_KEY ?? ''
+        clientId: !!js process.env.SSO_CLIENT_ID ?? ''
+        scopes: !!js process.env.SSO_SCOPES ?? ''
+        oidcRelayUrl: !!js process.env.WEB_CONSOLE_URL ?? ''
 
     # 会话身份上下文：订阅 platform-user 事件维护 ctx.currentUser，
     # 并在每轮第一个 step 向模型注入展示用身份块（含 web-console 组织身份）。

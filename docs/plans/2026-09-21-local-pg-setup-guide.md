@@ -103,8 +103,9 @@ CREATE TABLE public.platform_users (
     -- 显示名称
     display_name TEXT NOT NULL,
 
-    -- 邮箱,唯一
-    email TEXT NOT NULL,
+    -- 邮箱,唯一;可空(认证中心不下发 email 时存 NULL,如钉钉 unionId 登录;
+    -- PG 的 UNIQUE 约束允许多个 NULL)
+    email TEXT,
 
     -- 用户状态:pending_approval / active / disabled / locked
     status TEXT NOT NULL DEFAULT 'pending_approval'
@@ -754,4 +755,21 @@ CREATE INDEX IF NOT EXISTS idx_dsh_metrics_sample_metric_ts
 ```sql
 CREATE INDEX IF NOT EXISTS idx_hi_actinst_procdef_start
   ON flowable.act_hi_actinst (proc_def_id_, start_time_);
+```
+
+### 3.8 OAuth relay 中转会话表
+
+DSH 员工端 Pocket Access 手机端登录的中转登记(web-console `OauthRelayController`):手机端回调地址(LAN IP/隧道域名)无法在认证中心枚举登记,redirect_uri 恒指向 web-console 固定的 `/api/auth/dsh-relay/callback`;发起登录时按 state(兼作包裹号)登记回跳地址,认证中心 302 回落点按 state 取回并一次性消费。会话行只有回跳地址,不含授权码/令牌/用户信息(PKCE verifier 只在手机端,泄密面为零);过期行由登记时顺手清理,无独立清理任务。
+
+```sql
+-- ============================================================
+-- OAuth relay 中转会话:state 兼作包裹号,5 分钟 TTL,一次性消费。
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.oauth_relay_sessions (
+    -- authorize state(前端生成的随机串,兼作 relay 会话号)
+    state TEXT PRIMARY KEY,
+    -- 发起登录的端点 origin(手机端 LAN IP/隧道域名),302 转交目标基地址
+    return_origin TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 ```

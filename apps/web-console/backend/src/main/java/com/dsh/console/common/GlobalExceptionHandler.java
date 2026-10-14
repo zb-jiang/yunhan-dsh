@@ -1,5 +1,6 @@
 package com.dsh.console.common;
 
+import com.dsh.console.auth.OidcUpstreamException;
 import com.dsh.console.knowledge.KbStorageException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -88,6 +89,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
             .body(ApiResponse.fail(ApiError.of("FLOWABLE_REST_ERROR",
                 "调用流程引擎失败:" + e.getMessage())));
+    }
+
+    /** 认证中心(SSO 上游)调用失败:返回 502。 */
+    @ExceptionHandler(OidcUpstreamException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOidcUpstream(OidcUpstreamException e) {
+        log.error("OIDC upstream call failed", e);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+            .body(ApiResponse.fail(ApiError.of("OIDC_UPSTREAM_ERROR",
+                "认证中心调用失败:" + e.getMessage())));
     }
 
     /** Supabase Storage 调用失败(知识库上传/下载/删除):返回 502。 */

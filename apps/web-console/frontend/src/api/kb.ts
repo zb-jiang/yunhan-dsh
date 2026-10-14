@@ -1,5 +1,5 @@
 import type { AxiosResponse } from 'axios'
-import { supabase } from '../lib/supabase'
+import { readToken } from '../auth/auth-session'
 import { http } from './client'
 import { del, get, patch, post } from './client'
 import type { ApiResponse } from './types'
@@ -187,8 +187,7 @@ export const kbApi = {
    * 顺带避免大文件上传被 axios 30s 超时截断。
    */
   upload: async (kbId: string, file: File, folderId: string | null, params?: ChunkParams): Promise<KbDocumentDto> => {
-    const { data } = await supabase.auth.getSession()
-    const token = data.session?.access_token
+    const token = readToken()
     if (!token) throw new Error('登录状态失效,请重新登录')
     const form = new FormData()
     form.append('file', file)

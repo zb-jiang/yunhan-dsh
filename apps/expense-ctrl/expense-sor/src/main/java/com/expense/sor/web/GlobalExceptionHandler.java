@@ -57,6 +57,20 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND.value(), 1404, "资源不存在: " + e.getResourcePath(), null);
     }
 
+    /** 认证中心(SSO 上游)调用失败:502,上游故障不是本服务内部错误,引导重试或检查认证中心部署 */
+    @ExceptionHandler(com.expense.sor.auth.OidcUpstreamException.class)
+    @RawResponse
+    public ResponseEntity<Map<String, Object>> handleOidcUpstream(com.expense.sor.auth.OidcUpstreamException e) {
+        return build(HttpStatus.BAD_GATEWAY.value(), 1502, e.getMessage(), null);
+    }
+
+    /** 非法参数(如 AuthController 模式校验/缺参):400,消息为具体原因 */
+    @ExceptionHandler(IllegalArgumentException.class)
+    @RawResponse
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException e) {
+        return build(HttpStatus.BAD_REQUEST.value(), 1400, e.getMessage(), null);
+    }
+
     @ExceptionHandler(Exception.class)
     @RawResponse
     public ResponseEntity<Map<String, Object>> handleUnexpected(Exception e) {

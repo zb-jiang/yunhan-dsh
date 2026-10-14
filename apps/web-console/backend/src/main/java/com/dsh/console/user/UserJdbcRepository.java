@@ -58,7 +58,7 @@ public class UserJdbcRepository {
      * @param authSubject 认证主体(JWT sub)
      * @param loginName   登录名(非空)
      * @param displayName 显示名(非空)
-     * @param email       邮箱(非空,表 NOT NULL + 唯一)
+     * @param email       邮箱(可空,认证中心不下发 email 时为 NULL;非空时唯一)
      * @return 插入行数;0 表示 auth_subject 已有记录
      */
     public int insertPending(String authSubject, String loginName, String displayName, String email) {

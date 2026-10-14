@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-platform-user-api` 通过本地 webserver 暴露员工侧认证触点：`GET /api/enterprise/auth/me` 验证 Supabase JWT 并发布 `platform-user/verified`，`POST /signout` 发布 `platform-user/signout`，`GET /config` 把 Supabase URL 与 anon key 交给浏览器，`POST /connectivity-check` 在浏览器无法探测时从 Node 侧探测服务地址。插件本身不持有状态；身份缓存消费者订阅事件。
+`dsh-platform-user-api` 通过本地 webserver 暴露员工侧认证触点：`GET /api/enterprise/auth/me` 验证认证中心 JWT 并发布 `platform-user/verified`，`POST /signout` 发布 `platform-user/signout`，`GET /config` 按 `provider` 分支把认证中心参数交给浏览器，`POST /connectivity-check` 在浏览器无法探测时从 Node 侧探测服务地址。非 supabase 提供方下它还代理 OIDC 授权码+PKCE 流程：`GET /oidc/authorize` 把浏览器重定向到提供方的授权端点，`POST /oidc/token` / `POST /oidc/refresh` 从 Node 侧交换授权码与 refresh token，client secret 因此不进浏览器。插件本身不持有状态；身份缓存消费者订阅事件。
 
 ## 目录
 
@@ -29,19 +29,31 @@ kind: "package-reference"
 
 ### 最小配置
 
-两个字段均为必填且无默认值：缺任一字段的组合在加载时失败。它们正是浏览器直连 Supabase Auth 所需的 Supabase 项目坐标。
+前七个字段均为必填且无默认值：缺任一字段的组合在加载时失败。enterprise-app patch 用 `SSO_*` 环境变量填充它们，部署时通常只通过环境变量配置认证中心。`provider` 选择认证中心：`supabase` 保持浏览器直连 Supabase 登录，`casdoor` / `customer-oidc` 切换为通用 OIDC 提供方。`oidcRelayUrl` 为可选字段（缺省空串），仅影响 Pocket Access 手机端登录的回调中转。
 
 ```yaml
 - name: '@deepseek-ai/dsh-platform-user-api'
   config:
+    provider: 'supabase' # supabase / casdoor / customer-oidc
     supabaseUrl: 'https://your-project.supabase.co'
     supabaseAnonKey: 'your-anon-key'
+    issuer: ''
+    jwksUrl: ''
+    clientId: 'employee-web'
+    scopes: ''
+    oidcRelayUrl: '' # relay base URL for Pocket Access phone logins (web-console); empty = disabled
 ```
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `supabaseUrl` | 必填 | Supabase 项目 URL；volatile — 设置面板可不重载修改 |
+| `provider` | 必填 | 认证中心类型：`supabase / casdoor / customer-oidc`；volatile |
+| `supabaseUrl` | 必填 | Supabase 项目 URL；空值是合法的「尚未配置」初态（首启引导）；volatile |
 | `supabaseAnonKey` | 必填 | 浏览器侧 Supabase Auth 使用的 anon key；volatile |
+| `issuer` | 必填 | 认证中心 issuer URL；supabase 模式下为空时按 `supabaseUrl` 推导（`<url>/auth/v1`）；非 supabase 提供方必须非空；volatile |
+| `jwksUrl` | 必填 | JWKS 端点；为空时按 `<issuer>/.well-known/jwks.json` 推导；volatile |
+| `clientId` | 必填 | 员工端 RP 在认证中心注册的 client id；非 supabase 提供方必须非空；volatile |
+| `scopes` | 必填 | OIDC 授权码流程 scopes；为空时缺省 `openid profile`；volatile |
+| `oidcRelayUrl` | `''` | Pocket Access 手机端登录的中转基地址（web-console）；非 loopback 访问且非空时 redirect_uri 指向其 relay 回调，空串=未启用退回根路径回调；volatile |
 
 ### 各端点的行为
 
@@ -49,8 +61,13 @@ kind: "package-reference"
 |---|---|---|
 | GET | `/api/enterprise/auth/me` | 验证 `Authorization: Bearer` JWT，返回用户记录，携带原始 token 发布 `platform-user/verified` |
 | POST | `/api/enterprise/auth/signout` | 发布 `platform-user/signout`，应答 204 |
-| GET | `/api/enterprise/auth/config` | 每次请求现读返回 `{ url, anonKey }` |
+| GET | `/api/enterprise/auth/config` | 返回 `{ mode: 'supabase', url, anonKey }`（保留顶层字段兼容现有登录 UI）或 `{ mode: 'oidc', issuer, clientId, scopes, relayUrl }`，按 `provider` 分支、每次请求现读；非 supabase 提供方缺 `clientId` 应答 400 |
 | POST | `/api/enterprise/auth/connectivity-check` | 从 Node 探测 URL（任意 HTTP 状态都算可达），5 秒超时 |
+| GET | `/api/enterprise/auth/oidc/callback` | 授权码回调落点（API 路径不受 webserver 认证墙拦截）：iframe 场景父页面读地址提取授权码，整页场景由本页脚本回跳根路径；缺 `code`/`state` 应答 400 |
+| POST | `/api/enterprise/auth/oidc/relay-register` | 仅 OIDC 模式：把 `{ state, returnOrigin }` 转发到 web-console 的 relay 登记端点（浏览器不直连 web-console，无 CORS 面）；未配置 `oidcRelayUrl` 或缺字段应答 400，上游失败应答 502 |
+| GET | `/api/enterprise/auth/oidc/authorize` | 仅 OIDC 模式：经 discovery 解析提供方授权端点后 302 重定向浏览器，携带 `code_challenge` + `state`；非 OIDC 模式或缺 query 字段应答 400 |
+| POST | `/api/enterprise/auth/oidc/token` | 仅 OIDC 模式：用 `code` + `codeVerifier` 换取 `{ token, refreshToken, expiresIn }`（token 即 Bearer 用的 id_token）；discovery 或上游失败应答 502 |
+| POST | `/api/enterprise/auth/oidc/refresh` | 仅 OIDC 模式：用 refresh token 换取新的 `{ token, refreshToken, expiresIn }` 对；非 OIDC 模式应答 400 |
 
 -----
 
@@ -82,7 +99,7 @@ kind: "package-reference"
 ## 延伸阅读
 
 - [企业组 README](../README.zh.md) — 同组企业包及两个 profile 如何组合它们。
-- [SSO 认证中心方案设计](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — 这些端点服务的基于 Supabase 的身份模型。
+- [SSO 认证中心方案设计](../../../docs/plans/2026-10-11-sso-auth-center-design.md) — 这些端点服务的认证中心设计。
 
 -----
 
@@ -104,7 +121,7 @@ kind: "package-reference"
 - **事件只在 API 调用时发布** — `platform-user/verified` 在客户端请求 `/me` 时发布；没有来自 Supabase 的推送通道，从不调用这些端点的组件永远看不到登录。
 - **只读投影** — 这些端点不暴露治理写路径；注册、审批、禁用、锁定与角色都在 web-console。
 - **探测只是普通 GET** — connectivity-check 把任意 HTTP 状态（包括错误页）都算作可达；它回答「主机在不在」，不回答「服务健不健康」。
-- **未认证的配置面** — `/config` 不做认证就交出 Supabase 坐标；在 webserver 只绑 localhost 的前提下安全，若这一点改变则不安全。
+- **未认证的配置面** — `/config` 不做认证就交出认证中心坐标；在 webserver 只绑 localhost 的前提下安全，若这一点改变则不安全。
 
 <a id="dev-note"></a>
 ### 开发备注

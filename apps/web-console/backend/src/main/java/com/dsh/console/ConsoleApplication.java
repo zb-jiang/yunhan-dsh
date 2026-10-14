@@ -1,6 +1,6 @@
 package com.dsh.console;
 
-import com.dsh.console.config.SupabaseJwtProperties;
+import com.dsh.console.config.SsoAuthProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -20,7 +20,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *       {@code dsh_metrics_sample} 表 + 每日过期清理({@code @EnableScheduling})。</li>
  * </ul>
  *
- * <p>{@link ConfigurationPropertiesScan} 扫描 {@link SupabaseJwtProperties} 等配置类。
+ * <p>{@link ConfigurationPropertiesScan} 扫描 {@link SsoAuthProperties} 等配置类。
  */
 @SpringBootApplication
 @ConfigurationPropertiesScan
