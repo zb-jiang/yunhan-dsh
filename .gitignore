@@ -65,3 +65,5 @@ apps/web-console/tessdata/
 # Runtime state: engine logs and expense attachment storage
 apps/flowable-engine/logs/
 apps/expense-ctrl/attachments/
+# Runtime state: web-console instance-workspace blob storage (dsh.instance-workspace.root)
+apps/web-console/instance-workspaces/
