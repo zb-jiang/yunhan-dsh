@@ -9,6 +9,7 @@
   ],
   "references": [
     { "path": "../user-identity-context" },
+    { "path": "../web-console-proxy" },
     { "path": "../../core/tools" },
     { "path": "../../host/webserver" }
   ]

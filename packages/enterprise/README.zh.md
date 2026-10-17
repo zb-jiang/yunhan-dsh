@@ -25,6 +25,7 @@ kind: "package-group"
 |------|------|
 | [`backend-task/`](backend-task/README.zh.md) | 在服务器端运行 DSH backend task：提交插值后的节点 prompt 到 backend profile 并轮询 JSON 结果 |
 | [`flowable-task-proxy/`](flowable-task-proxy/README.zh.md) | Flowable 任务端点的纯 HTTP 转发 |
+| [`instance-workspace/`](instance-workspace/README.zh.md) | 实例云工作空间的模型面工具：文件增删改查、员工端代理路由与每回合 `<instance_workspace>` 块 |
 | [`kb-context/`](kb-context/README.zh.md) | 注入每回合 `<knowledge_base>` 模型可见块，内容由 web-console 知识库上报提供 |
 | [`knowledge/`](knowledge/README.zh.md) | 企业会话中模型调用的知识库检索工具 |
 | [`llm-access/`](llm-access/README.zh.md) | LLM 适配器，把已组装的请求原样转发到企业配额代理 |
@@ -36,6 +37,7 @@ kind: "package-group"
 | [`session-delete/`](session-delete/README.zh.md) | 归档会话产物删除 |
 | [`skill-sync/`](skill-sync/README.zh.md) | 守护进程，把员工待办任务引用的 skill 预装进本地缓存 |
 | [`user-identity-context/`](user-identity-context/README.zh.md) | 会话身份上下文：`ctx.currentUser` 加每回合注入的模型可见身份块 |
+| [`web-console-proxy/`](web-console-proxy/README.zh.md) | 本地 webserver 员工面前缀代理到 web-console 的共享转发器（附 JWT，JSON 401/502） |
 
 -----
 

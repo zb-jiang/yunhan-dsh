@@ -3048,6 +3048,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'sidebar.right.pane.tab\' (client-ui-sidebar-files), so it exists while that entry is mounted',
     occupants: [
       'client-ui-enterprise KbUploadAction id \'kb-upload\'',
+      'client-ui-enterprise InstanceUploadAction id \'instance-upload\'',
     ],
     replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'sidebar.files.entry.action\', () => ctx.slots.register(\n      { name: \'sidebar.files.entry.action\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
@@ -3225,6 +3226,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     occupants: [
       'client-ui-deliverables ReviewTab',
       'client-ui-enterprise TaskArchivePanel',
+      'client-ui-enterprise InstanceFilesPanel',
       'client-ui-plan PlanPreview',
       'client-ui-schedule ScheduleTaskTab',
       'client-ui-sidebar-browser BrowserBody',

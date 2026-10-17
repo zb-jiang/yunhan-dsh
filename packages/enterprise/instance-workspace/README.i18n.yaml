@@ -1,0 +1,64 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/enterprise/instance-workspace/README.md
+/:
+  en: d6b75642309821aa
+  zh: e1801ea5aec02653
+/deepseek-ai-dsh-instance-workspace:
+  en: 9af21aa0459f12c2
+  zh: 93dda97ed603e864
+/deepseek-ai-dsh-instance-workspace/summary:
+  en: c1190acd443076e3
+  zh: e14b3c2e32f16fac
+/deepseek-ai-dsh-instance-workspace/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f14f34fce35a8d90
+/deepseek-ai-dsh-instance-workspace/use-this-package:
+  en: a4109c1d5a7efd71
+  zh: 3c87214181a1ce14
+/deepseek-ai-dsh-instance-workspace/use-this-package/minimal-configuration:
+  en: 38391b4b2ac0c121
+  zh: abf690a6ab172ae8
+/deepseek-ai-dsh-instance-workspace/use-this-package/what-each-tool-does:
+  en: ef7fa2214663a4d8
+  zh: 6e14330d34936288
+/deepseek-ai-dsh-instance-workspace/understand-the-implementation:
+  en: c75599b18254aa11
+  zh: cc6a7533d9687c23
+/deepseek-ai-dsh-instance-workspace/understand-the-implementation/two-auth-channels:
+  en: dfaa9d6b7ccb601b
+  zh: 44e3b5aa9eb973df
+/deepseek-ai-dsh-instance-workspace/understand-the-implementation/employee-face-routes-and-per-turn-injection:
+  en: 34224e42983140fa
+  zh: bdff54d42773e4f5
+/deepseek-ai-dsh-instance-workspace/understand-the-implementation/local-root-session-directory-first:
+  en: df8cbb149ccdd7c6
+  zh: 6900db8f2b3a3f4d
+/deepseek-ai-dsh-instance-workspace/understand-the-implementation/render-function-is-shared:
+  en: 2392ff21864b030a
+  zh: 7a7ba5883759e34e
+/deepseek-ai-dsh-instance-workspace/further-exploration:
+  en: 5ea8a5b4371b032a
+  zh: 0b09bf7558ce5ab2
+/deepseek-ai-dsh-instance-workspace/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-instance-workspace/model-experience/instance-workspace-tools:
+  en: c92891453d7d9901
+  zh: 4f6b2eb85930ef0d
+/deepseek-ai-dsh-instance-workspace/model-experience/instance-workspace-tools/what-the-model-sees:
+  en: 6f7d6c59f32af1ad
+  zh: 921f009731111265
+/deepseek-ai-dsh-instance-workspace/model-experience/instance-workspace-tools/token-effect:
+  en: dbc8c40d46c542e8
+  zh: 83e9ed5e4ef8fdeb
+/deepseek-ai-dsh-instance-workspace/model-experience/instance-workspace-tools/kv-cache-effect:
+  en: 2c9e8aab847a7a8c
+  zh: 89295cfb01d2b925
+/deepseek-ai-dsh-instance-workspace/known-limitations-and-deferred-work:
+  en: 8f3f08fa4d338c1c
+  zh: 0472fc3a2ff2246c
+/deepseek-ai-dsh-instance-workspace/known-limitations-and-deferred-work/dev-note:
+  en: ff28a1babfbb8b1a
+  zh: e7df5783ab13a699

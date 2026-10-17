@@ -135,6 +135,7 @@ class DshServiceTaskVotingRuleTest {
             @Override
             public Map<String, Object> execute(String baseUrl, String prompt,
                                                List<String> skillRefs, String activityId,
+                                               String processInstanceId,
                                                WebConsoleKbClient.KbRef kb) {
                 capturedProfileUrls.add(baseUrl);
                 return Map.of("approved", true);

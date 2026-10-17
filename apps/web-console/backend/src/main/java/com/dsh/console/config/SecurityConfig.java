@@ -4,17 +4,17 @@ import com.dsh.console.security.JwtAuthConverter;
 import com.dsh.console.security.ServiceKeyAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Spring Security 配置:认证中心 JWT 本地验证。
@@ -54,18 +54,29 @@ public class SecurityConfig {
     /**
      * 按配置 issuer 构造 NimbusJwtDecoder,支持 ES256/RS256 等非对称算法。
      *
-     * <p>通过 issuer 的 {@code /.well-known/openid-configuration} 发现端点
-     * 动态获取 JWKS 公钥验证(Supabase Auth 默认 ES256,Casdoor 默认 RS256)。
+     * <p>经 {@code withIssuerLocation} 做 OpenID discovery 推导 JWKS 地址,验签算法集
+     * 由 JWKS 中的公钥推导(Supabase Auth 为 ES256,Casdoor 为 RS256)。不用
+     * {@code withJwkSetUri} 替代:其默认算法集硬编码 RS256,拒绝 ES256 token。
+     * discovery 与 JWKS 拉取统一走注入的带超时 RestOperations——默认 RestTemplate
+     * 无超时,issuer 域名网络不可达时 bean 创建静默挂起(TCP 建连后 TLS 握手无响应),
+     * Tomcat 永远无法 start。
      * issuer 参数校验在 {@link SsoAuthProperties} 绑定期 fails loud。</p>
      */
     @Bean
     public JwtDecoder jwtDecoder() {
-        JwtDecoder decoder = JwtDecoders.fromIssuerLocation(ssoProperties.issuer());
-        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(ssoProperties.issuer());
-        if (decoder instanceof org.springframework.security.oauth2.jwt.NimbusJwtDecoder nimbus) {
-            nimbus.setJwtValidator(withIssuer);
-        }
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(ssoProperties.issuer())
+            .restOperations(new RestTemplate(bootstrapRequestFactory()))
+            .build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(ssoProperties.issuer()));
         return decoder;
+    }
+
+    /** discovery/JWKS 拉取专用请求工厂:连接/读取各 5 秒超时,网络不可达时快速报错。 */
+    private SimpleClientHttpRequestFactory bootstrapRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return factory;
     }
 
     /**
@@ -85,6 +96,13 @@ public class SecurityConfig {
         // 会让 Chrome 拒绝渲染（「localhost 拒绝了我们的连接请求」）。SAMEORIGIN 不放开外站嵌入。
         .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
         .authorizeHttpRequests(authz -> authz
+                // ASYNC/ERROR dispatch 只能由容器内部发起(外部请求恒为 REQUEST dispatch,
+                // 攻击面不变),放行它们是 Spring Boot 默认链的兜底:StreamingResponseBody
+                // 类端点(LLM 代理、实例工作空间 download)的异步续处理会重跑 filter chain,
+                // 而所有 OncePerRequestFilter 默认 shouldNotFilterAsyncDispatch=true 被跳过,
+                // 服务密钥认证(filter 现场注入、不存 repository)在 ASYNC dispatch 蒸发,
+                // 不放行会 Access Denied 且响应已提交无法回错误页。
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC, jakarta.servlet.DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/health").permitAll()
                 // 登录页/回调处理在认证前运行:SSO 连接信息下发 + OIDC 授权码流程代理
                 .requestMatchers("/api/auth/**").permitAll()

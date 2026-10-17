@@ -2,17 +2,17 @@ package com.dsh.flowable.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Spring Security 配置:认证中心 JWT 本地验证。
@@ -34,26 +34,39 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 public class SecurityConfig {
 
     private final SupabaseJwtProperties properties;
+    private final DshWebConsoleProperties webConsoleProperties;
 
-    public SecurityConfig(SupabaseJwtProperties properties) {
+    public SecurityConfig(SupabaseJwtProperties properties, DshWebConsoleProperties webConsoleProperties) {
         this.properties = properties;
+        this.webConsoleProperties = webConsoleProperties;
     }
 
     /**
      * 按配置 issuer 构造 NimbusJwtDecoder,支持 ES256/RS256 等非对称算法。
      *
-     * <p>通过 issuer 的 {@code /.well-known/openid-configuration} 发现端点
-     * 动态获取 JWKS 公钥验证(Supabase Auth 默认 ES256,Casdoor 默认 RS256)。
-     * issuer 参数校验在 {@link SupabaseJwtProperties} 绑定期 fails loud。</p>
+     * <p>经 {@code withIssuerLocation} 做 OpenID discovery 推导 JWKS 地址,验签算法集
+     * 由 JWKS 中的公钥推导(Supabase Auth 为 ES256,Casdoor 为 RS256)。不用
+     * {@code withJwkSetUri} 替代:其默认算法集硬编码 RS256,拒绝 ES256 token。
+     * discovery 与 JWKS 拉取统一走注入的带超时 RestOperations——默认 RestTemplate
+     * 无超时,issuer 域名网络不可达时 bean 创建静默挂起(TCP 建连后 TLS 握手无响应),
+     * Tomcat 永远无法 start。issuer 参数校验在 {@link SupabaseJwtProperties} 绑定期
+     * fails loud。</p>
      */
     @Bean
     public JwtDecoder jwtDecoder() {
-        JwtDecoder decoder = JwtDecoders.fromIssuerLocation(properties.jwtIssuer());
-        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(properties.jwtIssuer());
-        if (decoder instanceof NimbusJwtDecoder nimbus) {
-            nimbus.setJwtValidator(withIssuer);
-        }
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withIssuerLocation(properties.jwtIssuer())
+            .restOperations(new RestTemplate(bootstrapRequestFactory()))
+            .build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(properties.jwtIssuer()));
         return decoder;
+    }
+
+    /** discovery/JWKS 拉取专用请求工厂:连接/读取各 5 秒超时,网络不可达时快速报错。 */
+    private SimpleClientHttpRequestFactory bootstrapRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return factory;
     }
 
     /**
@@ -70,9 +83,13 @@ public class SecurityConfig {
      * 轮询方(后台调度线程)没有用户 JWT 可透传,先例是 web-console 的
      * backend-profiles register permitAll("内网服务间信任,第一期");exposure 只开
      * health,metrics 两个端点(application.yml),不含 env/configprops/beans,
-     * 指标数值不含敏感信息。V2 收紧为静态 service token。
+     * 指标数值不含敏感信息。
+     *
      * <p>{@code /process-api/**} 是 Flowable 官方 REST 端点(参见 Flowable 文档),
-     * {@code /dsh/**} 是 DSH 自定义薄封装端点。
+     * {@code /dsh/**} 是 DSH 自定义薄封装端点。两类端点接受两条认证通道:用户 JWT
+     * (oauth2ResourceServer)或共享服务密钥({@link ServiceKeyAuthFilter},供
+     * web-console 服务面链路——backend profile 工具请求只有 X-Service-Key,
+     * 无用户 JWT 可透传;fail-closed:密钥未配置时永不放行)。
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -85,7 +102,8 @@ public class SecurityConfig {
                 .requestMatchers(AntPathRequestMatcher.antMatcher("/process-api/**")).authenticated()
                 .requestMatchers(AntPathRequestMatcher.antMatcher("/dsh/**")).authenticated()
                 .anyRequest().authenticated())
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}));
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}))
+            .addFilterBefore(new ServiceKeyAuthFilter(webConsoleProperties), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

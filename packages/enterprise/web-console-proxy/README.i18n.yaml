@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/enterprise/web-console-proxy/README.md
+/:
+  en: ff3364299d886019
+  zh: b29a684e5bb74bbc
+/deepseek-ai-dsh-web-console-proxy:
+  en: dd8cbd10bc5e4965
+  zh: c75886df707be054
+/deepseek-ai-dsh-web-console-proxy/summary:
+  en: 6e04d3131a7052eb
+  zh: c914dd784a7106b9
+/deepseek-ai-dsh-web-console-proxy/table-of-contents:
+  en: 9be40445baed505c
+  zh: 358f99776a9273f0
+/deepseek-ai-dsh-web-console-proxy/use-this-package:
+  en: b74e7f60571eab37
+  zh: ef0bc2e1763c6444
+/deepseek-ai-dsh-web-console-proxy/use-this-package/minimal-configuration:
+  en: d19fd61d619172be
+  zh: 6ab87cf126bd78d4
+/deepseek-ai-dsh-web-console-proxy/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-web-console-proxy/understand-the-implementation/forwarder-contract:
+  en: 751b006ea0ccf280
+  zh: 109412b0beb14704
+/deepseek-ai-dsh-web-console-proxy/understand-the-implementation/error-responses-are-json:
+  en: 1c04c122b17fe1b3
+  zh: 2ddee7c8ab529e5b
+/deepseek-ai-dsh-web-console-proxy/model-experience:
+  en: cd4e6df29ba9e4b2
+  zh: 22ea6abba2ed9396
+/deepseek-ai-dsh-web-console-proxy/model-experience/kv-cache-effect:
+  en: 31441da8d62b55c9
+  zh: 39ac6053ef808824
+/deepseek-ai-dsh-web-console-proxy/known-limitations-and-deferred-work:
+  en: 17e2142ff89eef22
+  zh: 22205a8f2c467d37
+/deepseek-ai-dsh-web-console-proxy/known-limitations-and-deferred-work/dev-note:
+  en: 84099b5e15873067
+  zh: ab4cc603a8776976

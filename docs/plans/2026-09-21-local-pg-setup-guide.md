@@ -773,3 +773,28 @@ CREATE TABLE IF NOT EXISTS public.oauth_relay_sessions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
+
+### 3.9 流程实例工作空间文件表
+
+流程实例云工作空间元数据(设计 `2026-10-14-instance-workspace-design.md` §3.2;web-console `InstanceWorkspaceJdbcRepository`)。磁盘文件(web-console `dsh.instance-workspace.root`)是事实源;本表供列表快查、配额求和与归属缓存(实例 → application_id 首写解析后落行缓存,不再访问引擎)。写 = 先落盘成功再 upsert 行;删 = 先删行再删盘;两侧不一致以磁盘为准,元数据缺行视为文件不存在(download/delete 404),不做孤儿行自愈。
+
+```sql
+-- ============================================================
+-- 流程实例工作空间文件元数据:磁盘为事实源,UNIQUE 防同实例同路径并发重复。
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.instance_workspace_files (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    instance_id VARCHAR(64) NOT NULL,          -- flowable process instance id
+    application_id UUID NOT NULL,              -- 实例空间首写时解析并缓存
+    rel_path TEXT NOT NULL,                    -- 实例空间内相对路径,/ 分隔(已过校验)
+    size_bytes BIGINT NOT NULL,
+    content_type TEXT,
+    uploaded_by TEXT,                          -- 员工 platformUserId;服务面固定 'dsh-service'
+    uploaded_by_label TEXT,                    -- 显示名快照(员工 displayName / 'dsh-service')
+    source_task_id VARCHAR(64),                -- 写入来源节点 id,可空
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (instance_id, rel_path)
+);
+CREATE INDEX IF NOT EXISTS idx_iwf_instance ON public.instance_workspace_files (instance_id);
+```

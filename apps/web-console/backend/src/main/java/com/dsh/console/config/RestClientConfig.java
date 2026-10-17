@@ -111,9 +111,13 @@ public class RestClientConfig {
     }
 
     /**
-     * 透传当前请求的 Authorization 头给 Flowable 引擎。
+     * 透传当前请求的 Authorization 与 X-Service-Key 头给 Flowable 引擎。
      *
-     * <p>无请求上下文(异步线程、定时任务)时不补头,由调用方负责自行注入。
+     * <p>Authorization 供管理面(JWT 用户)链路;X-Service-Key 供服务面
+     * (backend profile / backend-task 工具,ServiceKeyAuthFilter 放行)链路——
+     * 这类请求没有用户 JWT,引擎侧按共享服务密钥放行(引擎 SecurityConfig
+     * 服务密钥 filter)。无请求上下文(异步线程、定时任务)时不补头,由调用方
+     * 负责自行注入。
      */
     private ClientHttpRequestInterceptor forwardAuthHeader() {
         return (request, body, execution) -> {
@@ -123,6 +127,10 @@ public class RestClientConfig {
                 String auth = attrs.getRequest().getHeader(HttpHeaders.AUTHORIZATION);
                 if (auth != null && !auth.isBlank()) {
                     request.getHeaders().set(HttpHeaders.AUTHORIZATION, auth);
+                }
+                String serviceKey = attrs.getRequest().getHeader("X-Service-Key");
+                if (serviceKey != null && !serviceKey.isBlank()) {
+                    request.getHeaders().set("X-Service-Key", serviceKey);
                 }
             }
             return execution.execute(request, body);

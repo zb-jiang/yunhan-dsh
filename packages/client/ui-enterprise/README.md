@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-ui-enterprise` is the browser half of the enterprise workbench: an auth overlay that gates the whole shell on Supabase sign-in and approval status, a task-queue sidebar (todo and completed groups) mounted into the native sidebar nav, and a task-archive tab in the right sidebar. First click on a todo opens an explicit workspace picker, creates a dedicated session, and prefills the node prompt without overwriting edits; submit routes through the mapping dialog and records the receipt. Knowledge-base pickers, chips, '@' triggers, upload actions, service settings, and archived-session deletion round out the surface.
+`dsh-client-ui-enterprise` is the browser half of the enterprise workbench: an auth overlay gating the shell on Supabase sign-in and approval status, a todo/completed task-queue sidebar in the nav, and a task-archive tab. Clicking a todo opens a workspace picker, creates a dedicated session, prefills the prompt without overwriting edits, and submits through the mapping dialog with a recorded receipt. Knowledge pickers, chips, '@' triggers, upload actions, service settings, and session deletion round it out. Bound todos expose the instance's cloud workspace: an instance-files tab (preview, download, delete), upload-to-instance on the workspace tree, and an '@' source for instance files.
 
 ## Table of Contents
 
@@ -35,8 +35,10 @@ This package is the `./client` bundle of the enterprise web client: the host-sid
 | `shell.overlay` | PocketPairingExpired | pocket pairing-expiry page: probes the proxy gate once disconnected and covers the frame when the pairing is revoked/expired, LAN access is off, or the proxy stopped responding (master switch off / desktop down); the probe carries a short timeout (a TCP failure against a dead listener can hang tens of seconds in real networks), the stopped-responding page keeps polling and unmounts itself once the proxy is back, while the other conclusions are terminal; reachable only through the proxy, so the PC connects directly and never triggers it |
 | `sidebar.nav` | TaskQueueSidebar | todo + completed queue in the native sidebar's enterprise branch |
 | `sidebar.right.pane.tab` | TaskArchivePanel | the archive tab (two-stage: type declaration plus keyed body) |
+| `sidebar.right.pane.tab` | InstanceFilesPanel | the instance-files tab (two-stage; opened programmatically for bound todos): the process instance's shared cloud file tree with preview, download, and delete |
 | `conversation.input.left` / `conversation.input.dock` | KbPickerButton / KbChipsDock | knowledge-document picker entry and selected-doc chips |
 | `sidebar.files.entry.action` | KbUploadAction | per-file-row "upload to knowledge base" |
+| `sidebar.files.entry.action` | InstanceUploadAction | per-file-row "upload to instance space" (bound todos only) |
 | `settings.section` | EnterpriseServicesSection | aggregated enterprise service config page |
 | session menu / row / overlay | DeleteSession trio | archived-session delete entry and confirm dialog |
 
@@ -53,6 +55,10 @@ This section explains the design decisions and points at the code; the observabl
 ### Slots compose; the workbench orchestrates
 
 One `EnterpriseWorkbench` is constructed in apply and distributed through each occupant's inject ([src/client/index.ts](src/client/index.ts)). Registrations land in seats declared by other packages, so they go through `ctx.slots.inject` and register only after the declarer mounts; the archive tab registers its type and body in two stages.
+
+### The instance workspace rides the bound task
+
+A bound todo's process instance resolves from the workbench bindings (reactive helper in [src/client/instance-files-tab.ts](src/client/instance-files-tab.ts)). The instance-files tab lists the shared cloud workspace: preview pulls the file into a cache under the session cwd (the file viewer only claims files inside the session workspace), download pulls it to the same-named path under the session cwd (an existing target asks before overwriting), and delete removes the cloud file after a confirm. The workspace-tree action reads the local file through Remote `readBytes` and uploads it under an editable relative path. The '@' trigger inserts the plain text `@实例空间/<relPath>` — no chip or codec, the model sees the literal path. Binding reports (`POST api/enterprise/workspace/session-context`) fire when a todo confirms its workspace and replay after a page refresh, so the webserver's in-memory session→instance map self-heals.
 
 ### The auth gate is also the identity pump
 

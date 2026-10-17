@@ -60,7 +60,7 @@ This section explains the design decisions and points at the code; the observabl
 
 ### Two surfaces, one upstream
 
-Browser pages (the workbench KB selector, workspace upload) reach web-console only through the local webserver: the prefix routes `/api/enterprise/kb` and `/api/enterprise/apps` forward method, body, content-type, and the signed-in employee's JWT, and pass the upstream status and body through unchanged. An unreachable or misconfigured upstream answers with a JSON 502, never an HTML error page.
+Browser pages (the workbench KB selector, workspace upload) reach web-console only through the local webserver: the prefix routes `/api/enterprise/kb` and `/api/enterprise/apps` forward method, body, content-type, and the signed-in employee's JWT, and pass the upstream status and body through unchanged. An unreachable or misconfigured upstream answers with a JSON 502, never an HTML error page. The forwarder itself is the shared `@deepseek-ai/dsh-web-console-proxy` module, consumed here and by the instance-workspace plugin.
 
 ### Per-call authentication
 

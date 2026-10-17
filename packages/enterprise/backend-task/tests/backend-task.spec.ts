@@ -196,15 +196,15 @@ describe('backend-task', () => {
     return { route, fetchMock }
   }
 
-  /** 提交一个任务,返回 taskId。 */
+  /** 提交一个任务,返回 taskId(默认携带 processInstanceId,可被 options 覆盖)。 */
   const submit = async (
     route: StubRoute,
     prompt: string,
-    options: { skillRefs?: string[]; kbId?: string; kbName?: string } = {},
+    options: { skillRefs?: string[]; kbId?: string; kbName?: string; processInstanceId?: string; taskId?: string } = {},
   ) => {
     const res = stubResponse()
     await route.handler(
-      stubRequest('POST', '/api/backend/tasks', Buffer.from(JSON.stringify({ prompt, ...options }))),
+      stubRequest('POST', '/api/backend/tasks', Buffer.from(JSON.stringify({ prompt, processInstanceId: 'pi-1', ...options }))),
       res,
     )
     await flushTasks()
@@ -296,6 +296,83 @@ describe('backend-task', () => {
     expect(prompt).toContain('做提取')
   })
 
+  it('实例上下文注入:processInstanceId/taskId 渲染 instance_workspace 块进会话首条 user message', async () => {
+    const agents = stubAgents('{"a":1}', { kind: 'completed' })
+    vi.stubGlobal('fetch', stubFetch(consoleRoutes()))
+    const webServer = stubWebServer()
+    ctx.provide('agents', agents as never)
+    ctx.provide('sessions', stubSessions() as never)
+    ctx.provide('agentDefaultModel', stubDefaultModel() as never)
+    ctx.provide('skills', stubSkills() as never)
+    ctx.provide('webServer', webServer as never)
+    apply(ctx, { ...CONFIG, skillDir })
+    const route = webServer.routes.find(candidate => candidate.path === '/api/backend/tasks')!
+    const { taskId } = await submit(route, '做提取', { processInstanceId: 'pi-9', taskId: 'task-9' })
+    await pollTask(route, taskId)
+    const prompt = agents.created[0]!.promptMessages[0]!
+    // 与员工端同一渲染格式(renderInstanceWorkspaceContextText)
+    expect(prompt).toContain('<instance_workspace>')
+    expect(prompt).toContain('instanceId: pi-9')
+    expect(prompt).toContain('taskId: task-9')
+    expect(prompt).toContain('workspace_write')
+    expect(prompt).toContain('做提取')
+  })
+
+  it('实例上下文注入:无 taskId 时渲染 (无)', async () => {
+    const agents = stubAgents('{"a":1}', { kind: 'completed' })
+    vi.stubGlobal('fetch', stubFetch(consoleRoutes()))
+    const webServer = stubWebServer()
+    ctx.provide('agents', agents as never)
+    ctx.provide('sessions', stubSessions() as never)
+    ctx.provide('agentDefaultModel', stubDefaultModel() as never)
+    ctx.provide('skills', stubSkills() as never)
+    ctx.provide('webServer', webServer as never)
+    apply(ctx, { ...CONFIG, skillDir })
+    const route = webServer.routes.find(candidate => candidate.path === '/api/backend/tasks')!
+    const { taskId } = await submit(route, '做提取')
+    await pollTask(route, taskId)
+    expect(agents.created[0]!.promptMessages[0]).toContain('taskId: (无)')
+  })
+
+  it('提交校验:缺 processInstanceId 或非法 taskId → 400(fail loud)', async () => {
+    const agents = stubAgents('{"a":1}', { kind: 'completed' })
+    vi.stubGlobal('fetch', stubFetch(consoleRoutes()))
+    const webServer = stubWebServer()
+    ctx.provide('agents', agents as never)
+    ctx.provide('sessions', stubSessions() as never)
+    ctx.provide('agentDefaultModel', stubDefaultModel() as never)
+    ctx.provide('skills', stubSkills() as never)
+    ctx.provide('webServer', webServer as never)
+    apply(ctx, { ...CONFIG, skillDir })
+    const route = webServer.routes.find(candidate => candidate.path === '/api/backend/tasks')!
+    // 缺 processInstanceId → 400
+    const missing = stubResponse()
+    await route.handler(
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p"}')),
+      missing,
+    )
+    await flushTasks()
+    expect(missing.status).toBe(400)
+    expect((JSON.parse(missing.body) as { error: string }).error).toContain('processInstanceId')
+    // 空 processInstanceId → 400
+    const blank = stubResponse()
+    await route.handler(
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "processInstanceId": "  "}')),
+      blank,
+    )
+    await flushTasks()
+    expect(blank.status).toBe(400)
+    // 非法 taskId → 400
+    const badTask = stubResponse()
+    await route.handler(
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "processInstanceId": "pi-1", "taskId": 42}')),
+      badTask,
+    )
+    await flushTasks()
+    expect(badTask.status).toBe(400)
+    expect((JSON.parse(badTask.body) as { error: string }).error).toContain('taskId')
+  })
+
   it('提交校验:kbId/kbName 成对携带,缺名回退 kbId,非法形态 → 400', async () => {
     const agents = stubAgents('{"a":1}', { kind: 'completed' })
     vi.stubGlobal('fetch', stubFetch(consoleRoutes()))
@@ -310,7 +387,7 @@ describe('backend-task', () => {
     // 缺 kbName:回退用 kbId,202
     const noName = stubResponse()
     await route.handler(
-      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "kbId": "kb-1"}')),
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "kbId": "kb-1", "processInstanceId": "pi-1"}')),
       noName,
     )
     await flushTasks()
@@ -318,7 +395,7 @@ describe('backend-task', () => {
     // 非法 kbId → 400
     const badId = stubResponse()
     await route.handler(
-      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "kbId": 42}')),
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "kbId": 42, "processInstanceId": "pi-1"}')),
       badId,
     )
     await flushTasks()
@@ -326,7 +403,7 @@ describe('backend-task', () => {
     // 孤儿 kbName → 400
     const orphanName = stubResponse()
     await route.handler(
-      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "kbName": "x"}')),
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "kbName": "x", "processInstanceId": "pi-1"}')),
       orphanName,
     )
     await flushTasks()
@@ -353,14 +430,14 @@ describe('backend-task', () => {
     const { route } = mount('{"a":1}')
     const bad = stubResponse()
     await route.handler(
-      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "  "}')),
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "  ", "processInstanceId": "pi-1"}')),
       bad,
     )
     await flushTasks()
     expect(bad.status).toBe(400)
     const badRefs = stubResponse()
     await route.handler(
-      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "skillRefs": [1]}')),
+      stubRequest('POST', '/api/backend/tasks', Buffer.from('{"prompt": "p", "skillRefs": [1], "processInstanceId": "pi-1"}')),
       badRefs,
     )
     await flushTasks()

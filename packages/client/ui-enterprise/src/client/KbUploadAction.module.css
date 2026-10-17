@@ -17,8 +17,9 @@
   opacity: 0;
 }
 
-/* 行 hover 才现身,与树本身的安静一致。 */
-.item:hover .action,
+/* 行 hover 才现身,与树本身的安静一致。行类名 hash 在 FilesBody 自己的
+   CSS module 里,跨模块不可达,经行上实际渲染的 data-files-entry 属性桥接。 */
+[data-files-entry='file']:hover .action,
 .action:focus-visible {
   opacity: 1;
 }

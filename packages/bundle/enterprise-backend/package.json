@@ -37,6 +37,7 @@
     "@deepseek-ai/cordis-plugin-logger-console": "workspace:~",
     "@deepseek-ai/dsh-backend-task": "workspace:*",
     "@deepseek-ai/dsh-host-webserver": "workspace:*",
+    "@deepseek-ai/dsh-instance-workspace": "workspace:*",
     "@deepseek-ai/dsh-knowledge": "workspace:*"
   },
   "peerDependencies": {

@@ -9,8 +9,8 @@
   en: 288c828613284bbd
   zh: 57cc37ed734c3f74
 /deepseek-ai-dsh-client-ui-enterprise/summary:
-  en: 9240636748bfec07
-  zh: 0ac190a2d7ef3b0b
+  en: 684b90b7067cb6b4
+  zh: 5fc910b741e0f686
 /deepseek-ai-dsh-client-ui-enterprise/table-of-contents:
   en: d152484eb41ac6b4
   zh: f14f34fce35a8d90
@@ -18,14 +18,17 @@
   en: 3ad4da11e5ef6c61
   zh: 64a14b3ba86fc33b
 /deepseek-ai-dsh-client-ui-enterprise/use-this-package/where-each-piece-mounts:
-  en: 00abe72e28c1de81
-  zh: adc6de2d24f91954
+  en: 0bdb1acd4f448138
+  zh: b9ec2d3e431608a7
 /deepseek-ai-dsh-client-ui-enterprise/understand-the-implementation:
   en: c75599b18254aa11
   zh: d31fae373d95d6a0
 /deepseek-ai-dsh-client-ui-enterprise/understand-the-implementation/slots-compose-the-workbench-orchestrates:
   en: 12c39569a5e3dc10
   zh: fe2c20b87dcf0718
+/deepseek-ai-dsh-client-ui-enterprise/understand-the-implementation/the-instance-workspace-rides-the-bound-task:
+  en: f2c3569846b745da
+  zh: 172fe341897358ba
 /deepseek-ai-dsh-client-ui-enterprise/understand-the-implementation/the-auth-gate-is-also-the-identity-pump:
   en: ddd55e113e7063a7
   zh: c53d802aabc988e7

@@ -44,13 +44,17 @@ import { PocketPairingExpired } from './pocket/PocketPairingExpired.tsx'
 import { createEnterpriseServicesAccess } from './enterprise-services-access.ts'
 import { KnowledgeWorkbench } from './knowledge-workbench.ts'
 import { buildKbDocsSource } from './kb-trigger-source.ts'
+import { buildInstanceWorkspaceSource } from './instance-trigger-source.ts'
 import { buildKbDocDecorator } from './kb-doc-decorator.tsx'
 import { TaskArchivePanel } from './TaskArchivePanel.tsx'
+import { INSTANCE_FILES_TAB_ID, INSTANCE_FILES_TAB_KIND } from './instance-files-tab.ts'
+import { InstanceFilesPanel } from './InstanceFilesPanel.tsx'
 import { TaskQueueSidebar } from './TaskQueueSidebar.tsx'
 import { KbChipsDock } from './KbChipsDock.tsx'
 import { KbPickerButton } from './KbPickerButton.tsx'
 import { KbUploadAction } from './KbUploadAction.tsx'
 import type { KbUploadInjected } from './KbUploadAction.tsx'
+import { InstanceUploadAction } from './InstanceUploadAction.tsx'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import {
   DeleteSessionConfirmDialog, DeleteSessionMenuItem, DeleteSessionRowButton, deleteArchivedSessionRequest,
@@ -89,6 +93,9 @@ export function apply(ctx: ClientContext): void {
   // 输入框 '@' 知识库文档触发源:待办会话候选 → 内联 chip(退订器由 effect 持有)。
   const inputTriggers = ctx.get('inputTriggers') as InputTriggerServiceContract
   ctx.effect(() => inputTriggers.registerSource(buildKbDocsSource({ workbench, knowledge })), 'ui-enterprise: @kbDocs source')
+
+  // 输入框 '@' 实例空间文件触发源:绑定待办的会话候选 → 纯文本插入(退订器由 effect 持有)。
+  ctx.effect(() => inputTriggers.registerSource(buildInstanceWorkspaceSource(workbench)), 'ui-enterprise: @instanceWorkspace source')
 
   // 右边栏卡死哨兵:按钮+面板一起消失的脱节状态自愈 + 证据日志(见
   // workbench.armStuckSentinel;自愈只恢复 frame 轨道,不碰 surface)。
@@ -144,6 +151,22 @@ export function apply(ctx: ClientContext): void {
     inject: () => ({ workbench }),
   }, TaskArchivePanel))
 
+  // 实例空间标签页,stage one:类型声明(extension 带,不注册 guide——仅
+  // 程序化打开,见 workbench.openTask/confirmPendingTaskWorkspace)。
+  ctx.effect(() => ctx.sidebarRightTabs.register({
+    id: INSTANCE_FILES_TAB_ID,
+    kind: INSTANCE_FILES_TAB_KIND,
+    priority: 'extension',
+    title: () => '实例空间',
+  }), 'ui-enterprise: instance-files tab type')
+
+  // 实例空间标签页,stage two:主体注册(keyed 座位,key=类型 id)。
+  ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
+    name: 'sidebar.right.pane.tab',
+    key: INSTANCE_FILES_TAB_ID,
+    inject: () => ({ workbench }),
+  }, InstanceFilesPanel))
+
   // 知识库选择器入口:输入框左侧(待办/已完成回执会话且应用已开通时渲染)。
   ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
     name: 'conversation.input.left',
@@ -167,6 +190,15 @@ export function apply(ctx: ClientContext): void {
     id: 'kb-upload',
     inject: () => ({ readWorkspaceFile }),
   }, KbUploadAction))
+
+  // 工作空间文件行「上传到实例空间」(树上云,design 2026-10-14 §5.3):
+  // 同 readBytes 读全文 → 代理 multipart 上传到流程实例云工作空间;仅绑定
+  // 待办的会话渲染按钮(组件内经 workbench 判定,未绑定返回 null)。
+  ctx.slots.inject('sidebar.files.entry.action', () => ctx.slots.register({
+    name: 'sidebar.files.entry.action',
+    id: 'instance-upload',
+    inject: () => ({ readWorkspaceFile, workbench }),
+  }, InstanceUploadAction))
 
   // 企业服务配置:settings.section 座位的聚合配置页(volatile 字段即时生效)。
   ctx.slots.inject('settings.section', () => ctx.slots.register({

@@ -89,6 +89,21 @@
       config:
         webConsoleBaseUrl: !!js process.env.WEB_CONSOLE_URL ?? 'http://127.0.0.1:8080'
 
+    # 流程实例云工作空间：本地 webserver 代理 /api/enterprise/workspace →
+    # web-console，会话绑定上报（任务会话→流程实例）与每回合 <instance_workspace>
+    # 注入，注册 workspace_list/read/write/upload/download/delete 工具；
+    # 员工端登录态 JWT 模式，serviceKey 保持空串（无人值守场景才需要）。
+    # toolMount boundSessions：工具不进全局注册表，仅在会话上报流程实例绑定后
+    # 按会话注入——未绑定实例的普通对话模型目录里没有 workspace_*（任务 6 修
+    # 水平越权，实例级闸门另由 web-console 参与人校验兜底）。
+    - id: instance-workspace
+      name: '@deepseek-ai/dsh-instance-workspace'
+      config:
+        webConsoleBaseUrl: !!js process.env.WEB_CONSOLE_URL ?? 'http://127.0.0.1:8080'
+        readMaxBytes: !!js Number(process.env.INSTANCE_WS_READ_MAX_BYTES ?? 262144)
+        uploadMaxBytes: !!js Number(process.env.INSTANCE_WS_UPLOAD_MAX_BYTES ?? 67108864)
+        toolMount: 'boundSessions'
+
     # 员工端 AI 对话发起流程：注册 dsh_process_list / dsh_process_start_form /
     # dsh_process_start 工具，服务端直连 web-console（发起身份 orgUnitId 由
     # 上下文身份块的多位置确认交互产生）。

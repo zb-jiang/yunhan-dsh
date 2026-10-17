@@ -25,6 +25,7 @@ The enterprise group hosts the employee-facing platform layer: auth endpoints ve
 |---------|------|
 | [`backend-task/`](backend-task/README.md) | Runs DSH backend tasks server-side: submits the interpolated node prompt to a backend profile and polls for the JSON result |
 | [`flowable-task-proxy/`](flowable-task-proxy/README.md) | Pure HTTP forwarding for Flowable task endpoints |
+| [`instance-workspace/`](instance-workspace/README.md) | Model-facing tools over the per-instance cloud workspace: file CRUD, the employee-side proxy routes, and the per-turn `<instance_workspace>` block |
 | [`kb-context/`](kb-context/README.md) | Injects a per-turn `<knowledge_base>` model-visible block fed by web-console knowledge-base reports |
 | [`knowledge/`](knowledge/README.md) | Knowledge-base lookup tool the model calls during enterprise sessions |
 | [`llm-access/`](llm-access/README.md) | LLM adapter forwarding already-assembled requests through the enterprise quota proxy |
@@ -36,6 +37,7 @@ The enterprise group hosts the employee-facing platform layer: auth endpoints ve
 | [`session-delete/`](session-delete/README.md) | Archived-session artifact deletion |
 | [`skill-sync/`](skill-sync/README.md) | Daemon pre-installing skills referenced by the employee's pending tasks into the local cache |
 | [`user-identity-context/`](user-identity-context/README.md) | Session-identity context: `ctx.currentUser` plus a per-turn model-visible identity block |
+| [`web-console-proxy/`](web-console-proxy/README.md) | Shared forwarder for the local webserver's employee-face prefix proxies to web-console (JWT attach, JSON 401/502) |
 
 -----
 

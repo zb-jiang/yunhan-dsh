@@ -66,7 +66,7 @@ flowable:
 
 # DSH 自定义配置
 # Spring Security 不在 yaml 中声明 oauth2.resourceserver;
-# 由 SecurityConfig 注册 JwtDecoder 用 JwtDecoders.fromIssuerLocation() 从认证中心 OpenID 端点自动拉取 JWKS
+# 由 SecurityConfig 注册 JwtDecoder 用 NimbusJwtDecoder.withIssuerLocation() 从认证中心 OpenID 端点自动拉取 JWKS
 dsh:
   supabase:
     # JWT issuer claim:发证方由部署决定(Supabase Auth / Casdoor / 客户 IdP,认证中心设计 D2)

@@ -1,9 +1,11 @@
 # The dsh-enterprise-backend bundle patch: server-side unattended backend
 # task runner over dsh-base (design 2026-09-14 §7.2). It mounts the webserver
 # (REST task endpoints consumed by flowable-engine's DshBackendTaskDelegate),
-# the backend-task plugin, and the knowledge plugin (kb_* tools over the
+# the backend-task plugin, the knowledge plugin (kb_* tools over the
 # web-console service-key endpoints; kbId arrives in each task payload from
-# the delegate); no browser UI and no employee-facing plugins.
+# the delegate), and the instance-workspace plugin (workspace_* tools over the
+# service-key endpoints; the instanceId arrives in each task payload and is
+# injected into the session prompt); no browser UI and no employee-facing plugins.
 # Each instance starts in its own working directory (the task workspace) with
 # LLM credentials from the normal settings/env plane; DSH_BACKEND_URL must be
 # the address flowable-engine and web-console can reach this instance on.
@@ -46,3 +48,14 @@
       config:
         webConsoleBaseUrl: !!js process.env.WEB_CONSOLE_URL ?? 'http://127.0.0.1:8080'
         serviceKey: !!js process.env.DSH_SERVICE_KEY ?? ''
+
+    # 实例云工作空间工具(workspace_list/read/write/upload/download/delete):无登录
+    # 身份,经服务密钥白名单端点(/api/backend/instances/*)访问 web-console;工具
+    # 路径重写由插件内 resolveAuth 完成,instanceId 由任务 payload 注入的上下文提供。
+    # toolMount global:每个 backend task 会话都是该实例的办理现场,工具常驻根注册表。
+    - id: instance-workspace
+      name: '@deepseek-ai/dsh-instance-workspace'
+      config:
+        webConsoleBaseUrl: !!js process.env.WEB_CONSOLE_URL ?? 'http://127.0.0.1:8080'
+        serviceKey: !!js process.env.DSH_SERVICE_KEY ?? ''
+        toolMount: 'global'

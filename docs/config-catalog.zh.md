@@ -388,7 +388,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-backend-task`
 
 - `inject`: `webServer` · `agents` · `sessions` · `agentDefaultModel` · `skills`
-- `source`: [`packages/enterprise/backend-task/src/index.ts:60`](../packages/enterprise/backend-task/src/index.ts)
+- `source`: [`packages/enterprise/backend-task/src/index.ts:63`](../packages/enterprise/backend-task/src/index.ts)
 
 ```ts config-catalog
 /** 插件配置,全部来自 enterprise-backend profile 的 cordis.yml config 段。 */
@@ -1563,6 +1563,44 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-host-webserver -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-instance-workspace -->
+<a id="deepseek-aidsh-instance-workspace"></a>
+
+## `@deepseek-ai/dsh-instance-workspace`
+
+- `inject`: `webServer` · `tools` · `agents`
+- `refs`: `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/enterprise/instance-workspace/src/index.ts:77`](../packages/enterprise/instance-workspace/src/index.ts)
+
+```ts config-catalog
+/** 插件配置,全部来自 backend profile 的 cordis.yml config 段。 */
+export interface Config {
+  /** web-console 基地址(协议+主机+端口,无路径);volatile:设置面板可改,即时生效。 */
+  webConsoleBaseUrl: Volatile<string>
+  /** workspace_read 返回内容上限(字节),超出截断并在结果中注明。 */
+  readMaxBytes: number
+  /** workspace_upload 本地文件读取上限(字节),超限拒绝上传。 */
+  uploadMaxBytes: number
+  /**
+   * 服务密钥(X-Service-Key):backend profile 无人值守模式的 web-console 认证
+   * 凭证,须与 web-console {@code dsh.service-key} 一致;enterprise profile 有
+   * 登录身份,JWT 优先,此项保持空串。两者皆无时工具调用报错。
+   */
+  serviceKey: string
+  /** 覆盖本地落盘根(workspace_upload/workspace_download);缺省用进程工作目录。 */
+  localRoot?: string
+  /**
+   * 工具挂载模式,必填(错配 fail loud):`global` 把六个 workspace_* 工具
+   * 注册在根工具注册表(backend profile,所有会话可见,行为与历史版本一致);
+   * `boundSessions` 不全局注册,仅在会话经 session-context 路由上报流程实例
+   * 绑定后,向该会话 agent 的 scoped 注册表逐个注入(enterprise 员工端,
+   * 未绑定实例的会话模型工具目录里没有 workspace_*)。
+   */
+  toolMount: 'global' | 'boundSessions'
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-instance-workspace -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-invariants -->
 <a id="deepseek-aidsh-invariants"></a>
@@ -4806,5 +4844,6 @@ export interface Config {
 | `@deepseek-ai/dsh-util-time` | — | [`packages/util/time/src/index.ts`](../packages/util/time/src/index.ts) |
 | `@deepseek-ai/dsh-util-values` | — | [`packages/util/values/src/index.ts`](../packages/util/values/src/index.ts) |
 | `@deepseek-ai/dsh-util-workspace-path` | — | [`packages/util/workspace-path/src/index.ts`](../packages/util/workspace-path/src/index.ts) |
+| `@deepseek-ai/dsh-web-console-proxy` | — | [`packages/enterprise/web-console-proxy/src/index.ts`](../packages/enterprise/web-console-proxy/src/index.ts) |
 | `@deepseek-ai/dsh-win32-process` | — | [`packages/subprocess/win32-process/src/index.ts`](../packages/subprocess/win32-process/src/index.ts) |
 <!-- END GENERATED config-catalog:library -->

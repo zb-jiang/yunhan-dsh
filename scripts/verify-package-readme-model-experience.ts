@@ -241,6 +241,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/enterprise/platform-user-console': { kind: 'none', reason: 'The provider verifies JWTs and reads governance records; it registers nothing model-facing.' },
   'packages/enterprise/session-delete': { kind: 'none', reason: 'Archived-session artifact deletion; it registers nothing model-facing.' },
   'packages/enterprise/skill-sync': { kind: 'indirect', reason: 'The cache-root provider delegates model rendering to dsh-tool-skill.' },
+  'packages/enterprise/web-console-proxy': { kind: 'none', reason: 'Shared HTTP forwarder over node:http types; it registers nothing model-facing.' },
   'packages/bundle/enterprise-backend': { kind: 'indirect', reason: 'The bundle is a patch-list carrier; each inserted row\'s package owns its model-facing behavior.' },
 }
 

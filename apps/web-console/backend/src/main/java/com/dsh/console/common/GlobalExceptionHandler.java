@@ -5,10 +5,12 @@ import com.dsh.console.knowledge.KbStorageException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.util.unit.DataSize;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -26,6 +28,14 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** multipart 全局单文件上限(MB),用于超限消息提示具体数值。 */
+    private final long multipartMaxFileMb;
+
+    public GlobalExceptionHandler(
+            @Value("${spring.servlet.multipart.max-file-size:64MB}") DataSize multipartMaxFileSize) {
+        this.multipartMaxFileMb = multipartMaxFileSize.toMegabytes();
+    }
 
     /** 业务异常:返回 400。 */
     @ExceptionHandler(IllegalArgumentException.class)
@@ -109,11 +119,12 @@ public class GlobalExceptionHandler {
                 "访问文档存储失败:" + e.getMessage())));
     }
 
-    /** 上传文件超过 multipart 上限:返回 400。 */
+    /** 上传文件超过 multipart 上限:返回 400,消息带具体上限数值。 */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUpload(MaxUploadSizeExceededException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.fail(ApiError.of("FILE_TOO_LARGE", "上传文件超过大小上限")));
+            .body(ApiResponse.fail(ApiError.of("FILE_TOO_LARGE",
+                "上传文件超过大小上限(单文件上限 " + multipartMaxFileMb + "MB)")));
     }
 
     /** 客户端已断开(页面刷新/跳转/请求取消):连接已断,响应体写不回去,只记一行无堆栈。 */

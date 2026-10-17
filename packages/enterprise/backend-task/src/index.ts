@@ -3,10 +3,12 @@
  *
  * The DSH backend profile mounts this plugin over dsh-base + webserver. It is
  * the automated counterpart of the employee-side user task: flowable-engine's
- * DshBackendTaskDelegate POSTs `{ prompt, skillRefs, kbId?, kbName? }` here
+ * DshBackendTaskDelegate POSTs
+ * `{ prompt, skillRefs, kbId?, kbName?, processInstanceId, taskId }` here
  * (kbId/kbName = the workflow's application knowledge base, resolved by the
  * delegate over the web-console service-key endpoints; absent when the
- * application has no kb or resolution degraded), each task runs in
+ * application has no kb or resolution degraded; processInstanceId/taskId bind
+ * the task to the instance cloud workspace and the source node), each task runs in
  * its own non-interactive Agent session (one user message to quiescence, final
  * assistant text parsed as JSON), and the delegate polls the task to
  * ready/failed. Two daemons keep the instance integrated with web-console:
@@ -33,6 +35,7 @@ import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { SessionSeq } from '@deepseek-ai/dsh-session'
 import type { Session, SessionEvent, SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
 import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
+import { renderInstanceWorkspaceContextText } from '@deepseek-ai/dsh-instance-workspace'
 import type { SkillProviderControl } from '@deepseek-ai/dsh-skill'
 import { FileSystemSkillProvider } from '@deepseek-ai/dsh-skill-filesystem'
 import { fetchSkillhubManifest, installSkillZip, type SkillHubItem } from '@deepseek-ai/dsh-skill-sync'
@@ -134,6 +137,15 @@ interface BackendTaskKb {
   readonly kbName: string
 }
 
+/**
+ * payload 必填携带的实例上下文(设计 2026-10-14 §6.1):实例空间共享注入与
+ * 来源节点审计的锚点;processInstanceId 为空时提交直接 400(fail loud)。
+ */
+interface BackendTaskInstance {
+  readonly processInstanceId: string
+  readonly taskId: string | null
+}
+
 /** 读取并解析请求体 JSON;坏 JSON 抛错由调用方映射 400。 */
 function readJsonBody(req: import('node:http').IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -214,9 +226,11 @@ interface SessionDeps {
  * 注入(预装 skill 已由同步 daemon 放进工作空间,模型用 skill 工具装载);
  * kb 非 undefined 时在其上再注入 kb 上下文块(renderKbContextText,与员工端
  * kb-context 同一格式),模型据此用 kb_search / kb_list / kb_read 调用 knowledge
- * 插件的 kb_* 工具(kbId 同时是工具侧服务密钥访问的范围锚点)。结算:turn 错误 /
- * 无合法 JSON / 运行异常都置 failed,delegate 侧按重试处理;成功置 ready 并携带
- * 解析后的 JSON。
+ * 插件的 kb_* 工具(kbId 同时是工具侧服务密钥访问的范围锚点);实例上下文
+ * 必填,注入实例云工作空间块(renderInstanceWorkspaceContextText),模型据此
+ * 用 instance-workspace 插件的 workspace_* 工具读写实例共享空间。结算:turn
+ * 错误 / 无合法 JSON / 运行异常都置 failed,delegate 侧按重试处理;成功置
+ * ready 并携带解析后的 JSON。
  */
 async function runBackendTask(
   ctx: Context,
@@ -225,6 +239,7 @@ async function runBackendTask(
   prompt: string,
   skillRefs: readonly string[],
   kb: BackendTaskKb | undefined,
+  instance: BackendTaskInstance,
 ): Promise<void> {
   // Loader siblings mount concurrently. Await the complete application before
   // creating an Agent so its scoped tools and adapters are not half-composed.
@@ -236,6 +251,10 @@ async function runBackendTask(
   if (skillRefs.length > 0) {
     sections.push(`本任务可使用以下技能(skill): ${skillRefs.join('、')}。需要时先装载对应 skill 再使用。`)
   }
+  sections.push(renderInstanceWorkspaceContextText({
+    processInstanceId: instance.processInstanceId,
+    taskId: instance.taskId,
+  }))
   sections.push(prompt)
   const promptText = sections.join('\n\n')
   const selection = deps.defaultModel.currentSelection()
@@ -286,8 +305,10 @@ async function runBackendTask(
 /**
  * REST 任务端点分发。
  *
- * <p>`POST /api/backend/tasks` body `{ prompt, skillRefs?, kbId?, kbName? }` →
- * `202 { taskId }`;`GET /api/backend/tasks/{taskId}` →
+ * <p>`POST /api/backend/tasks` body
+ * `{ prompt, skillRefs?, kbId?, kbName?, processInstanceId, taskId? }` →
+ * `202 { taskId }`(processInstanceId 必填,taskId 可空);`GET
+ * /api/backend/tasks/{taskId}` →
  * `{ taskId, status, result?, error? }`(ready 时 result 为解析后的 JSON 对象)。
  */
 async function dispatchTasks(
@@ -304,15 +325,26 @@ async function dispatchTasks(
     let prompt: string
     let skillRefs: readonly string[] = []
     let kb: BackendTaskKb | undefined
+    let instance: BackendTaskInstance
     try {
       const parsed = await readJsonBody(req) as {
         prompt?: unknown
         skillRefs?: unknown
         kbId?: unknown
         kbName?: unknown
+        processInstanceId?: unknown
+        taskId?: unknown
       }
       if (typeof parsed.prompt !== 'string' || parsed.prompt.trim() === '') {
         throw new Error('prompt 必须为非空字符串')
+      }
+      // 实例上下文必填(设计 2026-10-14 §6.1):旧引擎 payload 未携带时直接 400。
+      if (typeof parsed.processInstanceId !== 'string' || parsed.processInstanceId.trim() === '') {
+        throw new Error('processInstanceId 必须为非空字符串')
+      }
+      if (parsed.taskId !== undefined && parsed.taskId !== null
+        && (typeof parsed.taskId !== 'string' || parsed.taskId.trim() === '')) {
+        throw new Error('taskId 提供时必须为非空字符串')
       }
       if (parsed.skillRefs !== undefined) {
         if (!Array.isArray(parsed.skillRefs)
@@ -334,13 +366,17 @@ async function dispatchTasks(
         throw new Error('kbName 不可脱离 kbId 单独出现')
       }
       prompt = parsed.prompt
+      instance = {
+        processInstanceId: parsed.processInstanceId,
+        taskId: parsed.taskId === undefined || parsed.taskId === null ? null : parsed.taskId,
+      }
     } catch (error) {
       sendJson(res, 400, { error: error instanceof Error ? error.message : String(error) })
       return
     }
     const task: BackendTaskState = { id: randomUUID(), status: 'running' }
     tasks.set(task.id, task)
-    void runBackendTask(ctx, deps, task, prompt, skillRefs, kb)
+    void runBackendTask(ctx, deps, task, prompt, skillRefs, kb, instance)
       .catch((error: unknown) => {
         task.status = 'failed'
         task.error = error instanceof Error ? error.message : String(error)

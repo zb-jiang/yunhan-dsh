@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 认证中心 JWT 验证配置。
  *
  * <p>绑定 yaml 中 {@code dsh.supabase.*} 字段。
- * 使用 {@link org.springframework.security.oauth2.jwt.JwtDecoders#fromIssuerLocation}
+ * 使用 {@link org.springframework.security.oauth2.jwt.NimbusJwtDecoder#withIssuerLocation}
  * 从认证中心 OpenID 发现端点自动拉取 JWKS 验证 ES256/RS256 签名,
  * 不再本地配置 secret。
  * 发证方由部署决定(Supabase Auth / Casdoor / 客户 IdP,认证中心设计 D2):

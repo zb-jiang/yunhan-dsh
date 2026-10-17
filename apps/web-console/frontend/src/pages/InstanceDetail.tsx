@@ -36,6 +36,7 @@ import { workflowsApi, type WorkflowDefinitionDto } from '../api/workflows'
 import { useAuth } from '../auth/AuthContext'
 import BpmnHistoryViewer from '../bpmn/BpmnHistoryViewer'
 import { SubmitModal } from '../components/SubmitModal'
+import { InstanceWorkspacePanel } from './InstanceWorkspacePanel'
 
 /** 历史活动类型 → 中文名(路径图时间线展示用;未映射的类型原样显示)。 */
 const ACTIVITY_TYPE_TEXT: Record<string, string> = {
@@ -912,6 +913,8 @@ function InstanceDetailView({ instanceId }: { instanceId: string }) {
         size="small"
         tableLayout="fixed"
       />
+
+      <InstanceWorkspacePanel instanceId={instanceId} />
 
       <SubmitModal
         title="终止实例"

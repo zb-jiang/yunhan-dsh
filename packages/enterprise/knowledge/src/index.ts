@@ -21,10 +21,10 @@
  * @module @deepseek-ai/dsh-knowledge
  */
 
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import { proxyRequest, validateBaseUrl } from '@deepseek-ai/dsh-web-console-proxy'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-user-identity-context'
 
@@ -132,99 +132,6 @@ interface KbDocumentTextDto {
   name: string
   textContent: string | null
   parseStatus: string
-}
-
-/** JSON 响应辅助函数。 */
-function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  const json = JSON.stringify(body)
-  res.writeHead(status, {
-    'content-type': 'application/json; charset=utf-8',
-    'content-length': Buffer.byteLength(json),
-  })
-  res.end(json)
-}
-
-/** 读取并缓冲整个请求体(multipart 上传与 JSON 提交都是有限体,整体转发)。 */
-async function readBody(req: IncomingMessage): Promise<Buffer> {
-  const chunks: Buffer[] = []
-  for await (const chunk of req) {
-    chunks.push(Buffer.from(chunk as Uint8Array))
-  }
-  return Buffer.concat(chunks)
-}
-
-/** 校验基地址形状(协议+主机),无效返回错误消息。 */
-function validateBaseUrl(value: string): string | undefined {
-  try {
-    new URL(value)
-    return undefined
-  } catch {
-    return `invalid base URL: ${value}`
-  }
-}
-
-/**
- * 把请求转发到 web-console(附当前登录 JWT),上游响应(状态码 + 体)原样回写。
- *
- * <p>未登录回 401;webConsoleBaseUrl 配置无效或 web-console 不可达回 JSON 502,
- * 浏览器侧永远不解析 HTML 错误页。
- *
- * @param options - 运行选项
- * @param localPrefix - 本地路由前缀(webserver 路由保证命中)
- * @param upstreamPrefix - web-console 侧前缀
- * @param req - 浏览器请求
- * @param res - 浏览器响应
- */
-async function proxyRequest(
-  options: KnowledgeOptions,
-  localPrefix: string,
-  upstreamPrefix: string,
-  req: IncomingMessage,
-  res: ServerResponse,
-): Promise<void> {
-  /* v8 ignore next -- `?? '/'` arm: node:http always sets url on server
-  requests; the field is only optional on the client-side IncomingMessage type */
-  const incoming = new URL(req.url ?? '/', 'http://localhost')
-  const token = options.token()
-  if (token === undefined) {
-    sendJson(res, 401, { error: '未登录,无法访问企业知识库' })
-    return
-  }
-  // volatile 配置:每次转发读取当前值,设置面板修改后无需重载即生效
-  const webConsoleBaseUrl = options.webConsoleBaseUrl().replace(/\/+$/, '')
-  if (validateBaseUrl(webConsoleBaseUrl) !== undefined) {
-    sendJson(res, 502, { error: `knowledge: webConsoleBaseUrl 配置无效: ${webConsoleBaseUrl}` })
-    return
-  }
-  const suffix = incoming.pathname.slice(localPrefix.length)
-  const target = new URL(`${upstreamPrefix}${suffix}${incoming.search}`, webConsoleBaseUrl)
-  const headers: Record<string, string> = { authorization: `Bearer ${token}` }
-  const contentType = req.headers['content-type']
-  // content-type is declared `string | undefined` on IncomingHttpHeaders —
-  // the array form never occurs for it.
-  if (typeof contentType === 'string') {
-    headers['content-type'] = contentType
-  }
-  const hasBody = req.method !== 'GET' && req.method !== 'HEAD'
-  let upstream: Response
-  try {
-    /* v8 ignore next -- node:http always sets method on server requests. */
-    upstream = await fetch(target, {
-      method: req.method ?? 'GET',
-      headers,
-      // Copy into a plain Uint8Array: Buffer<ArrayBufferLike> is not assignable
-      // to the DOM BodyInit's ArrayBuffer-backed view union.
-      body: hasBody ? new Uint8Array(await readBody(req)) : null,
-    })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    sendJson(res, 502, { error: `web-console 不可达(${webConsoleBaseUrl}): ${message}` })
-    return
-  }
-  const responseContentType = upstream.headers.get('content-type') ?? 'application/json; charset=utf-8'
-  const body = Buffer.from(await upstream.arrayBuffer())
-  res.writeHead(upstream.status, { 'content-type': responseContentType, 'content-length': body.length })
-  res.end(body)
 }
 
 /**
@@ -364,7 +271,20 @@ export function apply(ctx: Context, config: Config): void {
         ctx.webServer.register({
           kind: 'prefix',
           path: local,
-          handler: (req, res) => proxyRequest(options, local, upstream, req, res),
+          // 转发器由 @deepseek-ai/dsh-web-console-proxy 共享;baseUrl/token 与
+          // 工具面同源,volatile 基地址与登录态每次转发实时读取。
+          handler: (req, res) =>
+            proxyRequest(
+              {
+                baseUrl: options.webConsoleBaseUrl,
+                token: options.token,
+                unauthorizedMessage: '未登录,无法访问企业知识库',
+              },
+              local,
+              upstream,
+              req,
+              res,
+            ),
         }),
       `knowledge: ${local} prefix route`,
     )

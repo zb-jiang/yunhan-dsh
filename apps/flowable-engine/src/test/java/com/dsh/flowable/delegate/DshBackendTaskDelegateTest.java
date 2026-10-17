@@ -56,6 +56,9 @@ class DshBackendTaskDelegateTest {
     /** 桩捕获:透传的 skillRefs。 */
     private final AtomicReference<List<String>> capturedSkillRefs = new AtomicReference<>(List.of());
 
+    /** 桩捕获:随 payload 下发的流程实例 id(实例空间关联键)。 */
+    private final AtomicReference<String> capturedProcessInstanceId = new AtomicReference<>();
+
     /** 桩捕获:随 payload 下发的任务知识库(null = 未开通/降级)。 */
     private final AtomicReference<WebConsoleKbClient.KbRef> capturedKb =
         new AtomicReference<>();
@@ -90,10 +93,12 @@ class DshBackendTaskDelegateTest {
             @Override
             public Map<String, Object> execute(String baseUrl, String prompt,
                                                 List<String> skillRefs, String activityId,
+                                                String processInstanceId,
                                                 WebConsoleKbClient.KbRef kb) {
                 assertThat(baseUrl).isEqualTo("http://127.0.0.1:3190");
                 capturedPrompt.set(prompt);
                 capturedSkillRefs.set(skillRefs);
+                capturedProcessInstanceId.set(processInstanceId);
                 capturedKb.set(kb);
                 return stubResult;
             }
@@ -170,6 +175,8 @@ class DshBackendTaskDelegateTest {
         // 插值:已声明变量值替换,缺失值→「空」(与 user task 同语义)
         assertThat(capturedPrompt.get()).isEqualTo("基于 工单#42 与缺失 空 生成");
         assertThat(capturedSkillRefs.get()).containsExactly("demo-skill");
+        // 实例空间关联键:delegate 传真实流程实例 id(design 2026-10-14 任务2)
+        assertThat(capturedProcessInstanceId.get()).isEqualTo(instance.getId());
         assertThat(runtimeService.getVariable(instance.getId(), "reportSummary"))
             .isEqualTo("摘要文本");
         // array 整体覆盖写(不做 user task 多实例 append 聚合)

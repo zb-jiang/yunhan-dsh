@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-client-ui-enterprise` 是企业工作台的浏览器侧半边：一个以 Supabase 登录与审批状态为闸门、罩住整个外壳的认证浮层，一个挂进原生侧栏导航的待办队列侧栏（待办与已完成两组），以及右侧栏中的任务档案标签页。首次点击待办会打开显式的工作空间选择器，创建专属会话并预填节点 prompt，且不覆盖已编辑内容；提交经映射对话框路由并记录回执。知识库选择器、chips、'@' 触发、上传动作、服务设置与已归档会话删除补全了整个界面。
+`dsh-client-ui-enterprise` 是企业工作台的浏览器侧半边：以 Supabase 登录与审批状态为闸门的认证浮层、侧栏中的待办/已完成任务队列，以及任务档案标签页。点击待办打开工作空间选择器、创建专属会话、预填节点 prompt 且不覆盖已编辑内容，提交经映射对话框路由并记录回执。知识库选择器、chips、'@' 触发、上传动作、服务设置与会话删除补全界面。绑定待办还能使用实例的云工作空间：实例空间标签页（预览、下载、删除）、工作空间树上的「上传到实例空间」，以及实例文件 '@' 源。
 
 ## 目录
 
@@ -35,8 +35,10 @@ kind: "package-reference"
 | `shell.overlay` | PocketPairingExpired | 手机配对失效页：连接断开后经代理闸门探测，配对被撤销/失效、局域网关闭或代理停止应答（总开关关闭/电脑关机）时盖住整帧；探测带短超时（对已死监听端口的 TCP 失败在真实网络里可挂数十秒），停止应答的失效页会持续轮询，代理恢复后自动消失，其余结论为终态（仅手机端经代理可达，PC 直连不触发） |
 | `sidebar.nav` | TaskQueueSidebar | 原生侧栏 enterprise 分支中的待办 + 已完成队列 |
 | `sidebar.right.pane.tab` | TaskArchivePanel | 档案标签页（两阶段：类型声明 + keyed 主体） |
+| `sidebar.right.pane.tab` | InstanceFilesPanel | 实例空间标签页（两阶段；对绑定待办的会话程序化打开）：流程实例的共享云文件树，支持预览、下载、删除 |
 | `conversation.input.left` / `conversation.input.dock` | KbPickerButton / KbChipsDock | 知识文档选择入口与已选文档 chips |
 | `sidebar.files.entry.action` | KbUploadAction | 文件行级「上传到知识库」 |
+| `sidebar.files.entry.action` | InstanceUploadAction | 文件行级「上传到实例空间」（仅绑定待办的会话） |
 | `settings.section` | EnterpriseServicesSection | 企业服务配置聚合页 |
 | 会话菜单 / 行 / 浮层 | DeleteSession 三件套 | 已归档会话删除入口与确认对话框 |
 
@@ -53,6 +55,10 @@ kind: "package-reference"
 ### Slots 组合；工作台编排
 
 一个 `EnterpriseWorkbench` 在 apply 中构造，经各占据者的 inject 分发（[src/client/index.ts](src/client/index.ts)）。注册落点在其他包声明的座位里，因此走 `ctx.slots.inject`，并在声明者挂载后才注册；档案标签页分两阶段注册类型与主体。
+
+### 实例空间跟着绑定待办走
+
+绑定待办的流程实例从工作台绑定关系解析（响应式 helper 在 [src/client/instance-files-tab.ts](src/client/instance-files-tab.ts)）。实例空间标签页列出共享云工作空间：预览把文件拉到会话 cwd 下的预览缓存（文件查看器只认会话工作空间内的文件），下载拉到会话 cwd 下同名路径（目标已存在时先询问再覆盖），删除经确认后移除云端文件。工作空间文件树上的上传动作经 Remote `readBytes` 读本地文件全文，按可编辑的相对路径上传。'@' 触发源插入纯文本 `@实例空间/<relPath>`——无 chip、无 codec，模型收到字面路径。绑定上报（`POST api/enterprise/workspace/session-context`）在待办确认工作空间时发出，页面刷新后重放，webserver 内存中的会话→实例映射由此自愈。
 
 ### 认证门同时是身份泵
 

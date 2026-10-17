@@ -55,7 +55,9 @@ public class DshBackendClient {
      * @param baseUrl   backend profile 实例 URL(协议+主机+端口)
      * @param prompt    插值后的 userPrompt
      * @param skillRefs 节点引用的 skill 清单
-     * @param activityId 节点 id(日志定位)
+     * @param activityId 节点 id(日志定位;payload 的 taskId,可空)
+     * @param processInstanceId 流程实例 id(payload 关联键,实例空间按它定位;
+     *                          可空,兼容手工构造的测试场景)
      * @param kb        任务知识库(可为 null:应用未开通知识库或解析降级,
      *                  非 null 时 payload 附带 kbId/kbName 供 backend profile
      *                  注入 kb 上下文并圈定 kb_* 工具范围)
@@ -65,14 +67,16 @@ public class DshBackendClient {
      */
     public Map<String, Object> execute(String baseUrl, String prompt,
                                         List<String> skillRefs, String activityId,
+                                        String processInstanceId,
                                         WebConsoleKbClient.KbRef kb) {
-        String taskId = submit(baseUrl, prompt, skillRefs, activityId, kb);
+        String taskId = submit(baseUrl, prompt, skillRefs, activityId, processInstanceId, kb);
         return pollUntilReady(baseUrl, taskId, activityId);
     }
 
     /** 提交任务:POST /api/backend/tasks → 202 { taskId }。 */
     private String submit(String baseUrl, String prompt,
                            List<String> skillRefs, String activityId,
+                           String processInstanceId,
                            WebConsoleKbClient.KbRef kb) {
         String url = baseUrl + "/api/backend/tasks";
         HttpHeaders headers = new HttpHeaders();
@@ -80,6 +84,10 @@ public class DshBackendClient {
         Map<String, Object> payload = new HashMap<>();
         payload.put("prompt", prompt == null ? "" : prompt);
         payload.put("skillRefs", skillRefs == null ? List.of() : skillRefs);
+        // 实例空间关联键(design 2026-10-14 任务2):backend profile 据此定位实例空间;
+        // taskId 取节点 id(可空),未升级的 backend profile 忽略这两个新字段
+        payload.put("processInstanceId", processInstanceId);
+        payload.put("taskId", activityId);
         if (kb != null) {
             payload.put("kbId", kb.kbId());
             payload.put("kbName", kb.kbName());

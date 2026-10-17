@@ -41,6 +41,10 @@ import org.springframework.stereotype.Component;
  * 所属工程的知识库,kb 随 payload(kbId/kbName)下发,backend profile 据此注入
  * kb 上下文并圈定 kb_* 工具;未开通/解析降级为 null,payload 不带 kb 字段。
  *
+ * <p>实例空间关联(2026-10-14 任务2):payload 另带 processInstanceId(流程实例 id)
+ * 与 taskId(节点 id),backend profile 据此读写该实例的云工作空间;旧 profile
+ * 未升级时忽略这两个字段,不影响既有流程。
+ *
  * <p>任何失败(HTTP 不通/超时/failed/JSON 不合法/映射失败)抛异常,交给 async job
  * 按 {@code flowable:failedJobRetryTimeCycle} 重试;重试耗尽走异常边界事件。
  */
@@ -94,7 +98,8 @@ public class DshBackendTaskDelegate implements JavaDelegate {
         long start = System.nanoTime();
         Map<String, Object> result;
         try {
-            result = client.execute(profileUrl, prompt, props.skillRefs(), activityId, kb);
+            result = client.execute(profileUrl, prompt, props.skillRefs(), activityId,
+                execution.getProcessInstanceId(), kb);
         } catch (RuntimeException e) {
             meterRegistry.timer("dsh.backend.task", "outcome", "failed")
                 .record(System.nanoTime() - start, TimeUnit.NANOSECONDS);

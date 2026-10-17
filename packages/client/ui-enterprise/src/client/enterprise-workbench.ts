@@ -39,6 +39,8 @@ import type { UiWorkspace } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { completeTask, ensureSkills, getCompletedTasks, getMyTasks } from './task-api.ts'
 import type { CompletedTask, Task } from './task-api.ts'
+import { INSTANCE_FILES_TAB_KIND } from './instance-files-tab.ts'
+import { reportSessionWorkspaceContext } from './instance-workspace-api.ts'
 import { reportSessionKb, type SessionKbEntry } from './kb-session-report.ts'
 
 /**
@@ -229,7 +231,12 @@ export class EnterpriseWorkbench {
    * 创建(座位渲染才创建),此时直接调用是静默 no-op——等 mounted 发布
    * 目标会话后重放一次。undefined = 无待补开。
    */
-  private archiveReplay: { target: SessionId | undefined; unsubscribe(): void } | undefined
+  private archiveReplay: {
+    target: SessionId | undefined
+    /** 补开序列是否含实例空间标签页(与发起次 openArchiveTab 的实参一致)。 */
+    withInstanceFiles: boolean
+    unsubscribe(): void
+  } | undefined
   /**
    * 导航序号(single-flight):openTask 的 ensureSkillsReady 与建会话是
    * 异步缺口,期间用户的新点击(待办/已完成/确认)应使旧点击的续跑作废,
@@ -279,6 +286,8 @@ export class EnterpriseWorkbench {
       })
       // 任务列表就绪后重放持久绑定的会话归属:覆盖初始化与 webserver 重启自愈。
       this.replaySessionKbReports()
+      // 实例空间绑定同样重放(仅进行中绑定;pull 端点与每轮注入据此自愈)。
+      this.replaySessionWorkspaceReports()
     } catch (e) {
       this.tasks.update((draft) => {
         draft.loading = false
@@ -316,7 +325,7 @@ export class EnterpriseWorkbench {
       this.tasks.update((draft) => { draft.prefillNotice = prefillNotice })
       this.note(`openTask ${task.id} -> session ${sessionId}`)
       this.deps.uiWorkspace.openSession(sessionId)
-      this.openArchiveTab(sessionId)
+      this.openArchiveTab(sessionId, true)
       return
     }
     // 未绑定(首次点击,或持久绑定对应的会话已不存在):交给员工显式
@@ -338,6 +347,7 @@ export class EnterpriseWorkbench {
     if (sessionId === undefined) return
     this.bind(task.id, sessionId)
     this.reportSessionApp(sessionId, task.applicationId)
+    this.reportSessionWorkspace(sessionId, task.processInstanceId)
     const prefillNotice = this.prefillPrompt(task, sessionId)
     this.tasks.update((draft) => {
       // 只清自己置入的弹窗任务:等待建会话期间用户可能又点击了其它未绑定
@@ -350,7 +360,7 @@ export class EnterpriseWorkbench {
     if (seq !== this.navigationSeq) return
     this.note(`confirm ${task.id} -> session ${sessionId}`)
     this.deps.uiWorkspace.openSession(sessionId)
-    this.openArchiveTab(sessionId)
+    this.openArchiveTab(sessionId, true)
   }
 
   /** 员工取消"选择工作空间"弹窗:清空待确认任务,不产生会话与绑定。 */
@@ -424,8 +434,18 @@ export class EnterpriseWorkbench {
       // openArchiveTab(undefined)(会把档案标签写进旧会话),直接武装补开,
       // 新会话挂载后档案标签落到新会话表面。
       this.deps.uiWorkspace.startSession()
-      this.armArchiveReplay(undefined)
+      this.armArchiveReplay(undefined, false)
     }
+  }
+
+  /**
+   * 打开目标会话的实例空间标签页(树上云上传成功后的「打开实例空间」跳转)。
+   * 调用场景是用户正看着该会话的文件标签页,座位必然已挂载、openTabIn
+   * 必然落地(无 openArchiveTab 的时序缺口)。
+   * @param sessionId - 目标会话(即当前文件标签页所在会话)。
+   */
+  openInstanceFilesTab(sessionId: SessionId): void {
+    this.archiveTabPort.openTabIn(sessionId, INSTANCE_FILES_TAB_KIND)
   }
 
   /**
@@ -446,13 +466,17 @@ export class EnterpriseWorkbench {
    *
    * @param target - 要显示档案栏的会话;undefined 表示落到当前已挂载会话
    *   (只读档案路径:不切换会话,当前会话即可)。
+   * @param withInstanceFiles - 是否同时打开实例空间标签页(绑定待办的会话为
+   *   true:先开实例空间、后开档案,后开者保持激活——进入待办默认看档案);
+   *   只读档案与已完成会话路径保持 false,实例空间标签页只在进行中绑定出现。
    */
-  private openArchiveTab(target: SessionId | undefined): void {
+  private openArchiveTab(target: SessionId | undefined, withInstanceFiles = false): void {
     const mounted = this.deps.sidebarRight.mounted.getSnapshot()
     if (target !== undefined) {
       this.note(`archiveTab target=${target} mounted=${mounted ?? 'none'}`)
+      if (withInstanceFiles) this.archiveTabPort.openTabIn(target, INSTANCE_FILES_TAB_KIND)
       this.archiveTabPort.openTabIn(target, ARCHIVE_TAB_KIND)
-      this.armArchiveReplay(target)
+      this.armArchiveReplay(target, withInstanceFiles)
       return
     }
     // 只读档案路径:落到当前挂载的会话;尚无挂载会话时等第一个座位发布。
@@ -462,7 +486,7 @@ export class EnterpriseWorkbench {
       return
     }
     this.note('archiveTab read-only awaiting first seat')
-    this.armArchiveReplay(undefined)
+    this.armArchiveReplay(undefined, false)
   }
 
   /**
@@ -474,8 +498,9 @@ export class EnterpriseWorkbench {
    * 会话一直不挂载时,订阅静默闲置:仅在 mounted 恰好变成该会话时才补开,
    * 而那正是当初点击想要的语义。
    */
-  private armArchiveReplay(target: SessionId | undefined): void {
-    if (this.archiveReplay !== undefined && this.archiveReplay.target === target) return
+  private armArchiveReplay(target: SessionId | undefined, withInstanceFiles: boolean): void {
+    if (this.archiveReplay !== undefined && this.archiveReplay.target === target
+      && this.archiveReplay.withInstanceFiles === withInstanceFiles) return
     if (this.archiveReplay !== undefined) this.note(`replay replace ${String(this.archiveReplay.target)} -> ${target ?? 'any'}`)
     this.archiveReplay?.unsubscribe()
     const mounted = this.deps.sidebarRight.mounted
@@ -487,9 +512,11 @@ export class EnterpriseWorkbench {
       unsubscribe()
       this.note(`replay fire target=${target ?? 'any'} mounted=${now}`)
       // 此刻目标会话的座位已挂载,store 实例必已创建,openTabIn 必然落地。
+      // 与发起次同序:先实例空间、后档案(后开者激活)。
+      if (withInstanceFiles) this.archiveTabPort.openTabIn(now, INSTANCE_FILES_TAB_KIND)
       this.archiveTabPort.openTabIn(now, ARCHIVE_TAB_KIND)
     })
-    this.archiveReplay = { target, unsubscribe }
+    this.archiveReplay = { target, withInstanceFiles, unsubscribe }
   }
 
   /** SidebarRight 控制器的 Tab 域端口(结构化断言;见 SidebarRightTabDomainPort)。 */
@@ -816,6 +843,43 @@ export class EnterpriseWorkbench {
     if (this.reportedSessionApps.get(sessionId) === applicationId) return
     this.reportedSessionApps.set(sessionId, applicationId)
     reportSessionKb([{ sessionId, applicationId }])
+  }
+
+  /** 已上报的会话→流程实例绑定(去重;值不变不重发)。 */
+  private readonly reportedSessionWorkspaces = new Map<string, string>()
+
+  /**
+   * 上报单条会话→流程实例绑定到本地 instance-workspace 插件(值不变时跳过;
+   * 失败静默自愈:每轮实例空间注入与 pull 端点的 cwd 解析据此路由)。
+   */
+  private reportSessionWorkspace(sessionId: SessionId, processInstanceId: string): void {
+    if (this.reportedSessionWorkspaces.get(sessionId) === processInstanceId) return
+    this.reportedSessionWorkspaces.set(sessionId, processInstanceId)
+    reportSessionWorkspaceContext(sessionId, processInstanceId)
+  }
+
+  /**
+   * 重放进行中绑定的会话→流程实例上报(初始化与每次刷新后;webserver 内存
+   * 映射重启丢失后自愈)。已完成会话不重放:提交后无新回合,不注入也不开
+   * 实例空间标签页。
+   */
+  private replaySessionWorkspaceReports(): void {
+    const { taskToSession } = this.bindings.getSnapshot()
+    for (const [taskId, sessionId] of Object.entries(taskToSession)) {
+      // 列表暂缺的任务(瞬时抖动)跳过不报,下一条 task 到达时重放补齐。
+      const task = this.tasks.getSnapshot().items.find(item => item.id === taskId)
+      if (task === undefined) continue
+      this.reportSessionWorkspace(sessionId, task.processInstanceId)
+    }
+  }
+
+  /**
+   * 会话的工作目录(树上云默认目标 relPath、预览 dsh-resource 地址共用)。
+   * @param sessionId - 目标会话。
+   * @returns 会话 cwd;会话不在列表时 undefined。
+   */
+  cwdOfSession(sessionId: SessionId): string | undefined {
+    return this.deps.sessions.list.getSnapshot().byId[sessionId]?.cwd
   }
 
   /**

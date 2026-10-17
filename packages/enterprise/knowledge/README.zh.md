@@ -60,7 +60,7 @@ kind: "package-reference"
 
 ### 两个入口，一个上游
 
-浏览器页面（工作台知识库选择器、工作区上传）只经本地 webserver 访问 web-console：前缀路由 `/api/enterprise/kb` 与 `/api/enterprise/apps` 转发方法、请求体、content-type 与登录员工的 JWT，并把上游状态码与响应体原样回写。上游不可达或配置无效时以 JSON 502 应答，绝不让浏览器解析 HTML 错误页。
+浏览器页面（工作台知识库选择器、工作区上传）只经本地 webserver 访问 web-console：前缀路由 `/api/enterprise/kb` 与 `/api/enterprise/apps` 转发方法、请求体、content-type 与登录员工的 JWT，并把上游状态码与响应体原样回写。上游不可达或配置无效时以 JSON 502 应答，绝不让浏览器解析 HTML 错误页。转发器本身是共享模块 `@deepseek-ai/dsh-web-console-proxy`，本包与 instance-workspace 插件共同消费。
 
 ### 逐次调用的认证
 

@@ -14,7 +14,7 @@ java -jar .\target\dsh-flowable-engine-0.1.0-SNAPSHOT.jar --server.port=8090
 ---------------------------------------------------------------------------------------------------------------
 
 启动web console
-$env:SSO_PROVIDER="casdoor"
+$env:SSO_PROVIDER="supabase"
 # SSO_PROVIDER为casdoor时，下面的3个SSO_*环境变量才需要设置，切回 supabase 时SSO_ISSUER必须删(Remove-Item Env:SSO_ISSUER)
 $env:SSO_ISSUER="http://47fcb251.r35.cpolar.top"            #cpolar 隧道域名,隧道重启会变,须与 Casdoor app.conf origin 一致
 $env:SSO_CLIENT_ID="4fb987a231c51fe6e215"          #与员工端可共用同一 client,redirect_uri 各自登记(web-console 填 http://localhost:8080/ 或 dev http://localhost:5173/)
@@ -31,6 +31,7 @@ $env:SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 $env:NEWAPI_BASE_URL="http://127.0.0.1:3000"
 $env:NEWAPI_SERVICE_TOKEN = "sk-m5f2Nu9vlSQfIgc5YBaQ06V8YPcDzmDks1jYbExj58Bh3RB0"
 $env:DSH_SERVICE_KEY = "demo-webconsole-service-key"   #知识库集成：放行 /api/backend/kb/** 只读端点；须与flowable、backend profile一致
+$env:INSTANCE_WORKSPACE_ROOT = "D:\works\deepseek-harness\apps\web-console\instance-workspaces"   #流程实例工作空间存储根目录(磁盘为事实源)；不设则默认 ./data/instance-workspaces(相对启动目录)
 $env:KB_EMBEDDING_API_URL="https://api.siliconflow.cn/v1"
 $env:KB_EMBEDDING_API_KEY="sk-123456"
 $env:KB_EMBEDDING_MODEL="Qwen/Qwen3-Embedding-4B"
@@ -45,6 +46,8 @@ npm run build
 cd d:\works\deepseek-harness\apps\web-console\backend
 mvn clean package -DskipTests
 D:\Java21\bin\java.exe -jar .\target\dsh-web-console.jar --server.port=8080
+
+D:\Java21\bin\java.exe "-Djava.net.useSystemProxies=true" -jar .\target\dsh-web-console.jar --server.port=8080
 
 ---------------------------------------------------------------------------------------------------------------------
 
@@ -71,7 +74,7 @@ java -jar skillhub-app\target\skillhub-app-0.1.0.jar --server.port=8095
 ---------------------------------------------------------------------------------------------------------------------
 
 启动DSH enterprise profile APP
-$env:SSO_PROVIDER="casdoor"
+$env:SSO_PROVIDER="supabase"
 # SSO_PROVIDER为casdoor时，下面的4个SSO_*环境变量才需要设置，切回 supabase 时SSO_ISSUER/SSO_JWKS_URL 必须删(Remove-Item Env:SSO_ISSUER / Env:SSO_JWKS_URL)
 $env:SSO_ISSUER="http://47fcb251.r35.cpolar.top"            #cpolar 隧道域名,隧道重启会变,须与 Casdoor app.conf origin 一致
 $env:SSO_CLIENT_ID="4fb987a231c51fe6e215"          #Casdoor 管理界面 → 应用 dsh-poc → Client ID
@@ -80,7 +83,7 @@ $env:SSO_SCOPES="openid"                                     #不含 openid 则 
 $env:SUPABASE_URL="https://tmommaaeuqnhanbtqmti.supabase.co"
 $env:SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtb21tYWFldXFuaGFuYnRxbXRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNDYxMTgsImV4cCI6MjEwMjcyMjExOH0.TRUg-O36QkIH9QbJYi9FPL6j1PucKnrulecamWRSnkI"
 $env:FLOWABLE_ENGINE_URL="http://127.0.0.1:8090"
-$env:WEB_CONSOLE_URL="http://192.168.110.27:8080"   #手机端 relay 回调须用桌面局域网 IP(手机可达);填 127.0.0.1 时手机登录 redirect_uri=mismatch;桌面本机经局域网 IP 访问自己不受影响;IP 变化须同步改
+$env:WEB_CONSOLE_URL="http://127.0.0.1:8080"   #手机端 relay 回调须用桌面局域网 IP(手机可达);填 127.0.0.1 时手机登录 redirect_uri=mismatch;桌面本机经局域网 IP 访问自己不受影响;IP 变化须同步改
 $env:SKILL_SYNC_INTERVAL_MS=600000
 $env:SKILLHUB_URL="http://127.0.0.1:8095"
 $env:SKILLHUB_API_TOKEN="sk_It1SA2xPE_J8vRl_boCDEsRpjcD3rX6tq6tkaPkn7kA"
@@ -130,7 +133,7 @@ Invoke-RestMethod http://127.0.0.1:3190/api/backend/tasks/b7faed2f-e1cd-4ab3-82a
 ----------------------------------------------------------------------------------------------------------------------
 
 启动SOR
-$env:SSO_PROVIDER="casdoor"
+$env:SSO_PROVIDER="supabase"
 # provider=supabase 时下面3个不生效,可整段删掉
 $env:SSO_ISSUER="http://47fcb251.r35.cpolar.top"            #cpolar 隧道域名,隧道重启会变,须与 Casdoor app.conf origin 一致
 $env:SSO_CLIENT_ID="4fb987a231c51fe6e215"          #与员工端可共用同一 client,redirect_uri 各自登记(expense-sor 填 http://localhost:8091/)

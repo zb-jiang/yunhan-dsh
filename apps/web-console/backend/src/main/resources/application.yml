@@ -13,16 +13,22 @@ server:
   port: 8080
   servlet:
     context-path: /
+  # 拒收超大上传(multipart 超限准备回 400)时,Tomcat 须先吞完浏览器仍在发送的剩余请求体
+  # 才能写出响应;默认只吞 2MB,大文件超限即 RST 连接,浏览器只见 ERR_CONNECTION_RESET
+  # 收不到 400。-1 = 不限吞量,保证错误响应可达前端(实例空间/知识库等所有上传端点共用)
+  tomcat:
+    max-swallow-size: -1
 
 spring:
   application:
     name: dsh-web-console
 
-  # 知识库文档上传上限(与 dsh.knowledge.max-upload-size-mb 共用 KB_MAX_UPLOAD_MB)
+  # 全局 multipart 上限(与知识库上传共用 KB_MAX_UPLOAD_MB)。默认 64MB 对齐
+  # dsh.instance-workspace.max-file-mb=64——设计要求业务单文件限额不得超过此硬顶
   servlet:
     multipart:
-      max-file-size: ${KB_MAX_UPLOAD_MB:50}MB
-      max-request-size: ${KB_MAX_UPLOAD_MB:50}MB
+      max-file-size: ${KB_MAX_UPLOAD_MB:64}MB
+      max-request-size: ${KB_MAX_UPLOAD_MB:64}MB
 
   # 异步请求(SSE 流式转发)总时长上限:Tomcat 默认 30s 会掐断正常的 LLM 长生成
   # (症状=AsyncRequestTimeoutException 被兜底成 500 INTERNAL_ERROR);10 分钟覆盖最慢的推理场景
@@ -118,6 +124,24 @@ dsh:
   # /api/backend/kb/** 只读端点用；空白=机制关闭（所有带此头的请求 401）。
   # 须与 flowable-engine dsh.web-console.service-key、backend profile DSH_SERVICE_KEY 一致
   service-key: ${DSH_SERVICE_KEY:demo-webconsole-service-key}
+
+  # 流程实例云工作空间(设计 docs/plans/2026-10-14-instance-workspace-design.md §3.3):
+  # 文件落 web-console 服务器本地磁盘,元数据落 local PG instance_workspace_files 表。
+  # 实际单文件上限同时受 spring.servlet.multipart.max-file-size(KB_MAX_UPLOAD_MB,默认 64MB,
+  # 与下方 max-file-mb 默认对齐)硬顶;超过硬顶的请求在进入业务逻辑前即被 multipart 拒绝并映射
+  # 400 FILE_TOO_LARGE(含上限数值)。
+  instance-workspace:
+    # 存储根目录({root}/{applicationId}/{instanceId}/{relPath})
+    root: ${INSTANCE_WORKSPACE_ROOT:./data/instance-workspaces}
+    # 单文件上限(MB)
+    max-file-mb: ${INSTANCE_WORKSPACE_MAX_FILE_MB:64}
+    # 单实例总容量上限(MB)
+    max-instance-total-mb: ${INSTANCE_WORKSPACE_MAX_INSTANCE_TOTAL_MB:512}
+    # 单实例文件数上限
+    max-entries: ${INSTANCE_WORKSPACE_MAX_ENTRIES:2000}
+    # 运行中实例参与人缓存 TTL(秒;参与人=发起人+历任/现任办理人,新办理人接单后
+    # 缓存过期重查引擎自愈)。已结束实例参与人稳定,长缓存不受此值限制。
+    participant-cache-ttl-seconds: ${INSTANCE_WORKSPACE_PARTICIPANT_CACHE_TTL:60}
 
   # 分析看板(设计 2026-09-25 §8):轮询引擎 /actuator/metrics 落 dsh_metrics_sample 表。
   # 白名单内指标逐个采集;带 tag 的指标(如 dsh.backend.task{outcome=...})按引擎返回的
