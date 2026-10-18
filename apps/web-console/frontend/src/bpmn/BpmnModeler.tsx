@@ -18,6 +18,8 @@ import { DshPropertiesProviderModule } from './DshPropertiesProvider'
 import { DshBackendTaskPaletteModule } from './dsh-backend-task-palette'
 import { ReplaceMenuFilterModule } from './replace-menu-filter'
 import { TranslateZhModule } from './translate-zh'
+import TokenSimulationModule from 'bpmn-js-token-simulation'
+import 'bpmn-js-token-simulation/assets/css/bpmn-js-token-simulation.css'
 import BpmnZoomControls, { type BpmnCanvasLike } from './BpmnZoomControls'
 import { dshModdleDescriptor, flowableModdleDescriptor } from './dsh-moddle'
 
@@ -69,6 +71,7 @@ export default function BpmnModeler({ xml, onXmlChange, readonly = false }: Bpmn
         DshBackendTaskPaletteModule,
         ReplaceMenuFilterModule,
         TranslateZhModule,
+        TokenSimulationModule,
       ],
       moddleExtensions: {
         dsh: dshModdleDescriptor,

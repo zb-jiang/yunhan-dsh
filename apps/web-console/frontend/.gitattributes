@@ -1,0 +1,4 @@
+# patch-package patches are unified diffs: an empty context line is a single
+# leading space by format, which `git diff --check` (pre-commit whitespace
+# gate) flags as trailing whitespace. Drop the check for generated patches.
+*.patch -whitespace

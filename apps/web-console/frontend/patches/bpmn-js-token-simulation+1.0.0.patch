@@ -1,0 +1,260 @@
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/ExclusiveGatewayHandler.js b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/ExclusiveGatewayHandler.js
+index fc630e5..6ddbda7 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/ExclusiveGatewayHandler.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/ExclusiveGatewayHandler.js
+@@ -22,7 +22,7 @@ ExclusiveGatewayHandler.prototype.createContextPads = function(element) {
+   }
+ 
+   const html = `
+-    <button class="bts-context-pad" title="Set Sequence Flow">
++    <button class="bts-context-pad" title="切换流转路径">
+       ${ForkIcon()}
+     </button>
+   `;
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/InclusiveGatewayHandler.js b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/InclusiveGatewayHandler.js
+index c4ebfc1..509900e 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/InclusiveGatewayHandler.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/InclusiveGatewayHandler.js
+@@ -27,7 +27,7 @@ InclusiveGatewayHandler.prototype.createContextPads = function(element) {
+   });
+ 
+   const html = `
+-    <button class="bts-context-pad" title="Set Sequence Flow">
++    <button class="bts-context-pad" title="切换流转路径">
+       ${ForkIcon()}
+     </button>
+   `;
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/PauseHandler.js b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/PauseHandler.js
+index 1960e0e..a209fc0 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/PauseHandler.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/PauseHandler.js
+@@ -38,7 +38,7 @@ PauseHandler.prototype.createPauseContextPad = function(element) {
+   const wait = this._isPaused(element);
+ 
+   const html = `
+-    <button class="bts-context-pad ${ wait ? '' : 'show-hover' }" title="${ wait ? 'Remove' : 'Add' } pause point">
++    <button class="bts-context-pad ${ wait ? '' : 'show-hover' }" title="${ wait ? '移除' : '添加' }暂停点">
+       ${ (wait ? RemovePauseIcon : PauseIcon)('show-hover') }
+       ${ PauseIcon('hide-hover') }
+     </button>
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/TriggerHandler.js b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/TriggerHandler.js
+index e3f6989..9b88737 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/TriggerHandler.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/context-pads/handler/TriggerHandler.js
+@@ -32,7 +32,7 @@ TriggerHandler.prototype.createTriggerContextPad = function(element) {
+   };
+ 
+   const html = `
+-    <button class="bts-context-pad" title="Trigger Event">
++    <button class="bts-context-pad" title="触发事件">
+       ${PlayIcon()}
+     </button>
+   `;
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/element-support/ElementSupport.js b/node_modules/bpmn-js-token-simulation/lib/features/element-support/ElementSupport.js
+index d52ad08..a7b16cb 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/element-support/ElementSupport.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/element-support/ElementSupport.js
+@@ -71,7 +71,7 @@ ElementSupport.prototype.enable = function() {
+   if (unsupportedElements.length) {
+ 
+     this._notifications.showNotification({
+-      text: 'Found unsupported elements',
++      text: '发现不支持的元素',
+       icon: ExclamationTriangleIcon(),
+       type: 'warning',
+       ttl: 5000
+@@ -89,7 +89,7 @@ ElementSupport.prototype.showWarning = function(element) {
+   this._elementNotifications.addElementNotification(element, {
+     type: 'warning',
+     icon: ExclamationTriangleIcon(),
+-    text: 'Not supported'
++    text: '当前元素不支持'
+   });
+ };
+ 
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/log/Log.js b/node_modules/bpmn-js-token-simulation/lib/features/log/Log.js
+index 2eef175..76dce86 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/log/Log.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/log/Log.js
+@@ -358,13 +358,13 @@ Log.prototype._init = function() {
+     <div class="bts-log hidden djs-scrollable">
+       <div class="bts-header">
+         ${ LogIcon('bts-log-icon') }
+-        Simulation Log
+-        <button class="bts-close" aria-label="Close">
++        仿真日志
++        <button class="bts-close" aria-label="关闭">
+           ${ TimesIcon() }
+         </button>
+       </div>
+       <div class="bts-content">
+-        <p class="bts-entry placeholder">No Entries</p>
++        <p class="bts-entry placeholder">暂无记录</p>
+       </div>
+     </div>
+   `);
+@@ -392,7 +392,7 @@ Log.prototype._init = function() {
+   this._canvas.getContainer().appendChild(this._container);
+ 
+   this.paletteEntry = domify(`
+-    <button class="bts-entry" title="Toggle Simulation Log">
++    <button class="bts-entry" title="打开/关闭仿真日志">
+       ${ LogIcon() }
+     </button>
+   `);
+@@ -479,7 +479,7 @@ Log.prototype.clear = function() {
+     this._content.removeChild(this._content.firstChild);
+   }
+ 
+-  this._placeholder = domify('<p class="bts-entry placeholder">No Entries</p>');
++  this._placeholder = domify('<p class="bts-entry placeholder">暂无记录</p>');
+ 
+   this._content.appendChild(this._placeholder);
+ };
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/pause-simulation/PauseSimulation.js b/node_modules/bpmn-js-token-simulation/lib/features/pause-simulation/PauseSimulation.js
+index 7f5b148..bcfdfa1 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/pause-simulation/PauseSimulation.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/pause-simulation/PauseSimulation.js
+@@ -61,7 +61,7 @@ export default function PauseSimulation(
+ 
+ PauseSimulation.prototype._init = function() {
+   this.paletteEntry = domify(`
+-    <button class="bts-entry disabled" title="Play/Pause Simulation" disabled>
++    <button class="bts-entry disabled" title="播放/暂停仿真" disabled>
+       ${ PLAY_MARKUP }
+     </button>
+   `);
+@@ -92,7 +92,7 @@ PauseSimulation.prototype.pause = function() {
+   this._eventBus.fire(PAUSE_SIMULATION_EVENT);
+ 
+   this._notifications.showNotification({
+-    text: 'Pause Simulation'
++    text: '已暂停仿真'
+   });
+ 
+   this.isPaused = true;
+@@ -112,7 +112,7 @@ PauseSimulation.prototype.unpause = function() {
+   this._eventBus.fire(PLAY_SIMULATION_EVENT);
+ 
+   this._notifications.showNotification({
+-    text: 'Play Simulation'
++    text: '继续仿真'
+   });
+ 
+   this.isPaused = false;
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/reset-simulation/ResetSimulation.js b/node_modules/bpmn-js-token-simulation/lib/features/reset-simulation/ResetSimulation.js
+index c4ca695..8e6bda9 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/reset-simulation/ResetSimulation.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/reset-simulation/ResetSimulation.js
+@@ -38,7 +38,7 @@ export default function ResetSimulation(eventBus, tokenSimulationPalette, notifi
+ 
+ ResetSimulation.prototype._init = function() {
+   this._paletteEntry = domify(`
+-    <button class="bts-entry disabled" title="Reset Simulation" disabled>
++    <button class="bts-entry disabled" title="重置仿真" disabled>
+       ${ ResetIcon() }
+     </button>
+   `);
+@@ -47,7 +47,7 @@ ResetSimulation.prototype._init = function() {
+     this.resetSimulation();
+ 
+     this._notifications.showNotification({
+-      text: 'Reset Simulation',
++      text: '已重置仿真',
+       type: 'info'
+     });
+   });
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/set-animation-speed/SetAnimationSpeed.js b/node_modules/bpmn-js-token-simulation/lib/features/set-animation-speed/SetAnimationSpeed.js
+index dce03d2..ff095a4 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/set-animation-speed/SetAnimationSpeed.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/set-animation-speed/SetAnimationSpeed.js
+@@ -55,7 +55,7 @@ SetAnimationSpeed.prototype._init = function(animationSpeed) {
+       <div class="bts-animation-speed-buttons">
+         ${
+           SPEEDS.map(([ label, speed ], idx) => `
+-            <button title="Set animation speed = ${ label }" data-speed="${ speed }" class="bts-animation-speed-button ${speed === animationSpeed ? 'active' : ''}">
++            <button title="动画速度：${ label }" data-speed="${ speed }" class="bts-animation-speed-button ${speed === animationSpeed ? 'active' : ''}">
+               ${
+                 Array.from({ length: idx + 1 }).map(
+                   () => AngleRightIcon()
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/show-scopes/ShowScopes.js b/node_modules/bpmn-js-token-simulation/lib/features/show-scopes/ShowScopes.js
+index 518bcc9..8dee690 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/show-scopes/ShowScopes.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/show-scopes/ShowScopes.js
+@@ -117,7 +117,7 @@ ShowScopes.prototype.addScope = function(scope) {
+   const html = domify(`
+     <button data-scope-id="${scope.id}" class="bts-scope"
+          aria-pressed="false"
+-         title="Focus process instance ${scope.id}" ${colorMarkup}>
++         title="聚焦流程实例 ${scope.id}" ${colorMarkup}>
+       ${scope.getTokens()}
+     </button>
+   `);
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/simulation-state/SimulationState.js b/node_modules/bpmn-js-token-simulation/lib/features/simulation-state/SimulationState.js
+index 8a163c4..0560bae 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/simulation-state/SimulationState.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/simulation-state/SimulationState.js
+@@ -38,7 +38,7 @@ export default function SimulationState(
+     elementNotifications.addElementNotification(destroyInitiator.element, {
+       type: 'success',
+       icon: CheckCircleIcon(),
+-      text: 'Finished',
++      text: '流程已走完',
+       scope
+     });
+   });
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/modeler/ToggleMode.js b/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/modeler/ToggleMode.js
+index d9e5546..9cf0d8e 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/modeler/ToggleMode.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/modeler/ToggleMode.js
+@@ -48,7 +48,7 @@ export default function ToggleMode(
+ ToggleMode.prototype._init = function() {
+   this._container = domify(`
+     <div class="bts-toggle-mode">
+-      Token Simulation <span class="bts-toggle">${ ToggleOffIcon() }</span>
++      流程仿真 <span class="bts-toggle">${ ToggleOffIcon() }</span>
+     </div>
+   `);
+ 
+@@ -64,12 +64,12 @@ ToggleMode.prototype.toggleMode = function(active = !this._active) {
+   }
+ 
+   if (active) {
+-    this._container.innerHTML = `Token Simulation <span class="bts-toggle">${ ToggleOnIcon() }</span>`;
++    this._container.innerHTML = `流程仿真 <span class="bts-toggle">${ ToggleOnIcon() }</span>`;
+ 
+     domClasses(this._canvasParent).add('simulation');
+     domClasses(this._palette).add('hidden');
+   } else {
+-    this._container.innerHTML = `Token Simulation <span class="bts-toggle">${ ToggleOffIcon() }</span>`;
++    this._container.innerHTML = `流程仿真 <span class="bts-toggle">${ ToggleOffIcon() }</span>`;
+ 
+     domClasses(this._canvasParent).remove('simulation');
+     domClasses(this._palette).remove('hidden');
+diff --git a/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/viewer/ToggleMode.js b/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/viewer/ToggleMode.js
+index ffcf5e9..85a07e3 100644
+--- a/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/viewer/ToggleMode.js
++++ b/node_modules/bpmn-js-token-simulation/lib/features/toggle-mode/viewer/ToggleMode.js
+@@ -41,7 +41,7 @@ export default function ToggleMode(eventBus, canvas, selection) {
+ ToggleMode.prototype._init = function() {
+   this._container = domify(`
+     <div class="bts-toggle-mode">
+-      Token Simulation <span class="bts-toggle">${ ToggleOffIcon() }</span>
++      流程仿真 <span class="bts-toggle">${ ToggleOffIcon() }</span>
+     </div>
+   `);
+ 
+@@ -56,11 +56,11 @@ ToggleMode.prototype.toggleMode = function(active = !this._active) {
+   }
+ 
+   if (active) {
+-    this._container.innerHTML = `Token Simulation <span class="bts-toggle">${ ToggleOnIcon() }</span>`;
++    this._container.innerHTML = `流程仿真 <span class="bts-toggle">${ ToggleOnIcon() }</span>`;
+ 
+     domClasses(this._canvasParent).add('simulation');
+   } else {
+-    this._container.innerHTML = `Token Simulation <span class="bts-toggle">${ ToggleOffIcon() }</span>`;
++    this._container.innerHTML = `流程仿真 <span class="bts-toggle">${ ToggleOffIcon() }</span>`;
+ 
+     domClasses(this._canvasParent).remove('simulation');
+   }
