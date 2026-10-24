@@ -2,17 +2,23 @@
  * Workspace picker dialog: explicit workspace binding for a task.
  *
  * <p>首次点击未绑定待办时由 TaskQueueSidebar 渲染(workbench.openTask 置
- * pendingTask):员工从工作区列表中单选,或点"浏览本地文件夹"经宿主目录
- * 选择器(桌面版为 OS 原生对话框)现选一个目录,选定即注册为新工作区并
- * 自动选中;确认后 workbench 才新建专属会话并绑定。弹窗明示"选定后不可
- * 修改"——绑定即最终决定,没有草稿期反悔通道;取消不产生任何会话,可重新
- * 点击待办再次选择。尚无任何工作区时列表退化为引导视图,同样走浏览入口。
+ * pendingTask):员工从工作区列表中单选,或点"浏览本地文件夹"进入目录流程
+ * occupant —— `sidebar.nav.directoryFlow` 洞的占用者(browse 档为页面内
+ * 目录浏览器,native 档为 OS 原生对话框),本组件只按 owner 契约(open/
+ * busy/onPicked/onCancel/onError)与之对话,不区分档位。选定路径经
+ * workbench.adoptPickedWorkspace 注册为新工作区并自动选中;确认后 workbench
+ * 才新建专属会话并绑定。弹窗明示"选定后不可修改"——绑定即最终决定,没有
+ * 草稿期反悔通道;取消不产生任何会话,可重新点击待办再次选择。尚无任何
+ * 工作区时列表退化为引导视图,同样走浏览入口;洞未被任何 surface 包占用时
+ * 不渲染浏览按钮(无流程可用)。
  */
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { SnapshotSelectorHook } from '@deepseek-ai/dsh-client-ui-slots'
+// Type-only: 拉入 ui-workspace 的 SlotMap 合并(目录流程洞类型)。
+import type { DirectoryFlowOwnerProps } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { WorkspaceId, WorkspaceView } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { Task } from './task-api.ts'
-import type { WorkspacePickResult } from './enterprise-workbench.ts'
 import css from './WorkspacePickerDialog.module.css'
 
 type WorkspacePickerDialogProps = {
@@ -23,27 +29,56 @@ type WorkspacePickerDialogProps = {
   workspaces: readonly WorkspaceView[]
   onClose: () => void
   onConfirm: (workspaceId: WorkspaceId) => void
-  /** 打开宿主目录选择器浏览本地文件夹,选定即注册为新工作区。 */
-  onBrowse: () => Promise<WorkspacePickResult>
+  /** 把 occupant 选定的目录注册为新工作区(Host 幂等),失败抛错由弹窗展示。 */
+  onAdopt: (path: string) => Promise<WorkspaceId>
+  /** 目录流程洞占用源 hook:洞空闲时隐藏浏览入口。 */
+  useDirectoryFlow: SnapshotSelectorHook<boolean>
+  /** 用 owner 会话渲染目录流程洞(本 entry 的窄化 renderSlot)。 */
+  renderDirectoryFlow: (owner: DirectoryFlowOwnerProps) => ReactNode
 }
 
 export function WorkspacePickerDialog({
-  open, task, workspaces, onClose, onConfirm, onBrowse,
+  open, task, workspaces, onClose, onConfirm, onAdopt, useDirectoryFlow, renderDirectoryFlow,
 }: WorkspacePickerDialogProps) {
   const [selected, setSelected] = useState<WorkspaceId | null>(null)
-  const [browsing, setBrowsing] = useState(false)
+  const [flowOpen, setFlowOpen] = useState(false)
+  const [adopting, setAdopting] = useState(false)
   const [browseError, setBrowseError] = useState<string | null>(null)
   const hasWorkspaces = workspaces.length > 0
+  const flowAvailable = useDirectoryFlow(occupied => occupied)
+  // 一次只有一个目录流程在途(occupant 等待中或采纳在途中),浏览按钮随之
+  // 禁用——迟到的结果不能与并发的新一次选择/采纳竞争。
+  const flowBusy = flowOpen || adopting
 
-  const browse = (): void => {
-    if (browsing) return
-    setBrowsing(true)
-    setBrowseError(null)
-    void onBrowse().then((result) => {
-      setBrowsing(false)
-      if (result.status === 'picked') setSelected(result.workspaceId)
-      if (result.status === 'error') setBrowseError(result.message)
-    })
+  // occupant 半路卸载(HMR/surface 切换)后无人能取消或回报:流程开着而洞
+  // 已空时收回。flowOpen 也是依赖——流程可能在洞已空时打开(重试落空),
+  // 该转换同样要收回。
+  useEffect(() => {
+    if (flowOpen && !flowAvailable) setFlowOpen(false)
+  }, [flowOpen, flowAvailable])
+
+  /** 采纳 occupant 交回的路径;失败落回弹窗内错误行,可重新点按钮再试。 */
+  const adoptDirectory = (path: string): void => {
+    setAdopting(true)
+    onAdopt(path).then((workspaceId) => {
+      setFlowOpen(false)
+      setSelected(workspaceId)
+    }).catch((reason: unknown) => {
+      setBrowseError(reason instanceof Error ? reason.message : String(reason))
+      setFlowOpen(false)
+    }).finally(() => { setAdopting(false) })
+  }
+
+  /** owner 侧会话:采纳期间保持流程打开(busy),occupant 据此禁用提交。 */
+  const flowOwner: DirectoryFlowOwnerProps = {
+    open: flowOpen,
+    busy: adopting,
+    onPicked: adoptDirectory,
+    onCancel: () => { setFlowOpen(false) },
+    onError: (message) => {
+      setFlowOpen(false)
+      setBrowseError(message)
+    },
   }
 
   return (
@@ -84,15 +119,23 @@ export function WorkspacePickerDialog({
             </div>
           )}
 
-          <button type="button" className={css.browse} onClick={browse} disabled={browsing}>
-            <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden>
-              <path
-                d="M1.5 3.5a1 1 0 0 1 1-1h3l1.5 1.8h6.5a1 1 0 0 1 1 1v7.2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"
-                fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
-              />
-            </svg>
-            <span>{browsing ? '等待选择文件夹…' : '浏览本地文件夹…'}</span>
-          </button>
+          {flowAvailable && (
+            <button
+              type="button" className={css.browse}
+              onClick={() => { setBrowseError(null); setFlowOpen(true) }}
+              disabled={flowBusy}
+            >
+              <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden>
+                <path
+                  d="M1.5 3.5a1 1 0 0 1 1-1h3l1.5 1.8h6.5a1 1 0 0 1 1 1v7.2a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z"
+                  fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"
+                />
+              </svg>
+              <span>
+                {flowOpen ? '等待选择文件夹…' : adopting ? '正在注册工作区…' : '浏览本地文件夹…'}
+              </span>
+            </button>
+          )}
           {browseError !== null && <div className={css.browseError}>{browseError}</div>}
 
           <div className={css.warning}>
@@ -115,6 +158,7 @@ export function WorkspacePickerDialog({
           </div>
         </div>
       )}
+      {renderDirectoryFlow(flowOwner)}
     </Modal>
   )
 }

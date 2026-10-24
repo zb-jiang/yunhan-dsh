@@ -91,6 +91,9 @@ cd d:\works\deepseek-harness
 pnpm dsh --profile enterprise
 pnpm run dev:desktop
 
+$env:HTTPS_PROXY = "http://127.0.0.1:7890"
+$env:HTTP_PROXY  = "http://127.0.0.1:7890"
+$env:NODE_USE_ENV_PROXY = "1"
 ----------------------------------------------------------------------------------------------------------------------
 
 启动DSH backend profile

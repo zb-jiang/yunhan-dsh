@@ -1,6 +1,6 @@
 /**
  * Browser half of the browse directory-picker backend: fills ui-workspace's
- * two directory-flow holes with the in-app Select Workspace Directory dialog
+ * three directory-flow holes with the in-app Select Workspace Directory dialog
  * (figma `Harness` 813-23126 family), driving the node half's
  * `directoryPicker/list`/`directoryPicker/createDirectory` primitives.
  * Mounting this package therefore composes both sides of the browse
@@ -80,16 +80,20 @@ export function apply(ctx: ClientContext): void {
     createDirectory: (path, name) => ctx.uiWorkspace.createDirectory(path, name),
     t: ctx.locale.bind(LOCALE_NS),
   })
-  // Both declaration lifetimes must be live before the pair installs; the
-  // generator makes the two registrations one transactional effect. The
-  // outer/inner nesting order is arbitrary; neither hole has precedence.
+  // All three declaration lifetimes must be live before the trio installs;
+  // the generator makes the three registrations one transactional effect. The
+  // nesting order is arbitrary; no hole has precedence.
   ctx.slots.inject('conversation.hero.workspace.directoryFlow', () =>
-    ctx.slots.inject('sidebar.workspaces.directoryFlow', function* () {
-      yield ctx.slots.register({
-        name: 'conversation.hero.workspace.directoryFlow', inject: injected,
-      }, BrowseDirectoryFlow)
-      yield ctx.slots.register({
-        name: 'sidebar.workspaces.directoryFlow', inject: injected,
-      }, BrowseDirectoryFlow)
-    }))
+    ctx.slots.inject('sidebar.workspaces.directoryFlow', () =>
+      ctx.slots.inject('sidebar.nav.directoryFlow', function* () {
+        yield ctx.slots.register({
+          name: 'conversation.hero.workspace.directoryFlow', inject: injected,
+        }, BrowseDirectoryFlow)
+        yield ctx.slots.register({
+          name: 'sidebar.workspaces.directoryFlow', inject: injected,
+        }, BrowseDirectoryFlow)
+        yield ctx.slots.register({
+          name: 'sidebar.nav.directoryFlow', inject: injected,
+        }, BrowseDirectoryFlow)
+      })))
 }

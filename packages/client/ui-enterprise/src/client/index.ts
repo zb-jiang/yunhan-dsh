@@ -23,7 +23,10 @@
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import { createElement } from 'react'
 import { IconApiOutlineMedium, IconPhoneOutlineMedium, registerUserTextDecorator } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
+// Type-only: 拉入 ui-workspace 的 SlotMap 合并(sidebar.nav.directoryFlow 洞类型)。
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { InputTriggerServiceContract } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
@@ -129,10 +132,17 @@ export function apply(ctx: ClientContext): void {
     PocketPairingExpired,
   )
 
-  // 待办队列:原生 sidebar 的 enterprise nav 座位。
+  // 待办队列:原生 sidebar 的 enterprise nav 座位。children 声明本 entry
+  // 的目录流程洞(目录 surface 包经 slots.inject 按此延迟注册),占用源经
+  // hooks 下发——弹窗据此在洞空闲时隐藏"浏览本地文件夹"入口。
+  const directoryFlowSource: HostObservable<boolean> = {
+    getSnapshot: () => ctx.slots.entries('sidebar.nav.directoryFlow').length > 0,
+    subscribe: listener => ctx.slots.subscribe('sidebar.nav.directoryFlow', listener),
+  }
   ctx.slots.register({
     name: 'sidebar.nav',
-    inject: () => ({ workbench }),
+    children: { 'sidebar.nav.directoryFlow': { kind: 'single', scope: 'root' } },
+    inject: () => ({ workbench, hooks: { directoryFlow: directoryFlowSource } }),
   }, TaskQueueSidebar)
 
   // 任务档案标签页,stage one:类型声明(extension 带,企业外部实现)。

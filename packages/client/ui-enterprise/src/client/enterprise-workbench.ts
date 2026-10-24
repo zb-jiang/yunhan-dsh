@@ -206,12 +206,6 @@ export const ARCHIVE_TAB_KIND = 'dsh-enterprise-archive'
 /** 任务档案标签页实现的注册 id(stage-two keyed 座位的 key)。 */
 export const ARCHIVE_TAB_ID = '@deepseek-ai/dsh-client-ui-enterprise/archive'
 
-/** "浏览本地文件夹"选目录的结果(WorkspacePickerDialog 据此更新选中/提示)。 */
-export type WorkspacePickResult =
-  | { status: 'picked'; workspaceId: WorkspaceId }
-  | { status: 'cancelled' }
-  | { status: 'error'; message: string }
-
 /**
  * 工作台编排器。apply 时构造一次,经各插槽 inject 面闭包分发;
  * 状态面是纯 observable store,组件用 useSyncExternalStore 订阅。
@@ -370,31 +364,15 @@ export class EnterpriseWorkbench {
   }
 
   /**
-   * 弹窗内"浏览本地文件夹"入口:打开宿主目录选择器(桌面版是 OS 原生
-   * 文件夹对话框,Web 端由 in-app browse 后端承接),选定后把该路径注册为
-   * 新工作区(Host 幂等:路径已注册时返回既有工作区)并返回其 id,弹窗随之
-   * 选中新工作区,员工仍需显式确认才建会话绑定。
-   * @returns picked 携带新建(或既有)工作区 id;cancelled 为员工取消选择;
-   *          error 携带可供弹窗展示的失败原因。
+   * 目录流程 occupant 交回选定路径后的采纳动作:把该路径注册为新工作区
+   * (Host 幂等:路径已注册时返回既有工作区)并返回其 id,弹窗随之选中;
+   * 注册失败抛错,由弹窗展示。员工仍需显式确认才建会话绑定。
+   * @param path - occupant 选定的绝对目录路径。
+   * @returns 新建(或既有)工作区的 id。
    */
-  async pickNewWorkspace(): Promise<WorkspacePickResult> {
-    let path: string | null
-    try {
-      path = await this.deps.uiWorkspace.pickDirectory()
-    } catch (error: unknown) {
-      return {
-        status: 'error',
-        message: error instanceof Error ? error.message : String(error),
-      }
-    }
-    if (path === null) return { status: 'cancelled' }
-    try {
-      const workspace = await this.deps.workspaces.create({ path })
-      return { status: 'picked', workspaceId: workspace.workspaceId }
-    } catch (error: unknown) {
-      const detail = error instanceof Error ? error.message : String(error)
-      return { status: 'error', message: `注册工作区失败:${detail}` }
-    }
+  async adoptPickedWorkspace(path: string): Promise<WorkspaceId> {
+    const workspace = await this.deps.workspaces.create({ path })
+    return workspace.workspaceId
   }
 
   /**

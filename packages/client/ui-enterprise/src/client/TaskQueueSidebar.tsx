@@ -21,7 +21,9 @@ import {
   IconChevronDownOutlineRegular, IconChevronUpOutlineRegular, IconClockOutlineRegular,
   IconFolderCloseRegular, IconSlidersTwoOutlineRegular, IconTriangleRightFillRegular, Menu, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { PropsHooks, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+// Type-only: 拉入 ui-workspace 的 SlotMap 合并与目录流程 owner 契约。
+import type { DirectoryPickingInjected } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { EnterpriseWorkbench } from './enterprise-workbench.ts'
 import { useAuth } from './EnterpriseUi.tsx'
 import { WorkspacePickerDialog } from './WorkspacePickerDialog.tsx'
@@ -32,15 +34,19 @@ import {
 import type { TaskViewGroup, TaskViewOptions, TaskViewRow, TaskViewState } from './task-view.ts'
 import css from './TaskQueueSidebar.module.css'
 
-/** nav 座位注入面:工作台编排器。 */
-export type TaskQueueSidebarInjected = {
-  workbench: EnterpriseWorkbench
-}
+/** nav 座位注入面:工作台编排器 + 目录流程占用源(洞空闲与否经 hooks 下发)。 */
+export type TaskQueueSidebarInjected =
+  & DirectoryPickingInjected
+  & {
+    workbench: EnterpriseWorkbench
+  }
 
-/** nav 座位组件 props:owner(wide)+ 注入面 + 全局标准 kit(useSessions/useWorkspaces)。 */
+/** nav 座位组件 props:owner(wide)+ 目录流程洞渲染授权 + 注入面 + 全局标准 kit(useSessions/useWorkspaces)。 */
 export type TaskQueueSidebarProps =
   & PropsRuntime<'sidebar.nav'>
-  & TaskQueueSidebarInjected
+  & PropsRenderSlots<'sidebar.nav.directoryFlow'>
+  & Omit<TaskQueueSidebarInjected, 'hooks'>
+  & PropsHooks<TaskQueueSidebarInjected['hooks']>
 
 /**
  * 列表视图选项菜单:分组方式(按日期/按流程类型)与排序方式(升序/降序)。
@@ -127,7 +133,7 @@ function TaskGroupSection<T>({ group, expandedKey, onToggle, renderRow }: {
 }
 
 /** 待办队列 nav 座位(见模块文档)。 */
-export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces }: TaskQueueSidebarProps) {
+export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces, useDirectoryFlow, renderSlot }: TaskQueueSidebarProps) {
   const { currentUser, loading: authLoading, logout } = useAuth()
   const tasks = useSnapshot(workbench.tasks)
   const bindings = useSnapshot(workbench.bindings)
@@ -297,11 +303,9 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces }
 
       {authed && (
         <div className={css.footer}>
-          {/* oxlint-disable typescript/no-unnecessary-condition -- TS cannot narrow via the authed flag */}
           <span className={css.footerUser} title={currentUser?.email ?? ''}>
             {currentUser?.displayName ?? ''}
           </span>
-          {/* oxlint-enable typescript/no-unnecessary-condition */}
           <button type="button" className={css.logout} onClick={() => { void logout() }}>
             退出
           </button>
@@ -316,7 +320,9 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces }
         workspaces={workspaceItems}
         onClose={() => { workbench.cancelPendingTask() }}
         onConfirm={(workspaceId) => { void workbench.confirmPendingTaskWorkspace(workspaceId) }}
-        onBrowse={() => workbench.pickNewWorkspace()}
+        onAdopt={path => workbench.adoptPickedWorkspace(path)}
+        useDirectoryFlow={useDirectoryFlow}
+        renderDirectoryFlow={owner => renderSlot('sidebar.nav.directoryFlow', owner)}
       />
     </div>
   )

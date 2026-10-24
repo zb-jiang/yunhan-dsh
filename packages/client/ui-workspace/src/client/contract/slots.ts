@@ -8,19 +8,20 @@
  * - WorkspacePicker fills the conversation empty-state hole (menu + error
  *   dialog shared with the browser).
  *
- * Both registrations declare a **directory-flow hole** (`single` kind): the
+ * Three registrations declare a **directory-flow hole** (`single` kind): the
  * slot a composed picker package's client half fills with its
  * picking interaction — a renderless native-chooser driver or an in-app
- * browsing dialog. ui-workspace owns the trigger (the "Add workspace…"
- * entry, present only while the hole is occupied) and the adoption
+ * browsing dialog. The declaring entry owns the trigger and the adoption
  * semantics (`createWorkspace({ path })`, the retryable error dialog,
  * Choose again); the occupant owns everything between `open` and the picked path,
  * including creating a new directory to hand back. That occupant-owned
  * creation is why adding a workspace has a single route: an unoccupied hole
  * leaves the surface with no add affordance at all.
- * Two holes exist because the two menu surfaces are independent slot entries
+ * Three holes exist because the trigger surfaces are independent slot entries
  * and a hole has exactly one declaring entry — they carry the same owner
- * contract and the same occupant.
+ * contract and the same occupant. The third is declared by the enterprise
+ * task-queue sidebar's picker entry (`sidebar.nav`), which runs the same
+ * picking interaction for its own adopt-a-directory flow.
  *
  * WorkspaceBrowser also declares the two **Session row action lists**: every
  * row of a Session's "..." menu is an entry of
@@ -117,6 +118,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'conversation.hero.workspace.directoryFlow': { kind: 'single'; scope: 'root'; owner: DirectoryFlowOwnerProps }
     /** Directory-flow hole under the sidebar browsing region (declared by the WorkspaceBrowser entry). */
     'sidebar.workspaces.directoryFlow': { kind: 'single'; scope: 'root'; owner: DirectoryFlowOwnerProps }
+    /** Directory-flow hole under the enterprise task-queue sidebar's workspace picker (declared by the `sidebar.nav` entry). */
+    'sidebar.nav.directoryFlow': { kind: 'single'; scope: 'root'; owner: DirectoryFlowOwnerProps }
     /**
      * Leading decoration of one Session row, in the 16px cell before the title
      * that the row's own state dot otherwise occupies. A higher-priority state
@@ -185,10 +188,11 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
   }
 }
 
-/** The two directory-flow holes; a flow package's client half registers its one component into both. */
+/** The directory-flow holes; a flow package's client half registers its one component into each. */
 export type DirectoryFlowSlotName =
   | 'conversation.hero.workspace.directoryFlow'
   | 'sidebar.workspaces.directoryFlow'
+  | 'sidebar.nav.directoryFlow'
 
 /**
  * Directory-picking share both trigger surfaces consume. Occupancy rides the
