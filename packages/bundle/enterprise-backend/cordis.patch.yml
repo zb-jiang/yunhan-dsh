@@ -20,12 +20,19 @@
         levels:
           default: !!js Number(process.env.DSH_LOG_LEVEL ?? 3)
 
+    # 命令行提供者：解析 --help 与非法参数（终结进程），成功解析后常驻插件
+    # 接管进程生命周期。没有它，--help 会把常驻进程挂在前台。
+    - id: enterprise-backend-startup
+      name: '@deepseek-ai/dsh-enterprise-backend/startup'
+
     # 常驻 HTTP 服务：backend-task 在其上挂 /api/backend/tasks 前缀路由。
-    # 服务器部署需被 flowable-engine/web-console 跨主机访问，默认全接口。
+    # 默认只绑本机回环（v5 部署：引擎/控制台/本服务同机）；upstream webserver
+    # 拒绝 0.0.0.0 等 wildcard 地址（防全网卡暴露 RCE）。跨主机部署须把
+    # DSH_BACKEND_HOST 设为本机具体 IPv4/IPv6 地址。
     - id: webserver
       name: '@deepseek-ai/dsh-host-webserver'
       config:
-        host: !!js process.env.DSH_BACKEND_HOST ?? '0.0.0.0'
+        host: !!js process.env.DSH_BACKEND_HOST ?? '127.0.0.1'
         port: !!js Number(process.env.DSH_BACKEND_PORT ?? 3190)
 
     # 后台任务运行器：REST 端点 + 注册/心跳 daemon + skill 同步 daemon。

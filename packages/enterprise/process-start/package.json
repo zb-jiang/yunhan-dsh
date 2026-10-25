@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-process-start",
   "description": "Employee-side process start via AI conversation: model-facing dsh_process_list/dsh_process_start_form/dsh_process_start tools over web-console REST",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

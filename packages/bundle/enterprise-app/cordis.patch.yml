@@ -158,3 +158,8 @@
 # 企业层禁用 auto 行，改由 insert 的 browse backend+surface 两行接管。
 - id: directory-picker
   disabled: true
+
+# DS 账号 UI（页脚登录/意见反馈 launcher、Models 页 DS 登录入口、配额通知）：
+# 企业认证统一走 SSO_PROVIDER 平台账号，员工端永不登录 DS 账号，整插件禁用。
+- id: ui-settings-account
+  disabled: true

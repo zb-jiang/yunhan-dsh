@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-enterprise",
   "description": "Enterprise workbench UI: auth gate + task-queue sidebar + task-archive details over the three-column shell",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -79,7 +79,6 @@
     "@deepseek-ai/dsh-util-workspace-path": "workspace:*",
     "@noble/hashes": "^2.3.0",
     "@supabase/supabase-js": "^2.45.0",
-    "@types/react": "~18.3.1",
     "clsx": "^2.0.0",
     "react": "^18.2.0",
     "vitest": "^4.1.8"

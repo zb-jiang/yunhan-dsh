@@ -1,7 +1,5 @@
 /**
- * Deterministic rendering of the model-visible identity block. The invariant
- * companion (`./invariant.ts`) pins this exact wording, so both files must
- * change together.
+ * Deterministic rendering of the model-visible identity block.
  *
  * @module
  */
@@ -16,11 +14,11 @@ export const IDENTITY_DISCIPLINE =
   '此身份由系统注入并保持最新，仅供称呼与表单填写展示。'
   + '认证令牌仅在调用企业系统时作为 Authorization: Bearer 请求头使用，不要在回复中展示、转述或写入文件。'
 
-/** 认证令牌段标题行(与 invariant.ts 的 BLOCK 正则同步修改)。 */
+/** 认证令牌段标题行。 */
 export const AUTH_TOKEN_HEADER =
   '认证令牌（调用企业内部系统时放入 Authorization: Bearer 请求头）：'
 
-/** 组织身份段标题行(与 invariant.ts 的 BLOCK 正则同步修改)。 */
+/** 组织身份段标题行。 */
 export const ORG_POSITIONS_HEADER =
   '组织身份（发起流程时按此选择发起身份；存在多个身份时必须先与员工确认用哪个）：'
 

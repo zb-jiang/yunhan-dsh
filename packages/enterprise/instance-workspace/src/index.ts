@@ -375,7 +375,12 @@ export function apply(ctx: Context, config: Config): void {
     // (backend profile)返回 undefined 回退服务密钥。
     token: () => ctx.get('currentUser')?.getToken(),
     serviceKey: () => config.serviceKey,
-    localPort: () => ctx.webServer.port,
+    localPort: () => {
+      // 端口未绑定(服务未就绪)是时序问题,fail loud 而非静默指向错误地址。
+      const port = ctx.webServer.port
+      if (port === undefined) throw new Error('instance-workspace: webserver 端口不可用，无法构造本地回环地址')
+      return port
+    },
     cwd: () => config.localRoot !== undefined && config.localRoot !== '' ? config.localRoot : process.cwd(),
   }
 

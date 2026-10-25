@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-platform-user-api",
   "description": "HTTP API routes for platform-user authentication (/auth/me, /auth/config)",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

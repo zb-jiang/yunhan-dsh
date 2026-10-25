@@ -120,7 +120,7 @@ $env:WEB_CONSOLE_URL="http://127.0.0.1:8080"
 $env:DSH_BACKEND_URL="http://127.0.0.1:3190"   # backend profile对完宣告在什么URL监听
 $env:DSH_BACKEND_NAME="backend-1"
 $env:DSH_BACKEND_PORT="3190"     #backend profile 实际监听的端口
-$env:DSH_BACKEND_HOST="0.0.0.0"
+$env:DSH_BACKEND_HOST="127.0.0.1"   #upstream 0.2.1 起 webserver 拒绝 0.0.0.0 通配监听(启动报错)；同机互访用回环地址，跨主机设具体网卡 IP
 $env:DSH_BACKEND_SYNC_INTERVAL_MS=600000
 $env:SKILLHUB_URL="http://127.0.0.1:8095"
 $env:SKILLHUB_API_TOKEN="sk_It1SA2xPE_J8vRl_boCDEsRpjcD3rX6tq6tkaPkn7kA"
@@ -190,6 +190,7 @@ git merge master
 #    全部解决后: git add . && git merge --continue
 
 # 4. 验证
+$env:NODE_OPTIONS='--max-old-space-size=8192'
 pnpm install
 pnpm run lint
 pnpm run hygiene

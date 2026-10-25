@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-flowable-task-proxy",
   "description": "HTTP proxy for /dsh/tasks and /dsh/history from the DSH webserver to the flowable-engine",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

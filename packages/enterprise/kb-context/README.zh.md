@@ -60,10 +60,6 @@ kbId: <id>
 
 知识库解析始终以当前登录员工的 JWT 调 web-console 按应用接口，非成员得到 404 → 不注入。
 
-### 不变量钉住格式与位置
-
-`./invariant` 伴生插件钉住块的持久格式与位置（开放 step 内、`request/header` 之前），重放的日志拒绝被改写的块。
-
 </details>
 
 -----
@@ -109,6 +105,6 @@ kbId: <id>
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-`src/text.ts` 的 `renderKbContextText` 拥有块的逐字措辞，`./invariant` 伴随模块按它校验每条重放块——两个文件必须一起改。上报路由 `/api/enterprise/kb/session-context` 与客户端上报方 `@deepseek-ai/dsh-ui-enterprise` 共用；改名必须两侧同步。此处无未竟工作。
+`src/text.ts` 的 `renderKbContextText` 拥有块的逐字措辞。上报路由 `/api/enterprise/kb/session-context` 与客户端上报方 `@deepseek-ai/dsh-ui-enterprise` 共用；改名必须两侧同步。此处无未竟工作。
 
 </details>

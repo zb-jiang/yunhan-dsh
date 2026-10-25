@@ -17,7 +17,8 @@ import { SESSION_FORMAT_VERSION, SessionId, SessionSeq } from '@deepseek-ai/dsh-
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session'
 import SessionPersistence, { SessionPersistenceRevision } from '@deepseek-ai/dsh-session-persistence'
 import type { SessionHandle, SessionPersistenceSnapshot } from '@deepseek-ai/dsh-session-persistence'
-import JsonlSessionPersistence, { sessionDir } from '@deepseek-ai/dsh-session-persistence-jsonl'
+import * as JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
+import { sessionDir } from '@deepseek-ai/dsh-session-persistence-jsonl'
 import { SessionProjectionCache } from '@deepseek-ai/dsh-session-projection-cache'
 import { WebServer } from '@deepseek-ai/dsh-host-webserver'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
@@ -36,6 +37,9 @@ vi.mock('@deepseek-ai/dsh-session-persistence-jsonl', async (importOriginal) => 
   const pathModule = await import('node:path')
   return {
     ...actual,
+    // 真实模块无 inject 导出(装配器读到 undefined 按空注入列表处理);
+    // vitest 的 mock 代理对缺失键抛错,显式声明 undefined 保持透传语义。
+    inject: undefined,
     sessionDir(root: string, cwd: string | undefined, id: SessionId) {
       if (escapeState.active) return pathModule.join(root, '..', 'escaped-session')
       return actual.sessionDir(root, cwd, id)

@@ -60,10 +60,6 @@ The session-to-application map is in-memory; a webserver restart re-learns it fr
 
 kb resolution always re-fetches web-console's by-application endpoint with the signed-in employee's JWT, and non-members get 404 → no block.
 
-### The invariant pins format and position
-
-The `./invariant` companion pins the block's durable format and position (inside an open step, before `request/header`), so replayed logs reject rewritten blocks.
-
 </details>
 
 -----
@@ -109,6 +105,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-`renderKbContextText` in `src/text.ts` owns the block's exact wording, and the `./invariant` companion validates replayed blocks against it — the two files change together. The report route `/api/enterprise/kb/session-context` is shared with the client reporter in `@deepseek-ai/dsh-ui-enterprise`; renaming it must update both sides. No open work here.
+`renderKbContextText` in `src/text.ts` owns the block's exact wording. The report route `/api/enterprise/kb/session-context` is shared with the client reporter in `@deepseek-ai/dsh-ui-enterprise`; renaming it must update both sides. No open work here.
 
 </details>

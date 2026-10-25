@@ -54,10 +54,6 @@ Events are declared in the `@deepseek-ai/dsh-platform-user` package; `platform-u
 
 Identity fields (name/email/userId/org positions) are display-only; the auth token lets the assistant call enterprise internal systems as the signed-in employee (issued by Supabase SSO, bearer auth — the generic integration mechanism), and must never be shown, restated in replies, or written to files. The block itself carries this instruction.
 
-### The invariant checks format and attribution
-
-The `./invariant` companion validates the injected block's exact format and source attribution (same mechanism as time-context), mounted explicitly by test and diagnostic assemblies.
-
 </details>
 
 -----
@@ -115,6 +111,6 @@ These limits define what the package does not attempt. They are current constrai
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-`renderIdentityText` in `src/text.ts` owns the block's exact wording, and the `./invariant` companion validates replayed blocks against it — the two files change together. `src/positions.ts` mirrors the web-console `OrgPositionDto`; renaming a field must update both sides. No open work here.
+`renderIdentityText` in `src/text.ts` owns the block's exact wording. `src/positions.ts` mirrors the web-console `OrgPositionDto`; renaming a field must update both sides. No open work here.
 
 </details>

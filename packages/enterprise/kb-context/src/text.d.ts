@@ -1,7 +1,5 @@
 /**
- * Deterministic rendering of the model-visible knowledge-base block. The
- * invariant companion (`./invariant.ts`) pins this exact wording, so both
- * files must change together.
+ * Deterministic rendering of the model-visible knowledge-base block.
  *
  * @module
  */

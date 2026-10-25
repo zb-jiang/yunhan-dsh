@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-enterprise-backend",
   "description": "The dsh backend-profile bundle: server-side unattended backend task runner over dsh-base (webserver + backend-task plugin; no browser UI)",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -18,12 +18,17 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./startup": {
+      "types": "./lib/types/startup.d.ts",
+      "default": "./lib/startup.js"
+    },
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
+    "lib/startup.js",
     "cordis.patch.yml",
     "lib/types/**/*.d.ts"
   ],
@@ -36,9 +41,11 @@
   "dependencies": {
     "@deepseek-ai/cordis-plugin-logger-console": "workspace:~",
     "@deepseek-ai/dsh-backend-task": "workspace:*",
+    "@deepseek-ai/dsh-cmdline": "workspace:*",
     "@deepseek-ai/dsh-host-webserver": "workspace:*",
     "@deepseek-ai/dsh-instance-workspace": "workspace:*",
-    "@deepseek-ai/dsh-knowledge": "workspace:*"
+    "@deepseek-ai/dsh-knowledge": "workspace:*",
+    "commander": "^15.0.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"

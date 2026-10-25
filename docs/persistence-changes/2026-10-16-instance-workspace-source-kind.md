@@ -27,19 +27,19 @@ id: 2026-10-16-instance-workspace-source-kind
 baseline: false
 changes:
   - root: "event:agent/inbox/spliced"
-    previous: "2026-10-04-enterprise-attribution-kinds"
+    previous: "2026-10-13-user-rpc-principal"
     after: "41dd97a5775067d4a52bcbeb80787c4a3033842c3339e034a304129eef478b0c"
     decision: same-version
   - root: "event:developer/message"
-    previous: "2026-10-04-enterprise-attribution-kinds"
+    previous: "2026-10-13-user-rpc-principal"
     after: "bf2b198c22b7e9e07377b960f4697c1a8bef990485501ee19e2e92527092877e"
     decision: same-version
   - root: "event:session/title-llm-request"
-    previous: "2026-10-04-enterprise-attribution-kinds"
+    previous: "2026-10-13-user-rpc-principal"
     after: "696ff4e342116db71f8241a9f6f9e47ef57b1bb6b5c09ac925faf647584453bb"
     decision: same-version
   - root: "event:user/message"
-    previous: "2026-10-04-enterprise-attribution-kinds"
+    previous: "2026-10-13-user-rpc-principal"
     after: "b1035c796bb2095940195dabe4920f8249dafcac4004d6afc7173dba31cd0e09"
     decision: same-version
 ```

@@ -16,13 +16,13 @@
  * '@' 知识库文档触发源注册进 ctx.inputTriggers(待办/已完成会话候选 → 内联
  * chip),工作空间文件行的「上传到知识库」占据 ui-sidebar-files 声明的
  * `sidebar.files.entry.action`(readBytes 经 ctx.remote.workspaceFiles 绑定);
- * 历史消息里的 `知识库文档 docid: <id>` wire 文本经 ui-primitives 的
- * registerUserTextDecorator 注册装饰器恢复为文档徽标。座位由其他包的注册
- * 声明,经 ctx.slots.inject 延迟到声明后注册。
+ * 历史消息里的 `知识库文档 docid: <id>` wire 文本经 ui-conversation 的
+ * user-text 体系('kb-doc' 规则 + keyed 渲染器)恢复为文档徽标。座位由其他
+ * 包的注册声明,经 ctx.slots.inject 延迟到声明后注册。
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import { createElement } from 'react'
-import { IconApiOutlineMedium, IconPhoneOutlineMedium, registerUserTextDecorator } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconApiOutlineMedium, IconPhoneOutlineMedium } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: 拉入 ui-workspace 的 SlotMap 合并(sidebar.nav.directoryFlow 洞类型)。
@@ -48,7 +48,7 @@ import { createEnterpriseServicesAccess } from './enterprise-services-access.ts'
 import { KnowledgeWorkbench } from './knowledge-workbench.ts'
 import { buildKbDocsSource } from './kb-trigger-source.ts'
 import { buildInstanceWorkspaceSource } from './instance-trigger-source.ts'
-import { buildKbDocDecorator } from './kb-doc-decorator.tsx'
+import { kbDocRule, KbDocNode } from './kb-doc-decorator.tsx'
 import { TaskArchivePanel } from './TaskArchivePanel.tsx'
 import { INSTANCE_FILES_TAB_ID, INSTANCE_FILES_TAB_KIND } from './instance-files-tab.ts'
 import { InstanceFilesPanel } from './InstanceFilesPanel.tsx'
@@ -67,7 +67,7 @@ import type {
 } from './DeleteSession.tsx'
 
 export const inject = [
-  'slots', 'sessions', 'workspaces', 'uiWorkspace', 'layout', 'conversation', 'inputTriggers', 'sidebarRight',
+  'slots', 'sessions', 'workspaces', 'uiWorkspace', 'layout', 'conversation', 'uiConversation', 'inputTriggers', 'sidebarRight',
   'sidebarRightTabs', 'remote', 'remote.workspaceFiles', 'remote.settings', 'connection',
 ]
 
@@ -104,8 +104,13 @@ export function apply(ctx: ClientContext): void {
   // workbench.armStuckSentinel;自愈只恢复 frame 轨道,不碰 surface)。
   ctx.effect(() => workbench.armStuckSentinel(), 'ui-enterprise: rightbar stuck sentinel')
 
-  // 历史消息的知识库文档徽标:wire 文本 `知识库文档 docid: <id>` → 文档 chip。
-  ctx.effect(() => registerUserTextDecorator(buildKbDocDecorator()), 'ui-enterprise: kb doc history decorator')
+  // 历史消息的知识库文档徽标:'kb-doc' 规则切节点,'kb-doc' keyed 渲染器出
+  // chip(座位由 ui-conversation 声明,经 slots.inject 延迟到声明后注册)。
+  ctx.effect(() => ctx.uiConversation.userText.register(kbDocRule), 'ui-enterprise: kb doc rule')
+  ctx.slots.inject('conversation.user.text.node', () => ctx.slots.register({
+    name: 'conversation.user.text.node',
+    key: 'kb-doc',
+  }, KbDocNode))
 
   // 认证遮罩:未登录/待审批/被禁用时盖住整帧;注入企业服务配置读写面,
   // 登录页常驻「服务配置」弹层与设置面板共用同一套 load/save(含镜像与并发控制)。

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-llm-access",
   "description": "Enterprise LLM access on the employee side: registers the llm-enterprise provider route backed by web-console /api/llm (model catalog + OpenAI-compatible proxy) with the signed-in employee's JWT",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

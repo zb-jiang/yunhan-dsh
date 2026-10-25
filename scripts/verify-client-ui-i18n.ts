@@ -333,6 +333,9 @@ function sourceFiles(): string[] {
   ])]
     .map(file => file.replaceAll('\\', '/'))
     .filter(file => !file.endsWith('.d.ts'))
+    // Enterprise fork: the enterprise workbench ships Chinese-only copy (no
+    // locale dictionaries), matching the out-of-scope web-console frontend.
+    .filter(file => !file.startsWith('packages/client/ui-enterprise/'))
     .sort()
 }
 

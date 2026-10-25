@@ -54,10 +54,6 @@ kind: "package-reference"
 
 身份字段（姓名/邮箱/userId/组织岗位）仅供展示；认证令牌让助手以登录员工身份调用企业内部系统（由 Supabase SSO 签发、Bearer 认证——这是通用集成机制），绝不能展示、在回复中转述或写入文件。块本身携带这条指令。
 
-### 不变量检查格式与归属
-
-`./invariant` 伴随包校验注入块的精确格式与来源归属（与 time-context 同一机制），由测试与诊断装配显式挂载。
-
 </details>
 
 -----
@@ -115,6 +111,6 @@ eyJhbGciOi…
 <details>
 <summary>维护者工作上下文 — 点击展开</summary>
 
-`src/text.ts` 的 `renderIdentityText` 拥有块的逐字措辞，`./invariant` 伴随模块按它校验每条重放块——两个文件必须一起改。`src/positions.ts` 与 web-console 的 `OrgPositionDto` 字段对齐；字段改名必须两侧同步。此处无未竟工作。
+`src/text.ts` 的 `renderIdentityText` 拥有块的逐字措辞。`src/positions.ts` 与 web-console 的 `OrgPositionDto` 字段对齐；字段改名必须两侧同步。此处无未竟工作。
 
 </details>

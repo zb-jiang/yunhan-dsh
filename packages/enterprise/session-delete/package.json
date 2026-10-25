@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-session-delete",
   "description": "HTTP endpoint that permanently deletes one archived session (JSONL artifact directory, pending registration, projection-cache record, plus workspace registry bookkeeping)",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

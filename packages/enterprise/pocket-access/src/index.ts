@@ -268,7 +268,7 @@ export class PocketAccessService extends Service {
   private ensureUpstreamPort(): number {
     if (this.resolvedUpstreamPort !== null) return this.resolvedUpstreamPort
     const port = this.ctx.webServer.port
-    if (!Number.isInteger(port) || port <= 0) {
+    if (port === undefined || !Number.isInteger(port) || port <= 0) {
       throw new Error(`pocket-access: webserver 端口不可用（${String(port)}），无法确定上游转发目标`)
     }
     this.resolvedUpstreamPort = port

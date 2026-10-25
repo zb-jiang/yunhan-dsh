@@ -303,9 +303,11 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces, 
 
       {authed && (
         <div className={css.footer}>
+          {/* oxlint-disable typescript/no-unnecessary-condition -- authed is a hoisted boolean; TS cannot narrow through it */}
           <span className={css.footerUser} title={currentUser?.email ?? ''}>
             {currentUser?.displayName ?? ''}
           </span>
+          {/* oxlint-enable typescript/no-unnecessary-condition */}
           <button type="button" className={css.logout} onClick={() => { void logout() }}>
             退出
           </button>

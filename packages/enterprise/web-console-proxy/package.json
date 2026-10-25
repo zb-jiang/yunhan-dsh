@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-web-console-proxy",
   "description": "Shared webserver prefix forwarder: browser surfaces reach web-console only through the local DSH webserver, with the signed-in employee's JWT attached and JSON error responses",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -25,5 +25,11 @@
     "lib/index.js",
     "lib/types/**/*.d.ts"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~"
+  }
 }

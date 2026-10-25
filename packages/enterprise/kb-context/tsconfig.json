@@ -12,7 +12,6 @@
     { "path": "../../core/agent" },
     { "path": "../../core/session" },
     { "path": "../../host/webserver" },
-    { "path": "../../llm/llm" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../llm/llm" }
   ]
 }

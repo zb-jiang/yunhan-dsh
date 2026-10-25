@@ -32,7 +32,7 @@ kind: "package-bundle"
 | 行 | 包 | 角色 |
 |---|---|---|
 | `logger-console` | @deepseek-ai/cordis-plugin-logger-console | 常驻进程的 stdout 日志导出器；levels 必须显式声明，省略会静默丢弃 warn |
-| `webserver` | @deepseek-ai/dsh-host-webserver | 默认绑定 `0.0.0.0:3190` 的 HTTP 服务 —— 引擎与控制台跨主机访问 |
+| `webserver` | @deepseek-ai/dsh-host-webserver | 默认绑定 `127.0.0.1:3190` 的 HTTP 服务 —— v5 部署下引擎、控制台与本服务同机；跨主机调用时把 `DSH_BACKEND_HOST` 设为本机具体地址（webserver 配置校验拒绝 wildcard 地址） |
 | `backend-task` | @deepseek-ai/dsh-backend-task | REST 任务端点 + 注册/心跳与 skill 同步 daemon |
 | `knowledge` | @deepseek-ai/dsh-knowledge | 经 web-console 服务密钥端点的 `kb_*` 工具；每个任务 payload 携带 `kbId` |
 
@@ -41,7 +41,7 @@ kind: "package-bundle"
 | 环境变量 | 默认值 | 供给 |
 |---|---|---|
 | `DSH_LOG_LEVEL` | `3` | logger-console 级别 |
-| `DSH_BACKEND_HOST` | `0.0.0.0` | webserver 主机 |
+| `DSH_BACKEND_HOST` | `127.0.0.1` | webserver 主机；跨主机部署设为本机具体 IPv4/IPv6 地址 |
 | `DSH_BACKEND_PORT` | `3190` | webserver 端口 |
 | `WEB_CONSOLE_URL` | `http://127.0.0.1:8080` | backend-task 与 knowledge 的 web-console 基地址 |
 | `DSH_BACKEND_URL` | `http://127.0.0.1:3190` | backend-task selfUrl —— 必须是 flowable-engine 与 web-console 能访问到的地址 |

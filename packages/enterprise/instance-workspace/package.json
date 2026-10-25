@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-instance-workspace",
   "description": "Process-instance cloud workspace access: model-facing workspace_list/read/write/upload/download/delete tools, the employee-facing local proxy and session-binding report route, and the per-turn <instance_workspace> pre-step injection (JWT mode on the enterprise profile, service-key mode on the unattended backend profile)",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

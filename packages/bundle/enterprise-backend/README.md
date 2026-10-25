@@ -32,7 +32,7 @@ Launch one instance per backend profile. Each instance starts in its own working
 | Row | Package | Role |
 |---|---|---|
 | `logger-console` | @deepseek-ai/cordis-plugin-logger-console | stdout log exporter for the resident process; levels are declared explicitly because omitting them silently drops warn |
-| `webserver` | @deepseek-ai/dsh-host-webserver | HTTP server bound to `0.0.0.0:3190` by default — engine and console call in across hosts |
+| `webserver` | @deepseek-ai/dsh-host-webserver | HTTP server bound to `127.0.0.1:3190` by default — the v5 deployment keeps engine, console, and this service on one host; set `DSH_BACKEND_HOST` to a concrete local address for cross-host calls (wildcard addresses are rejected by the webserver config validation) |
 | `backend-task` | @deepseek-ai/dsh-backend-task | REST task endpoints plus the register/heartbeat and skill-sync daemons |
 | `knowledge` | @deepseek-ai/dsh-knowledge | `kb_*` tools over web-console service-key endpoints; each task payload carries the `kbId` |
 
@@ -41,7 +41,7 @@ Launch one instance per backend profile. Each instance starts in its own working
 | Env var | Default | Feeds |
 |---|---|---|
 | `DSH_LOG_LEVEL` | `3` | logger-console level |
-| `DSH_BACKEND_HOST` | `0.0.0.0` | webserver host |
+| `DSH_BACKEND_HOST` | `127.0.0.1` | webserver host; a cross-host deployment sets it to a concrete local IPv4/IPv6 address |
 | `DSH_BACKEND_PORT` | `3190` | webserver port |
 | `WEB_CONSOLE_URL` | `http://127.0.0.1:8080` | backend-task and knowledge web-console base URL |
 | `DSH_BACKEND_URL` | `http://127.0.0.1:3190` | backend-task selfUrl — must be the address flowable-engine and web-console can reach |

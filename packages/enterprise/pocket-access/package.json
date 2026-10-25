@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-pocket-access",
   "description": "Pocket Access: controlled phone entry surface for the employee DSH — pairing-gated reverse proxy over the local webserver with same-account identity mirroring",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

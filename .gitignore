@@ -43,12 +43,14 @@ apps/web/dist/
 apps/**/target/
 .artifacts/
 .dsh-build/
+.dsh-report/
 .playwright-mcp/
 .orig
 .worktrees/
 worktrees/
 .agents/worktrees/
 .typert-*/
+.workbuddy/
 native/system/test/bin/
 # tsc -b host-face 在 source-plane 包的 src/ 旁就地产出编译结果,不入库
 vendor/*/src/*.js
