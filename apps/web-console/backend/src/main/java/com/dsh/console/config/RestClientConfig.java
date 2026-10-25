@@ -12,7 +12,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
- * RestClient 配置:调用 Flowable 引擎 REST、企业 Skill 仓库(SkillHub)与 Supabase Storage。
+ * RestClient 配置:调用 Flowable 引擎 REST 与企业 Skill 仓库(SkillHub)。
  *
  * <p>认证模型为"认证直连 Supabase"(参见 SPEC §7.2 与 Supabase 手册 §0):
  * <ul>
@@ -20,8 +20,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  *       用 Supabase JWT Secret 本地验证(见 {@code SecurityConfig})。</li>
  *   <li>Web Console 调 Flowable REST 时把当前请求的 JWT 透传过去;Flowable 引擎同样用
  *       Supabase JWT Secret 验证,无需 server-to-server 共享密钥或 basic auth。</li>
- *   <li>Supabase Storage 同理:知识库上传/下载/删除透传用户 JWT(RLS 按应用成员放行),
- *       另带 {@code apikey: <anon key>} 头,不引入 service_role。</li>
  * </ul>
  *
  * <p>因此本配置不引入 {@code BasicAuthenticationInterceptor},仅在出站请求上补 Authorization 头。
@@ -29,7 +27,6 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  *
  * <p>线程边界:本 bean 是单例,interceptor 通过 {@link RequestContextHolder} 拿当前线程
  * 绑定的请求;后台线程(如异步任务)无请求上下文时,interceptor 不补头,由调用方自行处理。
- * Storage 客户端只在请求线程调用(解析管线直接消费上传字节,不经 Storage 回读)。
  *
  * <p>SkillHub 客户端不同:浏览器不直连 SkillHub,后端持只读静态 Bearer token 代理访问
  * (token 在 {@link com.dsh.console.skillhub.SkillHubRestClient} 按请求设置,不走透传 interceptor)。
@@ -39,14 +36,11 @@ public class RestClientConfig {
 
     private final FlowableRestProperties properties;
     private final SkillHubProperties skillHubProperties;
-    private final KnowledgeProperties knowledgeProperties;
 
     public RestClientConfig(FlowableRestProperties properties,
-                            SkillHubProperties skillHubProperties,
-                            KnowledgeProperties knowledgeProperties) {
+                            SkillHubProperties skillHubProperties) {
         this.properties = properties;
         this.skillHubProperties = skillHubProperties;
-        this.knowledgeProperties = knowledgeProperties;
     }
 
     /**
@@ -80,29 +74,6 @@ public class RestClientConfig {
         return RestClient.builder()
             .baseUrl(skillHubProperties.baseUrl())
             .requestFactory(factory)
-            .messageConverters(converters -> {
-                converters.removeIf(c -> c instanceof StringHttpMessageConverter);
-                converters.add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
-            })
-            .build();
-    }
-
-    /**
-     * Supabase Storage REST 客户端:base URL + 透传 JWT + 静态 apikey(anon key)头。
-     *
-     * <p>只服务知识库模块的上传/下载/删除,全部发生在请求线程
-     * (解析管线直接消费上传字节,不经 Storage 回读),透传 interceptor 可靠。
-     */
-    @Bean
-    public RestClient supabaseStorageRestClient() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(10_000);   // 10 秒
-        factory.setReadTimeout(60_000);      // 60 秒:50MB 文档上传留余量
-        return RestClient.builder()
-            .baseUrl(knowledgeProperties.supabaseUrl())
-            .requestFactory(factory)
-            .requestInterceptor(forwardAuthHeader())
-            .defaultHeader("apikey", knowledgeProperties.anonKey())
             .messageConverters(converters -> {
                 converters.removeIf(c -> c instanceof StringHttpMessageConverter);
                 converters.add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));

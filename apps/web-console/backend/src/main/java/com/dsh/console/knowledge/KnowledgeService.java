@@ -47,15 +47,13 @@ import org.springframework.web.multipart.MultipartFile;
  * 成员校验口径为「管理员 ∪ active 成员」,与 RLS(见 setup guide §12.2)一致。
  * 不做目录级 ACL。
  *
- * <p>上传把文件字节直接交给解析管线(不经 Storage 回读),Storage 只在请求线程访问。
+ * <p>上传把文件字节直接交给解析管线(本地原文落盘与元数据行同请求完成,
+ * 解析只消费内存字节,不回读文件)。
  */
 @Service
 public class KnowledgeService {
 
     private static final Logger log = LoggerFactory.getLogger(KnowledgeService.class);
-
-    /** 全部知识库共用的 Storage 桶(setup guide §4.1 一次性手工预建),应用间以对象路径 {appId}/ 段隔离。 */
-    private static final String KB_BUCKET = "kb-documents";
 
     /** 混合检索默认返回条数(调用方未传 topK 时)。 */
     private static final int DEFAULT_SEARCH_TOP_K = 8;
@@ -72,7 +70,7 @@ public class KnowledgeService {
 
     private final KnowledgeJdbcRepository repository;
     private final ApplicationJdbcRepository appRepository;
-    private final SupabaseStorageClient storageClient;
+    private final KbLocalStorage localStorage;
     private final KbParsePipeline parsePipeline;
     private final KbEmbeddingClient embeddingClient;
     private final KbRerankClient rerankClient;
@@ -81,7 +79,7 @@ public class KnowledgeService {
 
     public KnowledgeService(KnowledgeJdbcRepository repository,
                             ApplicationJdbcRepository appRepository,
-                            SupabaseStorageClient storageClient,
+                            KbLocalStorage localStorage,
                             KbParsePipeline parsePipeline,
                             KbEmbeddingClient embeddingClient,
                             KbRerankClient rerankClient,
@@ -89,7 +87,7 @@ public class KnowledgeService {
                             KnowledgeProperties properties) {
         this.repository = repository;
         this.appRepository = appRepository;
-        this.storageClient = storageClient;
+        this.localStorage = localStorage;
         this.parsePipeline = parsePipeline;
         this.embeddingClient = embeddingClient;
         this.rerankClient = rerankClient;
@@ -100,11 +98,10 @@ public class KnowledgeService {
     // ---------- 知识库开通 ----------
 
     /**
-     * 查应用知识库,不存在则按需开通(写 knowledge_bases 行,登记公共 Storage 桶名)。
+     * 查应用知识库,不存在则按需开通(写 knowledge_bases 行)。
      *
-     * <p>Storage 统一用公共桶 {@link #KB_BUCKET}:桶按 setup guide §4.1 一次性手工预建;
-     * 治理 JDBC 连的是本地 PG,云端 storage schema 不可达,代码不做桶登记。
-     * 应用间以对象路径 {@code {appId}/{docId}/...} 分段隔离。
+     * <p>文档原文存 {@code dsh.knowledge.storage-root} 本地根目录,
+     * 应用间以对象路径 {@code {appId}/{docId}/...} 分段隔离,库行不再登记存储位置。
      *
      * <p>开通属配置动作,仅 system_admin / 应用管理员可触发;成员的内容访问
      * 走 {@link #getKnowledgeBase}(KB 已存在时由管理员先行开通)。
@@ -115,9 +112,9 @@ public class KnowledgeService {
         ApplicationDto app = appRepository.findById(appId)
             .orElseThrow(() -> new NotFoundException("应用不存在: " + appId));
         return repository.findKbByApp(appId).orElseGet(() -> {
-            KnowledgeBaseDto kb = repository.insertKb(appId, app.name() + " 知识库", KB_BUCKET);
+            KnowledgeBaseDto kb = repository.insertKb(appId, app.name() + " 知识库");
             auditService.record("KB_CREATE", "application", null, auth.platformUserId(),
-                Map.of("appId", appId, "kbId", kb.id(), "storageBucket", KB_BUCKET));
+                Map.of("appId", appId, "kbId", kb.id()));
             return kb;
         });
     }
@@ -646,7 +643,7 @@ public class KnowledgeService {
     }
 
     /**
-     * 上传文档:预检同名与来源格式 → Storage 上传(透传 JWT)→ 落 pending 元数据行(含 chunk 参数)
+     * 上传文档:预检同名与来源格式 → 本地落盘 → 落 pending 元数据行(含 chunk 参数)
      * → 提交异步解析。
      *
      * <p>字节由 multipart 直接载入(上限 {@code KB_MAX_UPLOAD_MB}),管线消费后即释放。
@@ -684,15 +681,15 @@ public class KnowledgeService {
         String contentType = file.getContentType() == null || file.getContentType().isBlank()
             ? "application/octet-stream" : file.getContentType();
         UUID docId = UUID.randomUUID();
-        // Storage 对象 key 是 S3 风格 ASCII 白名单,中文文件名会被拒(InvalidKey);
-        // 对象路径 {appId}/{docId}/document{ext} 在公共桶内按应用分段隔离,对象名只用
-        // docId + ASCII 扩展名,显示名以元数据 name 为准(下载由前端按 name 命名)
+        // 对象路径 {appId}/{docId}/document{ext} 在存储根目录下按应用分段隔离,对象名只用
+        // docId + ASCII 扩展名(避开中文/特殊字符的文件系统兼容问题),显示名以元数据 name 为准
+        // (下载由前端按 name 命名)
         String storagePath = kb.applicationId() + "/" + docId + "/document" + storageExtension(name);
         KbDocumentRecord doc = new KbDocumentRecord(docId, kbId, folderId, name, contentType,
             content.length, storagePath, null, KbDocumentDto.STATUS_PENDING, null,
             chunkParams.maxSize(), chunkParams.overlap(), chunkParams.separator(),
             auth.authSubject(), null, null);
-        storageClient.upload(kb.storageBucket(), storagePath, content, contentType);
+        localStorage.store(storagePath, content);
         KbDocumentRecord inserted = repository.insertDocument(doc);
         // 入队等事务提交后再做:元数据行未提交时 pipeline 的 ready 回写会被同一行的
         // insert 锁阻塞(不至死锁,但没必要),afterCommit 保证管线看到的行一定已存在
@@ -723,7 +720,7 @@ public class KnowledgeService {
         }
         ChunkSplitter.ChunkParams chunkParams =
             ChunkSplitter.ChunkParams.of(chunkMaxSize, chunkOverlap, chunkSeparator, properties);
-        byte[] content = storageClient.download(kb.storageBucket(), doc.storagePath());
+        byte[] content = localStorage.load(doc.storagePath());
         repository.resetParsing(docId, chunkParams);
         KbDocumentRecord reset = repository.findDocument(kbId, docId).orElse(doc);
         parsePipeline.submit(reset, content);
@@ -741,7 +738,7 @@ public class KnowledgeService {
         checkAppMemberAccess(auth, kb.applicationId());
         KbDocumentRecord doc = repository.findDocument(kbId, docId)
             .orElseThrow(() -> new NotFoundException("文档不存在: " + docId));
-        byte[] content = storageClient.download(kb.storageBucket(), doc.storagePath());
+        byte[] content = localStorage.load(doc.storagePath());
         return new KbDocumentContentDto(docId, doc.name(), doc.contentType(), content);
     }
 
@@ -792,7 +789,7 @@ public class KnowledgeService {
         KbDocumentRecord doc = repository.findDocument(kbId, docId)
             .orElseThrow(() -> new NotFoundException("文档不存在: " + docId));
         // 先删 Storage 再删元数据行:Storage 删除失败(502)时行保留可重试
-        storageClient.delete(kb.storageBucket(), doc.storagePath());
+        localStorage.delete(doc.storagePath());
         repository.deleteDocument(docId);
         auditService.record("KB_DOCUMENT_DELETE", "kb_document", null, auth.platformUserId(),
             Map.of("kbId", kbId, "docId", docId, "name", doc.name()));

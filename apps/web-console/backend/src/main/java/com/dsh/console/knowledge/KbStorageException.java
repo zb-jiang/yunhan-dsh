@@ -1,10 +1,10 @@
 package com.dsh.console.knowledge;
 
 /**
- * Supabase Storage 操作失败(上传/下载/删除)。
+ * 知识库文档原文的本地文件系统读写失败(写入/读取/删除)。
  *
- * <p>由 common 包 {@code GlobalExceptionHandler} 映射为 502 STORAGE_ERROR:
- * Storage 在 Supabase 侧,失败多为网络/RLS 拒绝,调用方可重试但非本服务缺陷。
+ * <p>由 common 包 {@code GlobalExceptionHandler} 映射为 500 STORAGE_ERROR:
+ * 失败多为磁盘满/权限/文件缺失,属本服务端故障,非上游依赖不可用。
  */
 public class KbStorageException extends RuntimeException {
 

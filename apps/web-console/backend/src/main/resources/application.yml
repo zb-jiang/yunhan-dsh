@@ -1,5 +1,5 @@
 # DSH Web Console 后端配置
-# 环境变量:SUPABASE_URL/SUPABASE_ANON_KEY 指向 Supabase 项目(Auth+Storage),
+# 环境变量:SUPABASE_URL/SUPABASE_ANON_KEY 指向 Supabase 项目(Auth),
 # SUPABASE_DB_HOST/USER/PASSWORD 指向本地 PostgreSQL,
 # SSO_PROVIDER/SSO_ISSUER/SSO_CLIENT_ID/SSO_SCOPES 为认证中心(SSO)配置,
 # KB_EMBEDDING_API_KEY/KB_RERANK_API_KEY 为知识库解析与检索管线的 embedding/rerank
@@ -91,11 +91,11 @@ dsh:
     base-url: ${SKILLHUB_BASE_URL:http://127.0.0.1:8095}
     api-token: ${SKILLHUB_API_TOKEN:}
 
-  # 知识库模块:文件存 Supabase Storage,REST 走透传用户 JWT + anon key apikey 头,无 service_role;
-  # embedding 走硅基流动 OpenAI 兼容端点(独立 Key,不经 New API)
+  # 知识库模块:文档原文存服务器本地文件系统(storage-root 根目录,应用间 {appId}/ 分段隔离),
+  # 元数据在本地 PG;embedding 走硅基流动 OpenAI 兼容端点(独立 Key,不经 New API)
   knowledge:
-    supabase-url: ${SUPABASE_URL}
-    anon-key: ${SUPABASE_ANON_KEY}
+    # 文档原文存储根目录(必填,缺失启动即失败);相对路径按进程工作目录解析
+    storage-root: ${KB_STORAGE_ROOT:./data/kb-documents}
     # Tesseract 语言训练数据目录(不配则图片 OCR 标记解析失败)
     tessdata-path: ${TESSDATA_PATH:}
     max-upload-size-mb: ${KB_MAX_UPLOAD_MB:50}

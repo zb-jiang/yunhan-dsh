@@ -39,7 +39,7 @@ class BackendKbControllerTest {
 
     @BeforeEach
     void setUp() {
-        kb = new KnowledgeBaseDto(KB_ID, APP_ID, "差旅工程知识库", "kb-documents", OffsetDateTime.now());
+        kb = new KnowledgeBaseDto(KB_ID, APP_ID, "差旅工程知识库", OffsetDateTime.now());
     }
 
     private WorkflowDefinitionDto definition(UUID appId) {

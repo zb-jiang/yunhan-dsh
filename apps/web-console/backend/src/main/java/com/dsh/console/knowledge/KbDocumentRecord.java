@@ -13,7 +13,7 @@ import java.util.UUID;
  * @param name           文档名
  * @param contentType    MIME 类型
  * @param sizeBytes      文件大小
- * @param storagePath    桶内对象路径
+ * @param storagePath    本地存储根目录内的相对路径({appId}/{docId}/document{ext})
  * @param textContent    抽取/OCR 全文(未解析或无文本时为 null)
  * @param parseStatus    pending / ready / failed
  * @param parseError     解析失败原因

@@ -32,6 +32,7 @@ $env:NEWAPI_BASE_URL="http://127.0.0.1:3000"
 $env:NEWAPI_SERVICE_TOKEN = "sk-m5f2Nu9vlSQfIgc5YBaQ06V8YPcDzmDks1jYbExj58Bh3RB0"
 $env:DSH_SERVICE_KEY = "demo-webconsole-service-key"   #知识库集成：放行 /api/backend/kb/** 只读端点；须与flowable、backend profile一致
 $env:INSTANCE_WORKSPACE_ROOT = "D:\works\deepseek-harness\apps\web-console\instance-workspaces"   #流程实例工作空间存储根目录(磁盘为事实源)；不设则默认 ./data/instance-workspaces(相对启动目录)
+$env:KB_STORAGE_ROOT = "D:\works\deepseek-harness\apps\web-console\kb-documents"   #知识库文档原文存储根目录(磁盘为事实源)；不设则默认 ./data/kb-documents(相对启动目录)
 $env:KB_EMBEDDING_API_URL="https://api.siliconflow.cn/v1"
 $env:KB_EMBEDDING_API_KEY="sk-123456"
 $env:KB_EMBEDDING_MODEL="Qwen/Qwen3-Embedding-4B"

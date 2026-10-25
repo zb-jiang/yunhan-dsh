@@ -34,7 +34,7 @@ public class KnowledgeJdbcRepository {
 
     public Optional<KnowledgeBaseDto> findKb(UUID kbId) {
         return jdbcClient.sql("""
-                SELECT id, application_id, name, storage_bucket, created_at
+                SELECT id, application_id, name, created_at
                 FROM public.knowledge_bases WHERE id = :kbId
                 """)
             .param("kbId", kbId)
@@ -44,7 +44,7 @@ public class KnowledgeJdbcRepository {
 
     public Optional<KnowledgeBaseDto> findKbByApp(UUID appId) {
         return jdbcClient.sql("""
-                SELECT id, application_id, name, storage_bucket, created_at
+                SELECT id, application_id, name, created_at
                 FROM public.knowledge_bases WHERE application_id = :appId
                 """)
             .param("appId", appId)
@@ -52,15 +52,14 @@ public class KnowledgeJdbcRepository {
             .optional();
     }
 
-    public KnowledgeBaseDto insertKb(UUID appId, String name, String storageBucket) {
+    public KnowledgeBaseDto insertKb(UUID appId, String name) {
         return jdbcClient.sql("""
-                INSERT INTO public.knowledge_bases (application_id, name, storage_bucket)
-                VALUES (:appId, :name, :bucket)
-                RETURNING id, application_id, name, storage_bucket, created_at
+                INSERT INTO public.knowledge_bases (application_id, name)
+                VALUES (:appId, :name)
+                RETURNING id, application_id, name, created_at
                 """)
             .param("appId", appId)
             .param("name", name)
-            .param("bucket", storageBucket)
             .query(KbRowMapper.KB_INSTANCE)
             .single();
     }
@@ -626,7 +625,6 @@ public class KnowledgeJdbcRepository {
                 rs.getObject("id", UUID.class),
                 rs.getObject("application_id", UUID.class),
                 rs.getString("name"),
-                rs.getString("storage_bucket"),
                 rs.getObject("created_at", java.time.OffsetDateTime.class));
         }
 

@@ -17,7 +17,7 @@ class ChunkSplitterTest {
     private final ChunkSplitter splitter = new ChunkSplitter();
 
     private KnowledgeProperties defaults() {
-        return new KnowledgeProperties("http://supabase.test", "anon-key", null, 50,
+        return new KnowledgeProperties("./target/kb-test-root", null, 50,
             "https://api.siliconflow.test/v1", "sf-test-key", "test-embedding-model", 4096,
             java.time.Duration.ofSeconds(10), java.time.Duration.ofSeconds(120),
             1000, 150, SEP,

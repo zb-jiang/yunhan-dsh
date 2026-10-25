@@ -110,11 +110,11 @@ public class GlobalExceptionHandler {
                 "认证中心调用失败:" + e.getMessage())));
     }
 
-    /** Supabase Storage 调用失败(知识库上传/下载/删除):返回 502。 */
+    /** 知识库本地文档存储读写失败(上传/下载/删除):返回 500(属本服务端故障,非上游依赖)。 */
     @ExceptionHandler(KbStorageException.class)
     public ResponseEntity<ApiResponse<Void>> handleKbStorage(KbStorageException e) {
-        log.error("Supabase Storage call failed", e);
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+        log.error("KB local storage call failed", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.fail(ApiError.of("STORAGE_ERROR",
                 "访问文档存储失败:" + e.getMessage())));
     }

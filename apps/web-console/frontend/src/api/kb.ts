@@ -11,7 +11,6 @@ export interface KnowledgeBaseDto {
   id: string
   applicationId: string
   name: string
-  storageBucket: string
   createdAt: string | null
 }
 

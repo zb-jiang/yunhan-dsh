@@ -19,7 +19,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * <p>多文档上传各自入队排队,互不挤占内存(单文档上限 50MB)。未完成文档不进检索
  * (kw 强制 ready),失败可经重新解析端点恢复。服务重启丢队列中任务,启动时把停留在
- * pending 的文档从 Storage 回读原文重新入队(回读失败记 failed,可再次重新解析)。
+ * pending 的文档从本地存储回读原文重新入队(回读失败记 failed,可再次重新解析)。
  */
 @Service
 public class KbParsePipeline {
@@ -30,7 +30,7 @@ public class KbParsePipeline {
     private final ChunkSplitter splitter;
     private final KbEmbeddingClient embeddingClient;
     private final KnowledgeJdbcRepository repository;
-    private final SupabaseStorageClient storageClient;
+    private final KbLocalStorage localStorage;
     private final TransactionTemplate transactionTemplate;
     private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
         Thread thread = new Thread(runnable, "kb-parse");
@@ -42,13 +42,13 @@ public class KbParsePipeline {
                            ChunkSplitter splitter,
                            KbEmbeddingClient embeddingClient,
                            KnowledgeJdbcRepository repository,
-                           SupabaseStorageClient storageClient,
+                           KbLocalStorage localStorage,
                            TransactionTemplate transactionTemplate) {
         this.parser = parser;
         this.splitter = splitter;
         this.embeddingClient = embeddingClient;
         this.repository = repository;
-        this.storageClient = storageClient;
+        this.localStorage = localStorage;
         this.transactionTemplate = transactionTemplate;
     }
 
@@ -56,7 +56,7 @@ public class KbParsePipeline {
      * 提交解析任务(元数据行已落库、状态 pending 时调用;上传与重新解析共用)。
      *
      * @param doc     文档行(取 name / kbId / chunk 参数)
-     * @param content 文件字节(调用方持有;上传取 multipart,重新解析取 Storage 回读)
+     * @param content 文件字节(调用方持有;上传取 multipart,重新解析取本地存储回读)
      */
     public void submit(KbDocumentRecord doc, byte[] content) {
         executor.execute(() -> parse(doc, content));
@@ -69,20 +69,18 @@ public class KbParsePipeline {
     void recoverPendingDocuments() {
         List<KbDocumentRecord> pending = repository.listDocumentsByStatus(KbDocumentDto.STATUS_PENDING);
         for (KbDocumentRecord doc : pending) {
-            String bucket = repository.findKb(doc.kbId())
-                .map(kb -> kb.storageBucket())
-                .orElse(null);
-            if (bucket == null) {
+            boolean kbExists = repository.findKb(doc.kbId()).isPresent();
+            if (!kbExists) {
                 repository.updateParseResult(doc.id(), KbDocumentDto.STATUS_FAILED, null, "知识库不存在,无法恢复解析");
                 continue;
             }
             try {
-                byte[] content = storageClient.download(bucket, doc.storagePath());
+                byte[] content = localStorage.load(doc.storagePath());
                 submit(doc, content);
                 log.info("KB document requeued after restart: {} ({})", doc.name(), doc.id());
             } catch (Exception e) {
                 repository.updateParseResult(doc.id(), KbDocumentDto.STATUS_FAILED, null,
-                    "重启恢复时从 Storage 回读原文失败: " + e.getMessage());
+                    "重启恢复时从本地存储回读原文失败: " + e.getMessage());
             }
         }
     }

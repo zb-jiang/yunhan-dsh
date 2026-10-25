@@ -7,13 +7,13 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 /**
  * 知识库模块配置。
  *
- * <p>绑定 yaml 中 {@code dsh.knowledge.*} 字段。Storage 上传/下载/删除透传用户 JWT
- * (RLS 按应用成员放行),anon key 仅作随附 apikey 头,不引入 service_role。
+ * <p>绑定 yaml 中 {@code dsh.knowledge.*} 字段。文档原文存服务器本地文件系统
+ * (storage-root 根目录,应用间 {appId}/ 一级目录隔离),元数据在本地 PG。
  * embedding 走 OpenAI 兼容 {@code /embeddings} 端点,rerank 走 cohere 风格 {@code /rerank}
  * 端点,两组 API 各自独立配置基址与密钥(默认同为硅基流动,可指向不同供应商)。
  *
- * @param supabaseUrl             Supabase 项目 URL(Storage REST 基址,env {@code SUPABASE_URL};缺失启动即失败)
- * @param anonKey                 Supabase anon key(env {@code SUPABASE_ANON_KEY};缺失启动即失败)
+ * @param storageRoot              文档原文存储根目录(env {@code KB_STORAGE_ROOT};缺失启动即失败——
+ *                                文档落盘位置属于部署决策,不隐藏默认值;相对路径按进程工作目录解析)
  * @param tessdataPath            Tesseract 语言训练数据目录(env {@code TESSDATA_PATH};空表示 OCR 不可用,
  *                                图片解析标记 failed,不阻塞其他类型)
  * @param maxUploadSizeMb         单文档上传上限 MB(env {@code KB_MAX_UPLOAD_MB},默认 50;
@@ -48,8 +48,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties(prefix = "dsh.knowledge")
 public record KnowledgeProperties(
-    String supabaseUrl,
-    String anonKey,
+    String storageRoot,
     String tessdataPath,
     int maxUploadSizeMb,
     @DefaultValue("https://api.siliconflow.cn/v1") String embeddingApiUrl,
@@ -68,11 +67,8 @@ public record KnowledgeProperties(
     @DefaultValue("0.1") double rerankMinScore
 ) {
     public KnowledgeProperties {
-        if (supabaseUrl == null || supabaseUrl.isBlank()) {
-            throw new IllegalStateException("dsh.knowledge.supabase-url 未配置(环境变量 SUPABASE_URL)");
-        }
-        if (anonKey == null || anonKey.isBlank()) {
-            throw new IllegalStateException("dsh.knowledge.anon-key 未配置(环境变量 SUPABASE_ANON_KEY)");
+        if (storageRoot == null || storageRoot.isBlank()) {
+            throw new IllegalStateException("dsh.knowledge.storage-root 未配置(环境变量 KB_STORAGE_ROOT)");
         }
         if (maxUploadSizeMb <= 0) {
             throw new IllegalStateException("dsh.knowledge.max-upload-size-mb 必须为正整数");

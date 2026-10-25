@@ -270,7 +270,6 @@ create table if not exists public.knowledge_bases (
   application_id uuid not null unique references public.applications(id) on delete cascade,
                  -- 所属应用;unique 保证一应用一库;应用删除时级联删掉知识库
   name           text not null,        -- 显示名(web-console 后端自动取「{应用名} 知识库」)
-  storage_bucket text not null,        -- Storage 桶名;全部知识库共用公共桶 'kb-documents'(Supabase 侧一次性手工预建),应用间以对象路径 {appId}/ 段隔离
   created_at     timestamptz not null default now()
 );
 
@@ -290,10 +289,11 @@ create table if not exists public.kb_folders (
 );
 
 -- ============================================================
--- 表3 kb_documents:文档登记表。文件本体在 Supabase Storage 桶里,这张表是元数据和可检索文本。
+-- 表3 kb_documents:文档登记表。文件本体在 web-console 服务器本地文件系统
+-- (dsh.knowledge.storage-root 根目录),这张表是元数据和可检索文本。
 -- ============================================================
 create table if not exists public.kb_documents (
-  id           uuid primary key,     -- 文档 id(web-console 后端生成,用作桶内对象路径中段)
+  id           uuid primary key,     -- 文档 id(web-console 后端生成,用作存储相对路径中段)
   kb_id        uuid not null references public.knowledge_bases(id) on delete cascade,
                -- 所属知识库
   folder_id    uuid references public.kb_folders(id) on delete cascade,
@@ -301,7 +301,7 @@ create table if not exists public.kb_documents (
   name         text not null,        -- 文档名(如 '报价单.pdf',同级不能重名)
   content_type text not null,        -- MIME 类型(如 application/pdf)
   size_bytes   bigint not null,      -- 文件大小(字节)
-  storage_path text not null,        -- 文件在公共桶内的对象路径:'{appId}/{docId}/document{ext}'(应用分段隔离;对象名不含用户输入的中文)
+  storage_path text not null,        -- 文件在存储根目录内的相对路径:'{appId}/{docId}/document{ext}'(应用分段隔离;对象名不含用户输入的中文)
   text_content text,                 -- 从文件抽取出的纯文本(pdf/office 用 Tika 抽,图片用 OCR),
                -- 只用于关键字检索和 AI 阅读,不是文件本体;未解析完成时为 NULL
   parse_status text not null default 'pending' check (parse_status in ('pending','ready','failed')),

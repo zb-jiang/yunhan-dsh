@@ -69,3 +69,5 @@ apps/flowable-engine/logs/
 apps/expense-ctrl/attachments/
 # Runtime state: web-console instance-workspace blob storage (dsh.instance-workspace.root)
 apps/web-console/instance-workspaces/
+# Runtime state: web-console knowledge-base document storage (KB_STORAGE_ROOT)
+apps/web-console/kb-documents/
