@@ -2867,6 +2867,20 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'confirmation after the native opener accepts the document.',
         throws: ['RemoteError when no document exists, preparation fails, or opening fails.'],
       },
+      {
+        signature: '@Remote async readGlobalInstructions(): Promise<GlobalInstructionsValue>',
+        description: 'Read the user-global instructions file that the agent-instructions seam injects into every session, plus the injection budget when discoverable.',
+        parameters: [],
+        returns: 'the file view; an absent file reads as empty content.',
+        throws: ['RemoteError when reading fails for a reason other than absence.'],
+      },
+      {
+        signature: '@Remote async writeGlobalInstructions(content: string): Promise<GlobalInstructionsValue>',
+        description: 'Replace the user-global instructions file wholesale. The host creates the harness home directory when absent, and the next session\'s instruction baseline picks the file up.',
+        parameters: [{ name: 'content', description: 'complete UTF-8 file text to store.' }],
+        returns: 'the file view after the write.',
+        throws: ['RemoteError when the payload is not a string or exceeds the endpoint ceiling, or the write fails.'],
+      },
     ],
   },
   {
@@ -5764,6 +5778,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'GenericResultView',
     declaration: 'export interface GenericResultView {\n    card: \'generic\';\n    title?: string;\n    content?: ContentBlock[];\n}',
+  },
+  {
+    name: 'GlobalInstructionsValue',
+    declaration: 'export interface GlobalInstructionsValue {\n    readonly path: string;\n    readonly homeDisplay: string;\n    readonly exists: boolean;\n    readonly content: string;\n    readonly maxBytes?: number;\n}',
   },
   {
     name: 'GoalActivation',

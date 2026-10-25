@@ -31,6 +31,8 @@ kind: "package-reference"
 
 `settings.openSettingsDocument()` 准备提供方持有的文档，并用原生文本编辑器打开；该方法不接受浏览器提供的文件系统目标。
 
+`settings.readGlobalInstructions()` 与 `settings.writeGlobalInstructions(content)` 编辑用户全局指令文件（DSH home 下的 `AGENTS.md`），该文件会注入到每个会话的顶层。读取返回文件的路径、home 相对显示形式、是否已存在及其内容——文件尚不存在时按空文件读取，而不是报错。写入整体替换内容；配置了注入预算时，内容超限报告为 `bad-request`，其他 Host 侧拒绝使用 `globalRules/rejected`，details 携带文件路径。
+
 -----
 
 <a id="configuration"></a>

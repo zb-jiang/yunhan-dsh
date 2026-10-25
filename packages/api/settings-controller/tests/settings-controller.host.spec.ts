@@ -1,5 +1,8 @@
 /** Remote form operations over real Cordis profile configuration. */
 import { describe, expect, it, onTestFinished, vi } from 'vitest'
+import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { remoteErrorOf, remoteMethods } from '@deepseek-ai/dsh-typert-protocol'
 import SettingsController from '../src/index.ts'
@@ -17,6 +20,7 @@ describe('settings Remote', () => {
     expect(controller.typertRemote.namespace).toBe('settings')
     expect(remoteMethods(controller).map(method => method.method)).toEqual([
       'describe', 'update', 'replace', 'mutate', 'openSettingsDocument',
+      'readGlobalInstructions', 'writeGlobalInstructions',
     ])
     expect(ctx.get('credentialsController')).toBeDefined()
   })
@@ -103,4 +107,78 @@ it('classifies document preparation failures and cancellation during opening', a
   await expect(controller.openSettingsDocument(abort.signal)).rejects.toMatchObject({ code: 'gateway/cancelled' })
   abort = new AbortController()
   await expect(controller.openSettingsDocument(abort.signal)).rejects.toMatchObject({ code: 'gateway/cancelled' })
+})
+
+/** Points DSH_HOME at a fresh temp directory and restores the previous value afterwards. */
+async function withTempHome(): Promise<string> {
+  const home = await mkdtemp(join(tmpdir(), 'dsh-global-rules-'))
+  const previous = process.env.DSH_HOME
+  process.env.DSH_HOME = home
+  onTestFinished(async () => {
+    if (previous === undefined) delete process.env.DSH_HOME
+    else process.env.DSH_HOME = previous
+    await rm(home, { recursive: true, force: true })
+  })
+  return home
+}
+
+describe('global instructions Remote', () => {
+  it('reads an absent file as empty and omits the injection budget without a configured entry', async () => {
+    const { controller } = await boot()
+    const home = await withTempHome()
+    const view = await controller.readGlobalInstructions()
+    expect(view).toEqual({ path: join(home, 'AGENTS.md'), homeDisplay: '$DSH_HOME', exists: false, content: '' })
+  })
+
+  it('creates missing home directories and writes the rules file', async () => {
+    const { controller } = await boot()
+    const home = await withTempHome()
+    process.env.DSH_HOME = join(home, 'nested')
+    const written = await controller.writeGlobalInstructions('# My rules\n')
+    expect(written).toEqual({
+      path: join(home, 'nested', 'AGENTS.md'), homeDisplay: '$DSH_HOME', exists: true, content: '# My rules\n',
+    })
+    expect(await readFile(join(home, 'nested', 'AGENTS.md'), 'utf8')).toBe('# My rules\n')
+  })
+
+  it('reads back a file written earlier', async () => {
+    const { controller } = await boot()
+    const home = await withTempHome()
+    await controller.writeGlobalInstructions('# Roundtrip\n')
+    const view = await controller.readGlobalInstructions()
+    expect(view).toEqual({ path: join(home, 'AGENTS.md'), homeDisplay: '$DSH_HOME', exists: true, content: '# Roundtrip\n' })
+  })
+
+  it('rejects non-string payloads and content beyond the wire ceiling', async () => {
+    const { controller } = await boot()
+    await withTempHome()
+    await expect(controller.writeGlobalInstructions(42 as never)).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    await expect(controller.writeGlobalInstructions('a'.repeat(1_048_577))).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    expect(await readFile(join(process.env.DSH_HOME!, 'AGENTS.md'), 'utf8').catch(() => null)).toBeNull()
+  })
+
+  it('reports filesystem failures on both read and write', async () => {
+    const { controller } = await boot()
+    const home = await withTempHome()
+    await mkdir(join(home, 'AGENTS.md'))
+    await expect(controller.readGlobalInstructions()).rejects.toMatchObject({
+      code: 'globalRules/rejected', details: { path: join(home, 'AGENTS.md') },
+    })
+    await expect(controller.writeGlobalInstructions('# blocked\n')).rejects.toMatchObject({
+      code: 'globalRules/rejected', details: { path: join(home, 'AGENTS.md') },
+    })
+  })
+
+  it('exposes the agent-instructions injection budget when the loader declares it', async () => {
+    await boot()
+    await withTempHome()
+    const ctx = new Context()
+    ctx.provide('loader', {
+      entries: function* () {
+        yield { options: { id: 'agent-instructions' }, fiber: { config: { maxBytes: 4096 } } }
+      },
+    })
+    const budgeted = new SettingsController(ctx)
+    expect((await budgeted.readGlobalInstructions()).maxBytes).toBe(4096)
+  })
 })

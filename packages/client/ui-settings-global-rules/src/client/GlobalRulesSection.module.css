@@ -1,0 +1,88 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 720px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.intro {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.pathRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pathCaption {
+  flex: none;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.pathAbsent {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.editor {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 320px;
+  padding: 10px 12px;
+  border: 0.5px solid var(--dsw-alias-settings-card-stroke);
+  border-radius: var(--dsw-radius-xl);
+  background: var(--dsw-alias-settings-card-fill);
+  color: inherit;
+  font: 12px/1.6 var(--ds-font-family-code);
+  resize: vertical;
+  outline: none;
+}
+
+.editor:focus {
+  border-color: var(--dsw-static-neutral-bluish-400);
+}
+
+.meterRow {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 16px;
+}
+
+.meter {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.meterOver {
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.saved {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.error {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-state-error-primary);
+}

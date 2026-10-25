@@ -431,6 +431,11 @@
     - id: ui-settings-session-log
       name: '@deepseek-ai/dsh-client-ui-settings-session-log'
 
+    # The Global-rules settings section: edits the user-global AGENTS.md the
+    # harness injects near the top of every session on this machine.
+    - id: ui-settings-global-rules
+      name: '@deepseek-ai/dsh-client-ui-settings-global-rules'
+
     # The Built-in plugins settings section: the navigation entry and the tab
     # row the inventory tab registers into. The official configuration pages
     # are the companion rows below.

@@ -31,6 +31,8 @@ Mount this package as a Loader entry in a profile that serves browser configurat
 
 `settings.openSettingsDocument()` prepares the provider-owned document and opens it with the native text editor; it accepts no browser-supplied filesystem target.
 
+`settings.readGlobalInstructions()` and `settings.writeGlobalInstructions(content)` edit the user-global instruction file (`AGENTS.md` under the DSH home) that every session injects near its top. The read reports the file's path, its home-relative display form, whether it exists yet, and its content — a missing file reads as an empty one, never an error. The write replaces the whole content; a configured injection budget is reported as `bad-request` when the content exceeds it, and other host-side refusals use `globalRules/rejected` carrying the file path.
+
 -----
 
 <a id="configuration"></a>

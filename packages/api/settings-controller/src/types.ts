@@ -25,7 +25,33 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
      * never the value.
      */
     'credential/rejected': { readonly ref: string }
+    /**
+     * The global rules file read or write failed on the host filesystem; the
+     * details name the target file without diagnosing the filesystem error.
+     */
+    'globalRules/rejected': { readonly path: string }
   }
+}
+
+/** View of the user-global instructions file served to the settings Global Rules page. */
+export interface GlobalInstructionsValue {
+  /** Absolute host path of the file, for diagnostics and native-editor handoff. */
+  readonly path: string
+  /**
+   * Symbolic home label (`~/.dsh` or `$DSH_HOME`) the file lives under; the
+   * page composes the displayed location instead of showing a machine path.
+   */
+  readonly homeDisplay: string
+  /** Whether the file exists; an absent file reads as empty content. */
+  readonly exists: boolean
+  /** The file's UTF-8 text; empty when the file does not exist. */
+  readonly content: string
+  /**
+   * Injection budget in UTF-8 bytes from the mounted agent-instructions entry.
+   * Absent when the budget is not discoverable on this host, which hides the
+   * usage meter; an over-budget file is still saved but ignored by injection.
+   */
+  readonly maxBytes?: number
 }
 
 /** Confirmation that the settings document was handed to the native editor. */

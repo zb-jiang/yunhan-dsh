@@ -64,7 +64,10 @@ export function bundleRoster(
     if (disabledContext !== undefined
       && disabled.some(value => isJsExpr(value) && Boolean(evaluate(disabledContext, value.__jsExpr)))) continue
     seen.add(name)
-    const manifestPath = locateManifest(anchors, name)
+    // Rows a bundle names but does not itself depend on (the web profile's
+    // self-referencing runtime row) resolve from the app that depends on the
+    // bundles, the way the launcher resolves them; the anchor is that app here.
+    const manifestPath = locateManifest([...anchors, anchor], name)
     if (manifestPath === undefined) {
       throw new Error(`client-test-runtime: cannot resolve plugin package ${name} from ${bundles.join(', ')}`)
     }

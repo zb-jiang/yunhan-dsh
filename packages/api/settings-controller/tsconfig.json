@@ -12,6 +12,9 @@
       "path": "../../../vendor/cordis"
     },
     {
+      "path": "../../../vendor/loader"
+    },
+    {
       "path": "../../../vendor/schemastery"
     },
     {
@@ -22,6 +25,9 @@
     },
     {
       "path": "../../core/session"
+    },
+    {
+      "path": "../../util/home-paths"
     },
     {
       "path": "../../util/native-command"

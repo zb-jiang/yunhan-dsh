@@ -126,6 +126,24 @@ Host service backing the generated `ctx.remote.settings` namespace. Every remote
  * @throws RemoteError when no document exists, preparation fails, or opening fails.
  */
 @Remote async openSettingsDocument(signal: AbortSignal): Promise<SettingsDocumentOpenValue>
+
+/**
+ * Read the user-global instructions file that the agent-instructions seam
+ * injects into every session, plus the injection budget when discoverable.
+ * @returns the file view; an absent file reads as empty content.
+ * @throws RemoteError when reading fails for a reason other than absence.
+ */
+@Remote async readGlobalInstructions(): Promise<GlobalInstructionsValue>
+
+/**
+ * Replace the user-global instructions file wholesale. The host creates the
+ * harness home directory when absent, and the next session's instruction
+ * baseline picks the file up.
+ * @param content - complete UTF-8 file text to store.
+ * @returns the file view after the write.
+ * @throws RemoteError when the payload is not a string or exceeds the endpoint ceiling, or the write fails.
+ */
+@Remote async writeGlobalInstructions(content: string): Promise<GlobalInstructionsValue>
 ```
 
 Source: [`packages/api/settings-controller/src/index.ts`](../../packages/api/settings-controller/src/index.ts)

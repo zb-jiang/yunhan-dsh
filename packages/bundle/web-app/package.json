@@ -189,6 +189,7 @@
     "@deepseek-ai/dsh-client-product-analytics": "workspace:*",
     "@deepseek-ai/dsh-host-product-telemetry-otel": "workspace:*",
     "@deepseek-ai/dsh-client-ui-settings-session-log": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-settings-global-rules": "workspace:*",
     "@deepseek-ai/dsh-harness-dev-context": "workspace:*"
   },
   "peerDependencies": {

@@ -8,6 +8,9 @@
  */
 
 import { Context } from '@deepseek-ai/cordis'
+// Type-only: the Loader augmentation that types `ctx.get('loader')` for the budget lookup.
+import type {} from '@deepseek-ai/cordis-plugin-loader'
+import { dshHomeDisplay, resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import {
   openNativeTextFile,
 } from '@deepseek-ai/dsh-native-command'
@@ -17,14 +20,37 @@ import type {
 } from '@deepseek-ai/dsh-settings/types'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import { z } from 'zod'
 import { CredentialsController } from './credentials.ts'
-import type { SettingsDocumentOpenValue } from './types.ts'
+import type { GlobalInstructionsValue, SettingsDocumentOpenValue } from './types.ts'
 
 export { CredentialsController } from './credentials.ts'
 export type * from './types.ts'
 
 const settingsNamespaceRequestSchema = z.object({ ns: z.string().min(1) })
+
+const globalRulesContentSchema = z.string()
+
+/**
+ * The fixed user-global candidate file name of the agent-instructions seam
+ * (`USER_GLOBAL_FILE` in `@deepseek-ai/dsh-agent-instructions`). The name is
+ * protocol rather than configuration, so this endpoint mirrors it locally
+ * instead of coupling settings-controller to that package.
+ */
+const GLOBAL_RULES_FILE = 'AGENTS.md'
+
+/** Loader entry id whose resolved config carries the injection budget. */
+const AGENT_INSTRUCTIONS_ENTRY_ID = 'agent-instructions'
+
+/**
+ * Fixed wire-safety ceiling in UTF-8 bytes for one global rules write,
+ * independent of the injection budget: the budget is a deployment value that
+ * may be undiscoverable, while the endpoint must bound its payload
+ * unconditionally. Matches the agent-instructions default per-file read cap.
+ */
+const GLOBAL_RULES_WIRE_CEILING_BYTES = 1_048_576
 
 /** Read abort state afresh after an awaited provider or opener call. */
 function isAborted(signal: AbortSignal): boolean {
@@ -184,6 +210,66 @@ export class SettingsController extends TypertRemoteService {
     }
   }
 
+  /**
+   * Read the user-global instructions file that the agent-instructions seam
+   * injects into every session, plus the injection budget when discoverable.
+   * @returns the file view; an absent file reads as empty content.
+   * @throws RemoteError when reading fails for a reason other than absence.
+   */
+  @Remote
+  async readGlobalInstructions(): Promise<GlobalInstructionsValue> {
+    const target = this.globalRulesTarget()
+    let content: string
+    try {
+      content = await readFile(target.path, 'utf8')
+    } catch (error: unknown) {
+      if (isEntryNotFound(error)) return this.globalRulesView(target, false, '')
+      throw new RemoteError(
+        'globalRules/rejected',
+        `global rules file read failed: ${messageOf(error)}`,
+        { path: target.path },
+        { cause: error },
+      )
+    }
+    return this.globalRulesView(target, true, content)
+  }
+
+  /**
+   * Replace the user-global instructions file wholesale. The host creates the
+   * harness home directory when absent, and the next session's instruction
+   * baseline picks the file up.
+   * @param content - complete UTF-8 file text to store.
+   * @returns the file view after the write.
+   * @throws RemoteError when the payload is not a string or exceeds the endpoint ceiling, or the write fails.
+   */
+  @Remote
+  async writeGlobalInstructions(content: string): Promise<GlobalInstructionsValue> {
+    const parsed = globalRulesContentSchema.safeParse(content)
+    if (!parsed.success) {
+      throw new RemoteError('gateway/bad-request', 'invalid payload for globalRules write', { issues: parsed.error.issues })
+    }
+    if (Buffer.byteLength(parsed.data, 'utf8') > GLOBAL_RULES_WIRE_CEILING_BYTES) {
+      throw new RemoteError(
+        'gateway/bad-request',
+        `global rules content exceeds the ${GLOBAL_RULES_WIRE_CEILING_BYTES}-byte endpoint ceiling`,
+        {},
+      )
+    }
+    const target = this.globalRulesTarget()
+    try {
+      await mkdir(dirname(target.path), { recursive: true })
+      await writeFile(target.path, parsed.data, 'utf8')
+    } catch (error: unknown) {
+      throw new RemoteError(
+        'globalRules/rejected',
+        `global rules file write failed: ${messageOf(error)}`,
+        { path: target.path },
+        { cause: error },
+      )
+    }
+    return this.globalRulesView(target, true, parsed.data)
+  }
+
   private async write(
     ns: string,
     mode: 'update' | 'replace' | 'mutate',
@@ -212,6 +298,47 @@ export class SettingsController extends TypertRemoteService {
     return namespaceView(descriptor)
   }
 
+  /**
+   * Resolve the user-global instructions file's host path and symbolic home
+   * label. The process home chain matches the agent-instructions seam, which
+   * resolves the same way at mount.
+   */
+  private globalRulesTarget(): { path: string; display: string } {
+    const home = resolveDshHome()
+    return { path: join(home, GLOBAL_RULES_FILE), display: dshHomeDisplay(home) }
+  }
+
+  /** Assemble the wire view, attaching the budget only when discoverable. */
+  private globalRulesView(
+    target: { path: string; display: string },
+    exists: boolean,
+    content: string,
+  ): GlobalInstructionsValue {
+    const maxBytes = this.injectionBudget()
+    return {
+      path: target.path,
+      homeDisplay: target.display,
+      exists,
+      content,
+      ...maxBytes === undefined ? {} : { maxBytes },
+    }
+  }
+
+  /**
+   * Read the mounted agent-instructions entry's resolved injection budget.
+   * @returns the budget in UTF-8 bytes, or `undefined` when the Loader or the
+   * entry is absent on this host, for example when instructions mount per preset.
+   */
+  private injectionBudget(): number | undefined {
+    const loader = this.ctx.get('loader')
+    if (loader === undefined) return undefined
+    const entry = [...loader.entries()].find(candidate => candidate.options.id === AGENT_INSTRUCTIONS_ENTRY_ID)
+    const config: unknown = entry?.fiber?.config
+    if (typeof config !== 'object' || config === null) return undefined
+    const maxBytes: unknown = Reflect.get(config, 'maxBytes')
+    return typeof maxBytes === 'number' ? maxBytes : undefined
+  }
+
   /** Resolve the optional provider or report how to supply it. */
   private provider(): SettingsForms {
     const settings = this.ctx.get('settings')
@@ -228,6 +355,11 @@ export class SettingsController extends TypertRemoteService {
 
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+/** Distinguish a missing file from every other filesystem refusal. */
+function isEntryNotFound(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && Reflect.get(error, 'code') === 'ENOENT'
 }
 
 interface SettingsConflict {
