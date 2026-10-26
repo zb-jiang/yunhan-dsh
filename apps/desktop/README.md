@@ -146,7 +146,7 @@ Only the main application window enables `<webview>`. Guest attachment must matc
 
 The `dsh-app://shell/` origin serves packaged update documents, scripts, and styles without contacting the Host. Static requests retain GET/HEAD, path-containment, and MIME handling; each update document keeps its isolated preload and owned-window IPC checks.
 
-The product UI retains Web actions, including "Open In..." through the shared authenticated HTTP routes. Desktop uses Web's automatic directory-picker selection and initializes new profiles with the shared Web template's bundles.
+The product UI retains Web actions, including "Open In..." through the shared authenticated HTTP routes. Desktop uses Web's automatic directory-picker selection and initializes new profiles with the shared enterprise template's bundles.
 
 Update copy preserves the complete version, including prerelease suffixes, without adding v or V. When no update is available, the dialog title reports the result and the body shows the current version.
 

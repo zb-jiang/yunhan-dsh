@@ -118,9 +118,19 @@ export const SUPABASE_URL_MIRROR_NS = 'platform-user-console'
 /**
  * WEB_CONSOLE_URL 消费者镜像:主条目 platform-user-console(JWT 自读)之外,
  * user-identity-context(组织身份)、knowledge(知识库代理)、process-start
- * (流程发起)各自持有一份,保存时同步写入,四处保持一致。
+ * (流程发起)、llm-access(LLM 网关)、kb-context(知识库上下文)、
+ * instance-workspace(实例工作区)、pocket-access(口袋代理)各持有一份,
+ * 保存时同步写入,八处保持一致。
  */
-export const WEB_CONSOLE_URL_MIRROR_NS: readonly string[] = ['user-identity-context', 'knowledge', 'process-start']
+export const WEB_CONSOLE_URL_MIRROR_NS: readonly string[] = [
+  'user-identity-context',
+  'knowledge',
+  'process-start',
+  'llm-access',
+  'kb-context',
+  'instance-workspace',
+  'pocket-access',
+]
 
 /** 加载结果:字段名 → 当前生效值。 */
 export type FieldValues = Record<string, string>

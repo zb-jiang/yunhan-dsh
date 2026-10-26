@@ -30,7 +30,6 @@ export const DESKTOP_IPC = {
   nativeThemeSet: 'dsh-desktop:native-theme-set',
   windowFullscreen: 'dsh-desktop:window-fullscreen',
   windowsAppearance: 'dsh-desktop:windows-appearance',
-  windowsMenu: 'dsh-desktop:windows-menu',
 } as const
 
 /** Desktop release update state rendered by desktop-owned UI. */
@@ -81,7 +80,12 @@ export interface DshDesktopProductApi {
   deviceInfo(): Promise<string>
   readonly updates: {
     status(): Promise<DesktopUpdatePresentation>
-    open(): Promise<void>
+    /**
+     * Open the update dialog. `manual` records an explicit check request and, when an update is
+     * available, asks for confirmation before downloading; the default joins an automatic check.
+     * @param manual - Treat the call as a user-initiated update check when true.
+     */
+    open(manual?: boolean): Promise<void>
     subscribe(listener: (state: DesktopUpdatePresentation) => void): () => void
   }
 }

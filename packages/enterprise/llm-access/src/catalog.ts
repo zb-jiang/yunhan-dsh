@@ -7,12 +7,12 @@
  * @module @deepseek-ai/dsh-llm-access/catalog
  */
 
-import { resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai/src/config.ts'
+import { resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai'
 import type {
   PiAiModality,
   PiAiModelProfile,
   ResolvedPiAiProviderProfile,
-} from '@deepseek-ai/dsh-llm-pi-ai/src/config.ts'
+} from '@deepseek-ai/dsh-llm-pi-ai'
 
 /** The single provider route this package registers. */
 export const ENTERPRISE_PROVIDER = 'llm-enterprise'

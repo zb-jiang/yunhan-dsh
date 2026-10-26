@@ -8,7 +8,7 @@ import { join } from 'node:path'
  * @param {object} options Real workspace and fixture-owned delivery, task, and installation controls.
  * @returns {Promise<void>} Resolves after operator exit and removal of control listeners.
  */
-export async function runInteractiveUpdates({ mainWindow, server, fixture, checkMenu, control, root }) {
+export async function runInteractiveUpdates({ mainWindow, server, fixture, check, control, root }) {
   const panel = new BrowserWindow({ title: '本地升级验收控制', width: 640, height: 460,
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true } })
   const finished = Promise.withResolvers()
@@ -33,7 +33,6 @@ export async function runInteractiveUpdates({ mainWindow, server, fixture, check
   } })
   const select = mode => server.select(mode, '0.1.6-nightly.1')
   select('hold-download')
-  const check = () => checkMenu.click()
   panel.setMenu(Menu.buildFromTemplate([
     { label: '更新场景', submenu: [
       action('普通更新（点击下载后保持进度）', () => { server.policy('clear'); select('hold-download'); check() }),

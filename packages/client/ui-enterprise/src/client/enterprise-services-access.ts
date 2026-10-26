@@ -4,7 +4,8 @@
  * 设置面板的 settings.section 座位与登录页的常驻「服务配置」弹层。
  *
  * <p>镜像规则:SUPABASE_URL 双写 platform-user-console(JWT 校验条目);
- * WEB_CONSOLE_URL 四条目镜像(user-identity-context / knowledge / process-start)。
+ * WEB_CONSOLE_URL 八条目镜像(user-identity-context / knowledge / process-start /
+ * llm-access / kb-context / instance-workspace / pocket-access 各一份)。
  * 保存带 revision 乐观并发:打开期间被其他入口改过则拒绝。
  */
 import type { JsonValue } from '@deepseek-ai/dsh-util-values'

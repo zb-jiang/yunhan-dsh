@@ -14,6 +14,13 @@
     linear-gradient(180deg, #f8fafc, #eef2ff 55%, #f8fafc);
 }
 
+/* Windows Electron: the native caption row owns the window's top 40px strip;
+   the config gear sits at top: 18px and would render inside it. The gear is
+   absolutely positioned against the root's border box, so it offsets itself. */
+:global([data-windows-titlebar]) .configGear {
+  top: calc(18px + var(--dsh-windows-titlebar-height));
+}
+
 /* 细网格纹理:低对比企业感底纹,避免大面积纯色渐变的空洞感。 */
 .authPageRoot::before {
   content: '';

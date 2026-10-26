@@ -441,8 +441,10 @@ describe('PiAiAdapter provider routing', () => {
 
 describe('provider profile lifecycle', () => {
   it('keeps adapter helpers off the package root', () => {
+    // `resolveProfiles` is deliberately exported for the enterprise fork's
+    // dsh-llm-access consumer (recorded in .agents/UPSTREAM-MERGE.md); it is
+    // not a helper leak.
     for (const helper of [
-      'resolveProfiles',
       'toPiContext',
       'toPiReplayState',
       'toPiAssistant',

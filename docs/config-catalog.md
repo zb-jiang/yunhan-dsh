@@ -1862,7 +1862,7 @@ export interface Config {
 
 - `inject`: `llm` · `currentUser`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/enterprise/llm-access/src/index.ts:63`](../packages/enterprise/llm-access/src/index.ts)
+- `source`: [`packages/enterprise/llm-access/src/index.ts:62`](../packages/enterprise/llm-access/src/index.ts)
 
 ```ts config-catalog
 /** 插件配置,全部来自 enterprise profile 的 cordis.yml config 段。 */

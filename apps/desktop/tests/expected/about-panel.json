@@ -24,31 +24,5 @@
       "copyright": "",
       "iconPath": "<app icon>"
     }
-  },
-  "win32:zh-CN": {
-    "menu": [
-      { "label": "关于 DeepSeek Harness" },
-      { "type": "separator" }
-    ],
-    "options": {
-      "applicationName": "DeepSeek Harness",
-      "applicationVersion": "1.0.0",
-      "version": "",
-      "copyright": "",
-      "iconPath": "<app icon>"
-    }
-  },
-  "win32:en-US": {
-    "menu": [
-      { "label": "About DeepSeek Harness" },
-      { "type": "separator" }
-    ],
-    "options": {
-      "applicationName": "DeepSeek Harness",
-      "applicationVersion": "1.0.0",
-      "version": "",
-      "copyright": "",
-      "iconPath": "<app icon>"
-    }
   }
 }
