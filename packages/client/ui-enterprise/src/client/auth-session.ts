@@ -22,6 +22,8 @@ const REFRESH_TOKEN_KEY = 'dsh.enterprise.refresh'
 /** OIDC 授权码流程的一次性 PKCE verifier 与 state(跳转离开页面回来后消费)。 */
 const OIDC_VERIFIER_KEY = 'dsh.enterprise.oidc.verifier'
 const OIDC_STATE_KEY = 'dsh.enterprise.oidc.state'
+/** 匿名使用偏好:用户在登录页选择「匿名使用」后置位,放行未登录进入本机工作台。 */
+const ANONYMOUS_PREFERENCE_KEY = 'dsh.enterprise.anonymous'
 
 /** 当前认证模式,由 initAuth 读 config 后设置;module-level 供非响应式调用点读取。 */
 let authMode: AuthMode = 'supabase'
@@ -108,7 +110,8 @@ export function clearAuthSession(): void {
  * 清除全部本地登录凭据(认证中心参数变更后的强制重登前置):access/refresh
  * token、OIDC PKCE 一次性凭据,以及 supabase-js 持久会话(localStorage
  * `sb-<project-ref>-auth-token`)。与 {@link clearAuthSession} 不同,不区分当前
- * 模式——provider 切换后旧模式的凭据按定义全部作废。
+ * 模式——provider 切换后旧模式的凭据按定义全部作废。不清匿名使用偏好
+ * ({@link clearAnonymousPreference} 由 SSO 应用流程显式调用)。
  */
 export function clearStoredLoginState(): void {
   window.localStorage.removeItem(TOKEN_KEY)
@@ -120,6 +123,29 @@ export function clearStoredLoginState(): void {
     const key = window.localStorage.key(i)
     if (key !== null && key.startsWith('sb-')) window.localStorage.removeItem(key)
   }
+}
+
+/**
+ * 读取匿名使用偏好(登录页「匿名使用」按钮置位;未登录但放行进入本机工作台)。
+ * @returns 偏好开启与否。
+ */
+export function readAnonymousPreference(): boolean {
+  return window.localStorage.getItem(ANONYMOUS_PREFERENCE_KEY) === '1'
+}
+
+/**
+ * 置匿名使用偏好:登录页「匿名使用」按钮调用,后续启动未登录直接进入本机工作台。
+ */
+export function writeAnonymousPreference(): void {
+  window.localStorage.setItem(ANONYMOUS_PREFERENCE_KEY, '1')
+}
+
+/**
+ * 清匿名使用偏好。登录成功(升级为已登录)、退出登录(回登录页而非匿名态)、
+ * 认证中心参数应用(强制重登)三处调用:偏好只在「匿名使用」到「下次登录」之间有效。
+ */
+export function clearAnonymousPreference(): void {
+  window.localStorage.removeItem(ANONYMOUS_PREFERENCE_KEY)
 }
 
 /**

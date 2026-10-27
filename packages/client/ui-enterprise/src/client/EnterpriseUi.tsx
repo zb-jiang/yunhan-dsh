@@ -5,11 +5,13 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { EnterpriseServicesSection, type EnterpriseServicesInjected } from './EnterpriseServicesSection.tsx'
 import {
   buildOidcAuthorizeUrl,
+  clearAnonymousPreference,
   clearAuthSession,
   completeOidcCallback,
   fetchAuthConfig,
   getAuthMode,
   getOidcIssuer,
+  readAnonymousPreference,
   readOidcCallback,
   readOidcLoginSuccessMessage,
   readToken,
@@ -17,6 +19,7 @@ import {
   setOidcIssuer,
   setOidcRelayUrl,
   tryOidcRefresh,
+  writeAnonymousPreference,
   writeToken,
   type AuthMode,
   type AuthWebConfig,
@@ -60,7 +63,10 @@ function getSupabaseClient(): Promise<SupabaseClient> {
           void refreshAuthUser()
         }
       } else if (event === 'SIGNED_OUT') {
-        // 本页登出(logout 已清理过,幂等)或其他标签页登出经 storage 同步过来
+        // 本页登出(logout 已清理过,幂等)或其他标签页登出经 storage 同步过来;
+        // 登出语义回登录页而非匿名态,一并清匿名放行(另一标签页的 logout 已清本地偏好,
+        // 这里补齐本页内存快照)
+        exitGuestMode()
         clearAuthSession()
         setAuthSnapshot({ currentUser: null, loading: false, mode: 'supabase', loginError: null })
       }
@@ -103,6 +109,43 @@ type AuthSnapshot = { currentUser: PlatformUserRow | null; loading: boolean; mod
 let authSnapshot: AuthSnapshot = { currentUser: null, loading: true, mode: 'supabase', loginError: null }
 const authListeners = new Set<() => void>()
 let authInitialized = false
+
+// ── Guest store (匿名使用偏好,独立于认证快照) ──
+
+/**
+ * 匿名使用放行态:用户在登录页点过「匿名使用」且尚未登录。初始值读本地偏好,
+ * 与认证快照分离——登录/退出/SSO 应用的清偏好路径各自动它的内存快照。
+ */
+let guestSnapshot = readAnonymousPreference()
+const guestListeners = new Set<() => void>()
+
+function subscribeGuest(fn: () => void): () => void {
+  guestListeners.add(fn)
+  return () => { guestListeners.delete(fn) }
+}
+
+function getGuestSnapshot(): boolean {
+  return guestSnapshot
+}
+
+/** 置匿名放行(登录页「匿名使用」按钮):写本地偏好 + 通知订阅者。 */
+function enterGuestMode(): void {
+  writeAnonymousPreference()
+  guestSnapshot = true
+  guestListeners.forEach((fn) => { fn() })
+}
+
+/** 退出匿名放行(登录成功/显式登录/登出/SSO 应用/侧栏登录卡):清本地偏好 + 通知订阅者。 */
+export function exitGuestMode(): void {
+  clearAnonymousPreference()
+  guestSnapshot = false
+  guestListeners.forEach((fn) => { fn() })
+}
+
+/** 匿名放行态 hook:guest=true 且未登录时放行进入本机工作台。 */
+export function useGuest(): boolean {
+  return useSyncExternalStore(subscribeGuest, getGuestSnapshot, getGuestSnapshot)
+}
 
 function subscribeAuth(fn: () => void): () => void {
   authListeners.add(fn)
@@ -197,6 +240,8 @@ export function useAuth() {
     if (accessToken === undefined) throw new Error('登录失败：未返回会话')
     // oxlint-enable typescript/no-unnecessary-condition -- restore the rule after the wire-boundary guard
     writeToken(accessToken)
+    // 登录成功即升级为已登录:匿名放行作废(下次 token 过期回登录页而非匿名态)
+    exitGuestMode()
     const user = await fetchJson<PlatformUserRow>('/api/enterprise/auth/me')
     setAuthSnapshot({ currentUser: user, loading: false, mode: 'supabase', loginError: null })
   }, [])
@@ -212,6 +257,8 @@ export function useAuth() {
     // If session is returned (email confirmation disabled), auto-login
     if (data.session?.access_token !== undefined) {
       writeToken(data.session.access_token)
+      // 注册即自动登录:与 login 同口径清匿名放行
+      exitGuestMode()
       const user = await fetchJson<PlatformUserRow>('/api/enterprise/auth/me')
       setAuthSnapshot({ currentUser: user, loading: false, mode: 'supabase', loginError: null })
     } else {
@@ -230,6 +277,8 @@ export function useAuth() {
         headers: token === null ? {} : { authorization: `Bearer ${token}` },
       })
     } catch { /* 缓存自愈：下一次 /me 会重建身份 */ }
+    // 退出登录回登录页而非匿名态:匿名放行一并清,登录页保持可达
+    exitGuestMode()
     clearAuthSession()
     setAuthSnapshot({ currentUser: null, loading: false, mode: getAuthMode(), loginError: null })
     // OIDC 模式留在 DSH 登录页,不整页跳认证中心;认证中心会话仍留在浏览器,
@@ -627,6 +676,8 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
     void (async () => {
       try {
         await completeOidcCallback(callback)
+        // OIDC 登录成功:与 supabase login 同口径清匿名放行
+        exitGuestMode()
         await refreshAuthUser()
         // /me 网络失败时 refreshAuthUser 保留 loading 快照,与 initAuth 一致兜底回登录页
         if (getAuthSnapshot().loading) {
@@ -675,15 +726,21 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
     if (code !== null && state !== null) handleOidcCode({ code, state })
   }, [handleOidcCode])
 
-  const authState = useMemo<'loading' | 'anonymous' | 'pending' | 'blocked' | 'active'>(() => {
+  const guest = useGuest()
+  const authState = useMemo<'loading' | 'guest' | 'anonymous' | 'pending' | 'blocked' | 'active'>(() => {
     if (loading) return 'loading'
-    if (currentUser === null) return 'anonymous'
+    if (currentUser === null) return guest ? 'guest' : 'anonymous'
     if (currentUser.status === 'pending_approval') return 'pending'
     if (currentUser.status === 'disabled' || currentUser.status === 'locked') return 'blocked'
     return 'active'
-  }, [currentUser, loading])
+  }, [currentUser, loading, guest])
 
   if (authState === 'active') return null
+
+  // 匿名放行:整帧进入本机工作台(web profile 用法,模型在设置页自行配置),
+  // 不渲染任何遮罩;登录引导卡在侧栏底部(GuestSidebarCard 占据
+  // sidebar.footer.action 座位),不占用主帧区域
+  if (authState === 'guest') return null
 
   return (
     <div className={css.authPageRoot}>
@@ -731,13 +788,27 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
             </div>
           </div>
           {authState === 'anonymous' && (
-            <AuthPanel
-              mode={mode}
-              loginError={loginError}
-              onLogin={login}
-              onRegister={register}
-              onOidcLogin={openOidcFrame}
-            />
+            <>
+              <AuthPanel
+                mode={mode}
+                loginError={loginError}
+                onLogin={login}
+                onRegister={register}
+                onOidcLogin={openOidcFrame}
+              />
+              <div className={css.anonymousEntry}>
+                <button
+                  type="button"
+                  className={css.authSecondaryButton}
+                  onClick={() => { enterGuestMode() }}
+                >
+                  匿名使用
+                </button>
+                <div className={css.hint}>
+                  不登录直接使用本机工作台，模型在设置中自行配置；待办、企业模型登录后可用。
+                </div>
+              </div>
+            </>
           )}
           {(authState === 'pending' || authState === 'blocked') && (
             <div className={css.authBlockedActions}>

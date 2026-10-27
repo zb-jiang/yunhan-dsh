@@ -601,6 +601,22 @@
   overflow: hidden;
 }
 
+/* The nav seat's registrant may render nothing (unregistered, or a
+   registrant that declines — e.g. the enterprise task queue for a signed-out
+   user). An empty navArea must not claim its flex share, so the workspaces
+   region starts right below the panel list, matching the no-registration
+   promise that the column starts at New Session. The slot outlet always
+   renders a display:contents [data-slot] anchor, so the empty state is the
+   anchor being :empty, not the area itself; both forms are covered. A
+   nested :not(:has(...)) compound inside :has() is rejected by the CSS
+   parser (CSS.supports → false, the whole rule is dropped), so :empty is
+   the compatible emptiness test — React renders a null child as no DOM node
+   at all, and the fallback/crash faces do populate the anchor. */
+.navArea:empty,
+.navArea:has(> [data-slot]:empty) {
+  display: none;
+}
+
 .workspacesArea {
   flex: 1;
   min-height: 0;

@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildOidcAuthorizeUrl,
+  clearAnonymousPreference,
   clearAuthSession,
+  clearStoredLoginState,
   completeOidcCallback,
   fetchAuthConfig,
   getOidcIssuer,
+  readAnonymousPreference,
   readOidcCallback,
   readOidcLoginSuccessMessage,
   readToken,
@@ -12,6 +15,7 @@ import {
   setOidcIssuer,
   setOidcRelayUrl,
   tryOidcRefresh,
+  writeAnonymousPreference,
   writeToken,
 } from '../src/client/auth-session.ts'
 
@@ -29,6 +33,9 @@ function makeBrowser() {
     getItem: (key: string) => map.get(key) ?? null,
     setItem: (key: string, value: string) => { map.set(key, value) },
     removeItem: (key: string) => { map.delete(key) },
+    // clearStoredLoginState 的 sb- 前缀倒序遍历需要 length/key
+    get length() { return map.size },
+    key: (index: number) => [...map.keys()][index] ?? null,
   })
   const historyUrls: string[] = []
   const location = {
@@ -328,6 +335,28 @@ describe('auth-session(OIDC 授权码+PKCE 客户端逻辑)', () => {
       clearAuthSession()
       expect(browser.localStorageMap.has(TOKEN_KEY)).toBe(false)
       expect(browser.localStorageMap.has(REFRESH_KEY)).toBe(true)
+    })
+  })
+
+  describe('匿名使用偏好(登录页「匿名使用」放行)', () => {
+    it('缺省关闭,写入置位,清除复位', () => {
+      expect(readAnonymousPreference()).toBe(false)
+      writeAnonymousPreference()
+      expect(readAnonymousPreference()).toBe(true)
+      clearAnonymousPreference()
+      expect(readAnonymousPreference()).toBe(false)
+    })
+
+    it('clearStoredLoginState 清登录凭据但保留匿名放行(SSO 应用流程另行显式清)', () => {
+      browser.localStorageMap.set(TOKEN_KEY, 'id-token-1')
+      browser.localStorageMap.set(REFRESH_KEY, 'refresh-1')
+      browser.localStorageMap.set('sb-project-ref-auth-token', '{}')
+      writeAnonymousPreference()
+      clearStoredLoginState()
+      expect(browser.localStorageMap.has(TOKEN_KEY)).toBe(false)
+      expect(browser.localStorageMap.has(REFRESH_KEY)).toBe(false)
+      expect(browser.localStorageMap.has('sb-project-ref-auth-token')).toBe(false)
+      expect(readAnonymousPreference()).toBe(true)
     })
   })
 

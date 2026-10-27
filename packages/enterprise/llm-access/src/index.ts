@@ -115,7 +115,8 @@ export function apply(ctx: Context, config: Config): void {
     resolveApiKey: () => {
       const token = ctx.currentUser.getToken()
       if (token === undefined) {
-        return Promise.reject(new LlmError('未登录,无法调用企业模型;请先登录员工账号', 'AUTH'))
+        // 匿名放行(登录页「匿名使用」)下也走这里:引导到自有模型,而不是只提示登录
+        return Promise.reject(new LlmError('未登录,无法调用企业模型;请登录,或在设置→模型中改用自己的模型', 'AUTH'))
       }
       return Promise.resolve(token)
     },

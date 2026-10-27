@@ -12,8 +12,10 @@
  * 确认弹窗(WorkspacePickerDialog,选定后不可修改),确认后才建会话绑定;
  * 已绑定回到原会话。已完成来自引擎
  * 历史数据(持久,刷新仍在),点击回看本地会话或只读档案。窄轨(wide=
- * false,56px)渲染计数徽标,点击展开。未登录时由 shell.overlay 认证
- * 遮罩盖住整帧,这里只渲染占位。
+ * false,56px)渲染计数徽标,点击展开。未激活用户(匿名放行/登录检查中/待审批)
+ * 整个区块不渲染(navArea 随 :empty 收起,新会话与工作区上挪);登录墙存在时
+ * 由 shell.overlay 认证遮罩盖住整帧,匿名放行态的登录引导在侧栏底部
+ * (GuestSidebarCard)。
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import clsx from 'clsx'
@@ -170,6 +172,10 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces, 
     if (authed) void workbench.refresh()
   }, [authed, workbench])
 
+  // 匿名放行(guest)或登录检查中不渲染待办区块:待办是登录用户的企业能力,
+  // 匿名态整帧放行后侧栏只保留原生 workspaces 区块(列表拉取随组件卸载一并跳过)
+  if (!authed) return null
+
   if (!wide) {
     return (
       <button
@@ -195,17 +201,15 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces, 
     <div className={css.sidebar}>
       <div className={css.header}>
         <span className={css.headerTitle}>任务工作台</span>
-        {authed && (
-          <button
-            type="button"
-            className={css.refresh}
-            onClick={() => { void workbench.refresh() }}
-            disabled={tasks.loading}
-            title="刷新待办与已完成列表"
-          >
-            {tasks.loading ? '刷新中…' : '刷新'}
-          </button>
-        )}
+        <button
+          type="button"
+          className={css.refresh}
+          onClick={() => { void workbench.refresh() }}
+          disabled={tasks.loading}
+          title="刷新待办与已完成列表"
+        >
+          {tasks.loading ? '刷新中…' : '刷新'}
+        </button>
       </div>
 
       <div className={css.listArea}>
@@ -218,11 +222,11 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces, 
         </div>
 
         <div className={css.list}>
-          {authed && tasks.loading && tasks.items.length === 0 && <div className={css.hint}>加载中…</div>}
-          {authed && !tasks.loading && tasks.error !== null && (
+          {tasks.loading && tasks.items.length === 0 && <div className={css.hint}>加载中…</div>}
+          {!tasks.loading && tasks.error !== null && (
             <div className={css.error}>{tasks.error}</div>
           )}
-          {authed && !tasks.loading && tasks.error === null && tasks.items.length === 0 && (
+          {!tasks.loading && tasks.error === null && tasks.items.length === 0 && (
             <div className={css.hint}>暂无待办任务</div>
           )}
           {tasks.prefillNotice !== null && tasks.items.length > 0 && (
@@ -261,58 +265,52 @@ export function TaskQueueSidebar({ wide, workbench, useSessions, useWorkspaces, 
           ))}
         </div>
 
-        {authed && (
-          <>
-            <div className={clsx(css.sectionTitle, css.sectionTitleSecondary)}>
-              已完成
-              <span className={css.countBadge}>{tasks.completed.length}</span>
-              <span className={css.sectionActions}>
-                <TaskViewMenu options={viewState.completed} onPick={(next) => { updateView('completed', next) }} />
-              </span>
-            </div>
-            <div className={css.list}>
-              {tasks.completed.length === 0 && <div className={css.hint}>暂无已完成任务</div>}
-              {completedGroups.map(group => (
-                <TaskGroupSection
-                  key={group.key}
-                  group={group}
-                  expandedKey={completedExpanded}
-                  onToggle={toggleCompleted}
-                  renderRow={({ item: task, row }) => {
-                    const session = bindings.completedByTask[task.id]
-                    const active = session !== undefined && session === currentSession
-                    return (
-                      <button
-                        key={task.id}
-                        type="button"
-                        className={clsx(css.taskItem, css.doneItem, active && css.taskItemActive)}
-                        onClick={() => { workbench.openCompletedTask(task) }}
-                      >
-                        <span className={css.taskName}>{row.title}</span>
-                        <span className={css.doneTag}>已提交</span>
-                        <span className={css.taskTime}>{row.timeLabel}</span>
-                      </button>
-                    )
-                  }}
-                />
-              ))}
-            </div>
-          </>
-        )}
+        <div className={clsx(css.sectionTitle, css.sectionTitleSecondary)}>
+          已完成
+          <span className={css.countBadge}>{tasks.completed.length}</span>
+          <span className={css.sectionActions}>
+            <TaskViewMenu options={viewState.completed} onPick={(next) => { updateView('completed', next) }} />
+          </span>
+        </div>
+        <div className={css.list}>
+          {tasks.completed.length === 0 && <div className={css.hint}>暂无已完成任务</div>}
+          {completedGroups.map(group => (
+            <TaskGroupSection
+              key={group.key}
+              group={group}
+              expandedKey={completedExpanded}
+              onToggle={toggleCompleted}
+              renderRow={({ item: task, row }) => {
+                const session = bindings.completedByTask[task.id]
+                const active = session !== undefined && session === currentSession
+                return (
+                  <button
+                    key={task.id}
+                    type="button"
+                    className={clsx(css.taskItem, css.doneItem, active && css.taskItemActive)}
+                    onClick={() => { workbench.openCompletedTask(task) }}
+                  >
+                    <span className={css.taskName}>{row.title}</span>
+                    <span className={css.doneTag}>已提交</span>
+                    <span className={css.taskTime}>{row.timeLabel}</span>
+                  </button>
+                )
+              }}
+            />
+          ))}
+        </div>
       </div>
 
-      {authed && (
-        <div className={css.footer}>
-          {/* oxlint-disable typescript/no-unnecessary-condition -- authed is a hoisted boolean; TS cannot narrow through it */}
-          <span className={css.footerUser} title={currentUser?.email ?? ''}>
-            {currentUser?.displayName ?? ''}
-          </span>
-          {/* oxlint-enable typescript/no-unnecessary-condition */}
-          <button type="button" className={css.logout} onClick={() => { void logout() }}>
-            退出
-          </button>
-        </div>
-      )}
+      <div className={css.footer}>
+        {/* oxlint-disable typescript/no-unnecessary-condition -- authed is a hoisted boolean; TS cannot narrow through it */}
+        <span className={css.footerUser} title={currentUser?.email ?? ''}>
+          {currentUser?.displayName ?? ''}
+        </span>
+        {/* oxlint-enable typescript/no-unnecessary-condition */}
+        <button type="button" className={css.logout} onClick={() => { void logout() }}>
+          退出
+        </button>
+      </div>
 
       {/* 工作空间选择弹窗:key 按任务重挂载,选项状态不跨任务残留。 */}
       <WorkspacePickerDialog

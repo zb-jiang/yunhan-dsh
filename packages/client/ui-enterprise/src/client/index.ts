@@ -8,7 +8,8 @@
  * ctx.sidebarRightTabs,主体入 `sidebar.right.pane.tab` keyed 座位),
  * openTask/openCompletedTask 经 ctx.sidebarRight.openTab 打开;中间会话区
  * 保持原生 ConversationRoot。EnterpriseWorkbench 在 apply 构造一次,经各
- * 占据者的 inject 面分发。认证遮罩(shell.overlay)未登录时盖住整帧。
+ * 占据者的 inject 面分发。认证遮罩(shell.overlay)未登录时盖住整帧;匿名
+ * 放行态不盖,登录引导卡占据 sidebar.footer.action 座位(侧栏底部)。
  *
  * <p>知识库三面(design 2026-09-11 §6):KnowledgeWorkbench 同样在 apply
  * 构造一次;选择器入口占据 `conversation.input.left`(待办/已完成回执会话
@@ -53,6 +54,7 @@ import { TaskArchivePanel } from './TaskArchivePanel.tsx'
 import { INSTANCE_FILES_TAB_ID, INSTANCE_FILES_TAB_KIND } from './instance-files-tab.ts'
 import { InstanceFilesPanel } from './InstanceFilesPanel.tsx'
 import { TaskQueueSidebar } from './TaskQueueSidebar.tsx'
+import { GuestSidebarCard } from './GuestSidebarCard.tsx'
 import { KbChipsDock } from './KbChipsDock.tsx'
 import { KbPickerButton } from './KbPickerButton.tsx'
 import { KbUploadAction } from './KbUploadAction.tsx'
@@ -112,8 +114,9 @@ export function apply(ctx: ClientContext): void {
     key: 'kb-doc',
   }, KbDocNode))
 
-  // 认证遮罩:未登录/待审批/被禁用时盖住整帧;注入企业服务配置读写面,
-  // 登录页常驻「服务配置」弹层与设置面板共用同一套 load/save(含镜像与并发控制)。
+  // 认证遮罩:未登录/待审批/被禁用时盖住整帧(匿名放行态不盖,登录引导卡在
+  // 侧栏底部);注入企业服务配置读写面,登录页常驻「服务配置」弹层与设置面板
+  // 共用同一套 load/save(含镜像与并发控制)。
   ctx.slots.register(
     {
       name: 'shell.overlay',
@@ -149,6 +152,15 @@ export function apply(ctx: ClientContext): void {
     children: { 'sidebar.nav.directoryFlow': { kind: 'single', scope: 'root' } },
     inject: () => ({ workbench, hooks: { directoryFlow: directoryFlowSource } }),
   }, TaskQueueSidebar)
+
+  // 匿名使用引导卡:侧栏底部(设置项上方)的登录入口——匿名放行态认证遮罩
+  // 不盖帧,登录引导收进侧栏 footer(右上角悬浮条会挡顶栏控件,已废弃);
+  // 登录态与未开启匿名偏好返回 null,窄轨收缩为单图标按钮。
+  ctx.slots.register({
+    name: 'sidebar.footer.action',
+    id: 'enterprise-guest',
+    order: 40,
+  }, GuestSidebarCard)
 
   // 任务档案标签页,stage one:类型声明(extension 带,企业外部实现)。
   ctx.effect(() => ctx.sidebarRightTabs.register({

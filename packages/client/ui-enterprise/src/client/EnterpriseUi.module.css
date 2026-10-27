@@ -386,6 +386,85 @@
   margin-top: 2px;
 }
 
+/* ── 匿名放行:登录页「匿名使用」入口 + 侧栏底部登录引导卡 ── */
+
+.anonymousEntry {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+
+/* 侧栏底部(sidebar.footer.action 座位,设置项上方)的匿名登录引导卡,
+   视觉对齐待办侧栏 footer(分隔线 + 13px 主文案 + 12px 说明);
+   窄轨(56px 折叠态)收缩为单图标按钮。 */
+.guestCard {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+}
+
+.guestCardTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.guestCardGlyph {
+  display: inline-flex;
+  color: #1e40af;
+}
+
+.guestCardHint {
+  margin: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.guestCardButton {
+  margin-top: 2px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: #1e40af;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.guestCardButton:hover {
+  background: #3150c4;
+}
+
+.guestRailButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.guestRailButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
 /* ── 响应式:窄屏单列,hero 压缩 ── */
 
 @media (max-width: 960px) {

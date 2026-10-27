@@ -24,7 +24,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace } from '@deepseek-ai/dsh-client-ui-slots'
-import { clearStoredLoginState } from './auth-session.ts'
+import { clearAnonymousPreference, clearStoredLoginState } from './auth-session.ts'
 import css from './EnterpriseServicesSection.module.css'
 
 /** 单个配置字段的展示定义。 */
@@ -345,10 +345,12 @@ export function EnterpriseServicesSection({ load, save, saveSso }: EnterpriseSer
     void save(field, value).then((result) => {
       setSavingKey(null)
       if (result.ok) {
-        // 认证中心参数变更使本地会话失效:清全部本地凭据后整页刷新,initAuth
-        // 重新读 config 切换登录形态(Electron 打包版没有手动刷新通道)
+        // 认证中心参数变更使本地会话失效:清全部本地凭据(含匿名放行,刷新后回
+        // 登录页重新选择登录形态)后整页刷新,initAuth 重新读 config
+        // (Electron 打包版没有手动刷新通道)
         if (field.requireRelogin === true) {
           clearStoredLoginState()
+          clearAnonymousPreference()
           window.location.reload()
           return
         }
@@ -418,13 +420,14 @@ export function EnterpriseServicesSection({ load, save, saveSso }: EnterpriseSer
     setConfirming({ kind: 'sso', draft: ssoDraft })
   }
 
-  /** 认证服务组级应用落盘:成功即清本地登录凭据并整页刷新(强制按新认证中心重登)。 */
+  /** 认证服务组级应用落盘:成功即清本地登录凭据(含匿名放行,刷新后回登录页)并整页刷新(强制按新认证中心重登)。 */
   const applySso = (draft: SsoDraft): void => {
     setSavingKey('SSO')
     setMessage(null)
     void saveSso(draft).then((result) => {
       if (result.ok) {
         clearStoredLoginState()
+        clearAnonymousPreference()
         window.location.reload()
         return
       }
