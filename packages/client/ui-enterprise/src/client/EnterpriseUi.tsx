@@ -592,7 +592,7 @@ function ServiceConfigSheet({
           </button>
         </div>
         <div className={css.configSheetBody}>
-          <EnterpriseServicesSection load={services.load} save={services.save} />
+          <EnterpriseServicesSection load={services.load} save={services.save} saveSso={services.saveSso} />
         </div>
       </div>
     </div>

@@ -105,6 +105,24 @@ export function clearAuthSession(): void {
 }
 
 /**
+ * 清除全部本地登录凭据(认证中心参数变更后的强制重登前置):access/refresh
+ * token、OIDC PKCE 一次性凭据,以及 supabase-js 持久会话(localStorage
+ * `sb-<project-ref>-auth-token`)。与 {@link clearAuthSession} 不同,不区分当前
+ * 模式——provider 切换后旧模式的凭据按定义全部作废。
+ */
+export function clearStoredLoginState(): void {
+  window.localStorage.removeItem(TOKEN_KEY)
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
+  window.sessionStorage.removeItem(OIDC_VERIFIER_KEY)
+  window.sessionStorage.removeItem(OIDC_STATE_KEY)
+  // 倒序遍历:removeItem 会收缩索引
+  for (let i = window.localStorage.length - 1; i >= 0; i -= 1) {
+    const key = window.localStorage.key(i)
+    if (key !== null && key.startsWith('sb-')) window.localStorage.removeItem(key)
+  }
+}
+
+/**
  * no-store:config 是 volatile 每次现读,浏览器缓存会让设置面板改完后的新值迟到。
  * @returns 认证配置(mode 判别:supabase 直连参数或 OIDC issuer/clientId/scopes)。
  */

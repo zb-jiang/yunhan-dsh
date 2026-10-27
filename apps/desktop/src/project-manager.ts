@@ -32,6 +32,12 @@ const CORE_BUILD_PACKAGE = '@deepseek-ai/dsh-subprocess-local'
 // Bundled (signed) and development projects both run the enterprise profile: the employee client is the
 // distribution target, so the packaged runtime carries the enterprise bundle alongside the shared web app.
 const BUNDLED_PROFILE = PROFILE_TEMPLATES.enterprise as ProfileTemplate
+/**
+ * Whether the shell's DS-account welcome gate applies at all: the enterprise workspace
+ * authenticates through the platform SSO inside the web UI, so a distribution bundling it
+ * never collects DS credentials at the shell level.
+ */
+export const WELCOME_GATE_APPLIES = !BUNDLED_PROFILE.bundles.includes('@deepseek-ai/dsh-enterprise-app')
 const WORKSPACE_SETTINGS = 'nodeLinker: hoisted\nautoInstallPeers: false\n'
 function writeJson(path: string, value: unknown): void {
   writeFileSync(path, `${JSON.stringify(value, undefined, 2)}\n`, { mode: 0o600 })

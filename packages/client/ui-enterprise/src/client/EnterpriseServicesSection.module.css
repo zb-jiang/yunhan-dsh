@@ -116,6 +116,36 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-brand-primary) 18%, transparent);
 }
 
+.input:disabled,
+.select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* SSO_PROVIDER 下拉(SSO 组整组应用的第一个参数,置组首位)。 */
+.select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 7px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--dsw-alias-font-mono, ui-monospace, 'Cascadia Mono', Consolas, monospace);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.select:hover {
+  border-color: var(--dsw-alias-border-l3);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--dsw-alias-brand-primary) 18%, transparent);
+}
+
 .fieldHint {
   color: var(--dsw-alias-label-secondary);
   font-size: 12px;
@@ -130,6 +160,16 @@
   justify-content: flex-end;
   align-items: center;
   gap: 8px;
+}
+
+/* SSO 组底部整组应用条(组级应用,组内字段不单独保存)。 */
+.groupActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+  padding-top: 12px;
 }
 
 .probeOk {

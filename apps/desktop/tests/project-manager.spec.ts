@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { resolveDesktopPaths } from '../src/paths.ts'
-import { DesktopProjectManager } from '../src/project-manager.ts'
+import { DesktopProjectManager, WELCOME_GATE_APPLIES } from '../src/project-manager.ts'
 import { readProfilePlugins } from '@deepseek-ai/dsh-app-boot'
 import { runtimeFixture } from './runtime-fixture.ts'
 
@@ -99,6 +99,10 @@ describe('desktop external plugin profile', () => {
     }).dsh.profile.bundles).not.toContain('plugin')
     expect(existsSync(join(manager.paths.profile, 'node_modules/plugin/package.json'))).toBe(true)
     await expect(manager.applyRelease()).resolves.toBeUndefined()
+  })
+
+  it('bundles the enterprise workspace, whose platform SSO owns authentication over the shell welcome gate', () => {
+    expect(WELCOME_GATE_APPLIES).toBe(false)
   })
 
   it('disables plugins before runtime initialization and backs up the patch while preserving package files', async () => {

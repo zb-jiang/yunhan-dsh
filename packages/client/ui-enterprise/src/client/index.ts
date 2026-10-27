@@ -222,7 +222,7 @@ export function apply(ctx: ClientContext): void {
     order: 30,
     label: () => '企业服务配置',
     icon: () => createElement(IconApiOutlineMedium, { size: 16 }),
-    inject: () => ({ load: servicesAccess.load, save: servicesAccess.save }),
+    inject: () => ({ load: servicesAccess.load, save: servicesAccess.save, saveSso: servicesAccess.saveSso }),
   }, EnterpriseServicesSection))
 
   // 手机访问:settings.section 座位(M1:状态轮询+总开关+局域网卡)。
