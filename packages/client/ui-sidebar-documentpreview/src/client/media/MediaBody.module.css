@@ -1,0 +1,63 @@
+/* The frame follows the scroller's width; a taller video grows the frame and
+   scrolls vertically instead of overflowing the pane. */
+.frame {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 100%;
+  height: max-content;
+  min-height: 100%;
+  padding: 12px;
+  font-family: var(--dsw-font, sans-serif);
+  white-space: normal;
+}
+
+.frame:has([data-document-loading]) {
+  height: 100%;
+}
+
+/* Native controls keep their aspect; width is the pane's, height follows. */
+.media {
+  display: block;
+  width: 100%;
+  max-width: none;
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-background-surface, #000);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 10px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+/* The failure line with its retry button, centred like the status line. */
+.failed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+.failedLine {
+  margin: 0;
+  padding: 10px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: normal;
+}

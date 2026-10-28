@@ -43,6 +43,12 @@ export interface DocumentBodyOwner {
   readonly wrap: boolean
   /** Report a renderer-owned scrollport; passing `null` restores the shared body as the owner. */
   readonly scrollportRef: RefCallback<HTMLElement>
+  /** Host-facing absolute path once the file's metadata arrives; renderers that load bytes over the HTTP file route need it. */
+  readonly absolutePath?: string
+  /** Host-facing file version of the frame `absolutePath` arrived in; report it through the renderer content's `loaded`. */
+  readonly version?: string
+  /** The file's metadata read failed; a renderer-owned load cannot construct its file route. */
+  readonly metadataFailed?: boolean
 }
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {

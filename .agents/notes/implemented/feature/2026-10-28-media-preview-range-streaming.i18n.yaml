@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-10-28-media-preview-range-streaming.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-10-28-media-preview-range-streaming.md
+/agent-note-media-preview-range-streaming:
+  en: a7b1e4d7211b52db
+  zh: 8fca21b5591eb297
+/agent-note-media-preview-range-streaming/problem:
+  en: 141692500b3fe66e
+  zh: d9aa2c769b7206eb
+/agent-note-media-preview-range-streaming/decision:
+  en: 72162485c1dc2507
+  zh: e353bfbe16ab4883
+/agent-note-media-preview-range-streaming/alternatives-considered:
+  en: 048e6468baf1b4fd
+  zh: a721a12b65eef7da
+/agent-note-media-preview-range-streaming/consequences:
+  en: f1b7c3702b4a8d22
+  zh: f149868ee2cbbf57

@@ -6,7 +6,8 @@
  * 可见的知识库清单 /api/kb/mine)+ 目标文件夹(该库文件夹树,含根)→
  * 确认后经 Remote readBytes 读工作空间文件全文(原生字节,超限走 too-large
  * 失败)→ 重组 File → 经代理 multipart 上传,响应 pending(解析异步)。
- * 上传成功后展示解析状态提示;关闭对话框即中断在途读取。
+ * 上传成功后展示解析状态提示;关闭对话框即中断在途读取。匿名放行态不渲染
+ * 本操作(知识库接口要求登录身份,匿名调用只会 401)。
  */
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -16,6 +17,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceFileBytes } from '@deepseek-ai/dsh-api-workspace-files/types'
 import { listFolders, listMyKbs, uploadDocument } from './kb-api.ts'
 import type { KbAppSummary, KbDocument, KbFolder } from './kb-api.ts'
+import { useAuth, useGuest } from './EnterpriseUi.tsx'
 import css from './KbUploadAction.module.css'
 
 /** entry.action 座位注入面:读工作空间文件全文的 Remote 绑定。 */
@@ -51,9 +53,13 @@ function folderLabel(folder: KbFolder): string {
   return `${'　'.repeat(Math.max(depth, 0))}${folder.name}`
 }
 
-/** 文件行上传按钮 + 对话框(见模块文档)。 */
+/** 文件行上传按钮 + 对话框(见模块文档);匿名放行态隐藏(知识库接口要求登录身份)。 */
 export function KbUploadAction({ readWorkspaceFile, path, name, sessionId }: KbUploadActionProps): ReactNode {
+  const { currentUser } = useAuth()
+  const guest = useGuest()
   const [open, setOpen] = useState(false)
+  // 判定口径与 GuestSidebarCard 一致:currentUser === null && guest 即匿名放行态。
+  if (currentUser === null && guest) return null
   return (
     <>
       <button

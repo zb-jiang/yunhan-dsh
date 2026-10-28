@@ -3,14 +3,14 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-sidebar-documentpreview/README.md
 /:
-  en: ef50065f5ff17aa1
-  zh: ee5d2b7986739fca
+  en: d11cbfc3dbd92bde
+  zh: 31b9427912b1fba3
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview:
   en: 5168e03d461318f5
   zh: 7ad97d70ee331bfd
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview/summary:
-  en: a74c16667d0baada
-  zh: 4fd709ff9f98b84f
+  en: 777612a56631804c
+  zh: 0e3ebc0eacca1ed2
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview/table-of-contents:
   en: 0dd8c3a22e28aacf
   zh: c27c11bf4b5cceba
@@ -21,8 +21,8 @@
   en: 57942270e23d3a8e
   zh: 6617124e652b3f67
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview/how-it-reads:
-  en: b056bbe0f74fe328
-  zh: fd9ac88f08825afc
+  en: c94c84568a225b30
+  zh: e0dd20f988f919ce
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview/excel-preview:
   en: b99b0e0b8efc2853
   zh: 4327352d1334fc6b
@@ -39,8 +39,8 @@
   en: 7edb4c0bb5f13847
   zh: ae5d0bbebe4aa563
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview/known-limitations-and-deferred-work:
-  en: 7be2ad2e198131f8
-  zh: 21b35eae72a49ad2
+  en: dda3bd92d2f5a7f7
+  zh: 63f9e271c1a4d377
 /deepseek-ai-dsh-client-ui-sidebar-documentpreview/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: e88aeb617ffb74ea

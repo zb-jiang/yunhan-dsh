@@ -28,6 +28,7 @@ describe('classifyLinkPath', () => {
     ['deck.pptx', 'document'],
     ['notes.md', 'other'],
     ['clip.mp4', 'other'],
+    ['song.mp3', 'other'],
     ['notes.unknownext', 'other'],
     ['Makefile', 'other'],
     ['README', 'other'],

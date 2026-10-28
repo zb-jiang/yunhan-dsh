@@ -43,6 +43,7 @@ export function classifyLinkPath(path: string): LinkIconKind {
     case 'pdf':
     case 'ppt':
     case 'word': return 'document'
+    case 'audio':
     case 'markdown':
     case 'other':
     case 'video': return 'other'

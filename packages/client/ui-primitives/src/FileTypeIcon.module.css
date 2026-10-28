@@ -5,6 +5,10 @@
   color: var(--dsh-file-type-icon-color, var(--dsh-file-type-default-color));
 }
 
+.audio {
+  --dsh-file-type-default-color: var(--dsh-file-type-violet);
+}
+
 .code {
   --dsh-file-type-default-color: var(--dsw-static-deepseek-500);
 }

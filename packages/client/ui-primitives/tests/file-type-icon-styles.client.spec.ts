@@ -9,6 +9,7 @@ const css = readFileSync(fileURLToPath(new URL('../src/FileTypeIcon.module.css',
 type TraditionalFileType = Exclude<FileType, CodeFileType>
 
 const TYPE_COLORS: Readonly<Record<TraditionalFileType, string>> = {
+  audio: 'var(--dsh-file-type-violet)',
   code: 'var(--dsw-static-deepseek-500)',
   excel: 'var(--dsw-static-green-500)',
   folder: 'var(--dsw-static-amber-400)',

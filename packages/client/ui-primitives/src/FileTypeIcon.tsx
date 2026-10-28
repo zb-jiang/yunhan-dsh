@@ -10,6 +10,7 @@ import css from './FileTypeIcon.module.css'
 /** File categories with distinct 28px glyphs. */
 export type FileType =
   | CodeFileType
+  | 'audio'
   | 'code'
   | 'excel'
   | 'folder'
@@ -45,6 +46,14 @@ export type FileTypeIconProps = IconProps & (
 )
 
 const EXTENSION_TYPES: Readonly<Record<string, ClassifiedFileType>> = {
+  mp3: 'audio',
+  wav: 'audio',
+  flac: 'audio',
+  ogg: 'audio',
+  m4a: 'audio',
+  aac: 'audio',
+  wma: 'audio',
+  opus: 'audio',
   scss: 'code',
   sass: 'code',
   less: 'code',
@@ -83,6 +92,8 @@ const EXTENSION_TYPES: Readonly<Record<string, ClassifiedFileType>> = {
   webm: 'video',
   mkv: 'video',
   avi: 'video',
+  flv: 'video',
+  wmv: 'video',
   mpg: 'video',
   mpeg: 'video',
   doc: 'word',
@@ -195,6 +206,14 @@ function SpreadsheetGlyph({ size, className }: IconProps): ReactNode {
 
 function glyph(type: TraditionalFileType, size: number, className: string | undefined): ReactNode {
   switch (type) {
+    case 'audio':
+      return (
+        <FileGlyph size={size} className={className} markTransform={FILE_MARK_TRANSFORM}>
+          <path d="M14.1 19.7C14.1 18.5 13.1 17.6 12 17.6C10.8 17.6 9.9 18.5 9.9 19.7C9.9 20.9 10.8 21.8 12 21.8C13.1 21.8 14.1 20.9 14.1 19.7Z" fill="currentColor" />
+          <path d="M13.6 19.7V11.4" stroke="currentColor" strokeWidth="1.4" />
+          <path d="M13.6 11.4C15.4 12.3 16.7 13.7 16.7 15.5C16.7 16.4 16.4 17.2 15.8 17.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+        </FileGlyph>
+      )
     case 'code':
       return (
         <FileGlyph size={size} className={className}>

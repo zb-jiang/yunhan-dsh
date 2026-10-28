@@ -43,6 +43,11 @@ describe('classifyFileType', () => {
     ['report.pdf', 'pdf'],
     ['deck.pptx', 'ppt'],
     ['clip.webm', 'video'],
+    ['clip.flv', 'video'],
+    ['movie.wmv', 'video'],
+    ['song.mp3', 'audio'],
+    ['track.FLAC', 'audio'],
+    ['ringtone.opus', 'audio'],
     ['letter.docx', 'word'],
     ['budget.xlsx', 'excel'],
     ['Makefile', 'makefile'],
@@ -60,7 +65,7 @@ describe('classifyFileType', () => {
 
 describe('FileTypeIcon', () => {
   const types: FileTypeKind[] = [
-    'code', 'excel', 'folder', 'html', 'image', 'markdown', 'other', 'pdf', 'ppt', 'video', 'word',
+    'audio', 'code', 'excel', 'folder', 'html', 'image', 'markdown', 'other', 'pdf', 'ppt', 'video', 'word',
   ]
 
   it.each(types)('%s renders a distinct aria-hidden svg without literal colors', (type) => {
@@ -108,7 +113,7 @@ describe('FileTypeIcon', () => {
     expect(new Set(paths).size).toBe(types.length)
   })
 
-  it.each(['folder', 'html', 'image', 'video'] as const)(
+  it.each(['audio', 'folder', 'html', 'image', 'video'] as const)(
     'enlarges the %s center mark without scaling the file shell',
     (type) => {
       const { container } = render(<FileTypeIcon kind={type} />)

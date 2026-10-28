@@ -56,14 +56,13 @@ describe('SessionMediaReferences /api/file', () => {
     }
   }
 
-  it('serves the inclusive image cap and refuses larger images for GET, HEAD and Range', async () => {
+  it('serves the inclusive image cap and refuses larger images for GET and HEAD', async () => {
     const route = await mount(PNG_BYTES.length)
     const path = join(root, 'bounded.png')
     await writeFile(path, PNG_BYTES)
     expect(await responseBytes(await route.call(path))).toEqual(PNG_BYTES)
     await appendFile(path, new Uint8Array(1))
     expect((await route.call(path)).status).toBe(413)
-    expect((await route.call(path, { headers: { range: 'bytes=0-0' } })).status).toBe(413)
     const head = await route.call(path, { method: 'HEAD' })
     expect(head.status).toBe(413)
     expect(head.body).toBeNull()
@@ -105,6 +104,7 @@ describe('SessionMediaReferences /api/file', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toBe(mediaType)
     expect(response.headers.get('content-length')).toBe(String(PNG_BYTES.length))
+    expect(response.headers.get('accept-ranges')).toBe('bytes')
     expect(response.headers.get('cache-control')).toBe('private, no-store')
     expect(response.headers.get('x-content-type-options')).toBe('nosniff')
     expect(response.headers.get('content-security-policy')).toBe("sandbox; default-src 'none'")
@@ -121,17 +121,101 @@ describe('SessionMediaReferences /api/file', () => {
     expect((await route.call(path, { method: 'HEAD' })).status).toBe(413)
   })
 
-  it('ignores Range headers and returns complete bodies without advertising ranges', async () => {
+  it('serves a byte interval as 206 with content-range and range advertising', async () => {
     const route = await mount()
     const path = join(root, 'clip.mp4')
     await writeFile(path, PNG_BYTES)
-    for (const range of ['bytes=0-3', 'bytes=-4', 'bytes=999-', 'bytes=abc', 'items=0-0', 'bytes=0-1,3-4']) {
+    const response = await route.call(path, { headers: { range: 'bytes=0-3' } })
+    expect(response.status).toBe(206)
+    expect(response.headers.get('accept-ranges')).toBe('bytes')
+    expect(response.headers.get('content-range')).toBe(`bytes 0-3/${PNG_BYTES.length}`)
+    expect(response.headers.get('content-length')).toBe('4')
+    expect(await responseBytes(response)).toEqual(PNG_BYTES.slice(0, 4))
+  })
+
+  it.each([
+    ['bytes=-4', PNG_BYTES.slice(8), 'bytes 8-11/12'],
+    ['bytes=5-', PNG_BYTES.slice(5), 'bytes 5-11/12'],
+    ['bytes=0-999', PNG_BYTES, 'bytes 0-11/12'],
+    ['bytes=0-1,3-4', PNG_BYTES.slice(0, 2), 'bytes 0-1/12'],
+  ])('serves %s from the first interval', async (range, expected, contentRange) => {
+    const route = await mount()
+    const path = join(root, 'clip.mp4')
+    await writeFile(path, PNG_BYTES)
+    const response = await route.call(path, { headers: { range } })
+    expect(response.status).toBe(206)
+    expect(response.headers.get('content-range')).toBe(contentRange)
+    expect(response.headers.get('content-length')).toBe(String(expected.byteLength))
+    expect(await responseBytes(response)).toEqual(expected)
+  })
+
+  it('falls back to the complete body for a Range it cannot honor', async () => {
+    const route = await mount()
+    const path = join(root, 'clip.mp4')
+    await writeFile(path, PNG_BYTES)
+    for (const range of ['bytes=abc', 'items=0-0', 'bytes=5-2', 'bytes=-']) {
       const response = await route.call(path, { headers: { range } })
       expect(response.status).toBe(200)
-      expect(response.headers.get('accept-ranges')).toBeNull()
       expect(response.headers.get('content-range')).toBeNull()
       expect(await responseBytes(response)).toEqual(PNG_BYTES)
     }
+  })
+
+  it('rejects unsatisfiable ranges with 416 and the complete size', async () => {
+    const route = await mount()
+    const path = join(root, 'clip.mp4')
+    await writeFile(path, PNG_BYTES)
+    for (const range of ['bytes=999-', 'bytes=12-0']) {
+      const response = await route.call(path, { headers: { range } })
+      expect(response.status).toBe(416)
+      expect(response.headers.get('content-range')).toBe(`bytes */${PNG_BYTES.length}`)
+    }
+    const empty = join(root, 'empty.mp4')
+    await writeFile(empty, '')
+    for (const range of ['bytes=0-', 'bytes=-4']) {
+      expect((await route.call(empty, { headers: { range } })).status).toBe(416)
+    }
+  })
+
+  it('streams a sparse 1 GiB file windowed without reading it whole', async () => {
+    const route = await mount()
+    const inspect = vi.fn()
+    route.fs.internals.inspectReadBytesAfterStat = inspect
+    const readWhole = vi.spyOn(route.fs, 'readBytes')
+    const path = join(root, 'huge.mp4')
+    const handle = await open(path, 'w')
+    try {
+      await handle.truncate(1024 * 1024 * 1024)
+    } finally {
+      await handle.close()
+    }
+    const response = await route.call(path, { headers: { range: 'bytes=0-3' } })
+    expect(response.status).toBe(206)
+    expect(await responseBytes(response)).toEqual(new Uint8Array(4))
+    expect(readWhole).not.toHaveBeenCalled()
+    expect(inspect).not.toHaveBeenCalled()
+  })
+
+  it('assembles a multi-window interval across the read window size', async () => {
+    const route = await mount()
+    const path = join(root, 'windowed.mp4')
+    const bytes = new Uint8Array(1024 * 1024 + 5)
+    bytes.fill(7, 1024 * 1024)
+    await writeFile(path, bytes)
+    const response = await route.call(path, { headers: { range: 'bytes=0-' } })
+    expect(response.status).toBe(206)
+    expect(response.headers.get('content-length')).toBe(String(bytes.byteLength))
+    expect(await responseBytes(response)).toEqual(bytes)
+  })
+
+  it('streams a ranged read past the whole-file cap', async () => {
+    const route = await mount(PNG_BYTES.length)
+    const path = join(root, 'bounded.mp4')
+    await writeFile(path, PNG_BYTES)
+    await appendFile(path, new Uint8Array(1))
+    const response = await route.call(path, { headers: { range: 'bytes=0-0' } })
+    expect(response.status).toBe(206)
+    expect(await responseBytes(response)).toEqual(PNG_BYTES.slice(0, 1))
   })
 
   it('answers HEAD without reading content and reports missing and non-regular files', async () => {
@@ -214,6 +298,8 @@ describe('SessionMediaReferences /api/file', () => {
     expect(response.headers.get('content-length')).toBe('0')
     expect(await response.text()).toBe('')
     expect((await route.call(path, { signal: AbortSignal.abort() })).status).toBe(499)
+    const ranged = { headers: { range: 'bytes=0-3' }, signal: AbortSignal.abort() }
+    expect((await route.call(path, ranged)).status).toBe(499)
   })
 
   it('unregisters the route on disposal', async () => {

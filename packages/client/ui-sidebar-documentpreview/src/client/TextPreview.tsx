@@ -346,6 +346,9 @@ export function TextPreview({
         {content !== undefined && renderSlot('sidebar.right.tab.document', {
           resourceAddress: tab.contentId, content, wrap: state.wrap, scrollportRef: bindScrollport,
           addResource: add, setResources: set,
+          ...(absolutePath !== undefined && { absolutePath }),
+          ...(meta.value?.version !== undefined && { version: meta.value.version }),
+          ...(meta.failure !== undefined && { metadataFailed: true }),
         }, {
           entryKey: selected.id, hookContext: useTabInfo,
           fallback: <p className={css.statusLine}>{t('rendererUnavailable', { name: selected.title() })}</p>,
