@@ -25,6 +25,7 @@ kind: "package-group"
 |------|------|
 | [`backend-task/`](backend-task/README.zh.md) | 在服务器端运行 DSH backend task：提交插值后的节点 prompt 到 backend profile 并轮询 JSON 结果 |
 | [`flowable-task-proxy/`](flowable-task-proxy/README.zh.md) | Flowable 任务端点的纯 HTTP 转发 |
+| [`file-write/`](file-write/README.zh.md) | 企业文件编辑器背后的工作区受限文本写入通道：在 workspace-write 沙箱策略下以乐观并发保存 |
 | [`instance-workspace/`](instance-workspace/README.zh.md) | 实例云工作空间的模型面工具：文件增删改查、员工端代理路由与每回合 `<instance_workspace>` 块 |
 | [`kb-context/`](kb-context/README.zh.md) | 注入每回合 `<knowledge_base>` 模型可见块，内容由 web-console 知识库上报提供 |
 | [`knowledge/`](knowledge/README.zh.md) | 企业会话中模型调用的知识库检索工具 |

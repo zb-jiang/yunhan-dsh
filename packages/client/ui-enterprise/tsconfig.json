@@ -25,6 +25,7 @@
     { "path": "../../api/session-controller/tsconfig.client.json" },
     { "path": "../../api/workspace-controller/tsconfig.client.json" },
     { "path": "../../api/workspace-files/tsconfig.client.json" },
+    { "path": "../../enterprise/file-write" },
     { "path": "../ui-sidebar-files" }
   ]
 }

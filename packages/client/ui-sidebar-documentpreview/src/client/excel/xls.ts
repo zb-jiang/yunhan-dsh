@@ -47,8 +47,10 @@ export function mapXlsWorkbook(workbook: WorkBook, limits: ExcelLimits): ExcelPr
       range.e.r = Math.max(range.e.r, merge.e.r)
       range.e.c = Math.max(range.e.c, merge.e.c)
     }
-    const row = Math.max(range.e.r + 1, source['!rows']?.length ?? 1)
-    const column = Math.max(range.e.c + 1, source['!cols']?.length ?? 1)
+    // 导出系统会写超出内容的整表行列元数据(BIFF COLINFO 可覆盖全部 257 列);
+    // 面积只按内容矩形算,与 xlsx 侧一致,元数据长度不计入。
+    const row = range.e.r + 1
+    const column = range.e.c + 1
     area += row * column
     if (!Number.isSafeInteger(area) || area > limits.maxCells) throw new ExcelPreviewError('tooLarge')
     const config: Required<Pick<SheetConfig, 'merge' | 'rowlen' | 'columnlen' | 'rowhidden' | 'colhidden'>> = {

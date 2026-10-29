@@ -382,6 +382,7 @@
     { "path": "./packages/enterprise/llm-access" },
     { "path": "./packages/enterprise/pocket-access" },
     { "path": "./packages/enterprise/process-start" },
+    { "path": "./packages/enterprise/file-write" },
     { "path": "./packages/enterprise/backend-task" },
     { "path": "./packages/enterprise/session-delete" },
     { "path": "./packages/session/session-telemetry-otel" },

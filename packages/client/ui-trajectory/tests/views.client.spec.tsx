@@ -218,6 +218,7 @@ function standaloneProps(
   const inputActions: InputActions = {
     captureInsertion: () => ({ start: 0, end: 0, draftRev: 0 }),
     insertText: () => false,
+    insertReference: () => false,
     setDraft: () => {},
     persistDraft: () => {},
     addAttachments: () => false,
@@ -347,6 +348,7 @@ function mount(fixture: Awaited<ReturnType<typeof bench>>) {
   const inputActions: InputActions = {
     captureInsertion: () => ({ start: 0, end: 0, draftRev: 0 }),
     insertText: () => false,
+    insertReference: () => false,
     setDraft: vi.fn(),
     persistDraft: vi.fn(),
     addAttachments: vi.fn(() => false),

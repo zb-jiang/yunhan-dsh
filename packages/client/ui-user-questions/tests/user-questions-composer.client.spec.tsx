@@ -132,6 +132,7 @@ const kitBase: Omit<QuestionComposerProps, 'matched' | 'useStore' | 'useQuestion
   inputActions: {
     captureInsertion: () => ({ start: 0, end: 0, draftRev: 0 }),
     insertText: () => false,
+    insertReference: () => false,
     setDraft: () => { throw new Error('unused') },
     persistDraft: () => { throw new Error('unused') },
     addAttachments: () => { throw new Error('unused') },

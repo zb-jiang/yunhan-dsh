@@ -34,12 +34,21 @@ import type { InputTriggerServiceContract } from '@deepseek-ai/dsh-client-ui-inp
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-files/client'
+// Type-only: 拉入 ui-sidebar-documentpreview 的 SlotMap 合并
+// (sidebar.right.tab.document.actions 座位类型,「引用到对话」挂载点)。
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
+// Type-only: 拉入 enterpriseFiles 域的 RemoteErrorDetailsMap 声明合并与 wire 请求类型。
+import type { EnterpriseFileWriteRequest } from '@deepseek-ai/dsh-enterprise-file-write/types'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ConnectionHandle } from '@deepseek-ai/dsh-client-connection/client'
 // Type-only: 拉入 settings 域的 SlotMap 声明('settings.section' 座位类型)。
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
+// 生成态 remote contribution:客户端 bundle 内联(typert remote-client 产物),
+// 挂载后在 ctx.remote.enterpriseFiles 暴露文件写端点。
+import enterpriseFilesRemote from '@deepseek-ai/dsh-enterprise-file-write/remote'
 import { EnterpriseOverlay } from './EnterpriseUi.tsx'
 import { ARCHIVE_TAB_ID, ARCHIVE_TAB_KIND, EnterpriseWorkbench } from './enterprise-workbench.ts'
 import { EnterpriseServicesSection } from './EnterpriseServicesSection.tsx'
@@ -49,6 +58,7 @@ import { createEnterpriseServicesAccess } from './enterprise-services-access.ts'
 import { KnowledgeWorkbench } from './knowledge-workbench.ts'
 import { buildKbDocsSource } from './kb-trigger-source.ts'
 import { buildInstanceWorkspaceSource } from './instance-trigger-source.ts'
+import { buildFileQuoteSource } from './file-quote-source.ts'
 import { kbDocRule, KbDocNode } from './kb-doc-decorator.tsx'
 import { TaskArchivePanel } from './TaskArchivePanel.tsx'
 import { INSTANCE_FILES_TAB_ID, INSTANCE_FILES_TAB_KIND } from './instance-files-tab.ts'
@@ -60,6 +70,11 @@ import { KbPickerButton } from './KbPickerButton.tsx'
 import { KbUploadAction } from './KbUploadAction.tsx'
 import type { KbUploadInjected } from './KbUploadAction.tsx'
 import { InstanceUploadAction } from './InstanceUploadAction.tsx'
+import { QuoteToConversationAction } from './QuoteToConversationAction.tsx'
+import {
+  ENTERPRISE_FILE_EDITOR_EXTENSIONS, ENTERPRISE_FILE_EDITOR_ID, EnterpriseFileEditor,
+} from './EnterpriseFileEditor.tsx'
+import type { EnterpriseFileEditorInjected, EnterpriseFileSaveOutcome } from './EnterpriseFileEditor.tsx'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import {
   DeleteSessionConfirmDialog, DeleteSessionMenuItem, DeleteSessionRowButton, deleteArchivedSessionRequest,
@@ -70,13 +85,57 @@ import type {
 
 export const inject = [
   'slots', 'sessions', 'workspaces', 'uiWorkspace', 'layout', 'conversation', 'uiConversation', 'inputTriggers', 'sidebarRight',
-  'sidebarRightTabs', 'remote', 'remote.workspaceFiles', 'remote.settings', 'connection',
+  'sidebarRightTabs', 'documentPreviews', 'remote', 'remote.workspaceFiles', 'remote.settings', 'connection',
 ]
+
+/**
+ * 两阶段挂载企业文件写通道(voice-input `mountVoiceInput` 同款结构):先挂
+ * remote contribution,再在注入 `remote.enterpriseFiles` 的子 fiber 里注册
+ * 编辑器预览与保存闭包——闭包捕获子 fiber 的 ctx,该 fiber 对 mount 出的
+ * namespace 向上可见且已声明注入,任何调用栈(含 React 事件回调)都能解析。
+ * @param ctx - 客户端 Cordis 上下文(插件 apply fiber)
+ * @returns 联合 disposer:先撤编辑器注册,再卸载 remote namespace
+ */
+async function mountEnterpriseFiles(ctx: ClientContext): Promise<() => Promise<void>> {
+  const disposeRemote = await ctx.remote.$mount(enterpriseFilesRemote)
+  const consumers = ctx.inject(['remote.enterpriseFiles', 'documentPreviews', 'slots'], (filesCtx) => {
+    const enterpriseFiles = filesCtx.remote.enterpriseFiles
+    const saveFile = (sessionId: string, request: EnterpriseFileWriteRequest, signal?: AbortSignal): Promise<EnterpriseFileSaveOutcome> =>
+      enterpriseFiles.write(sessionId as SessionId, request, signal ?? new AbortController().signal).then(result => result.ok
+        ? { ok: true, version: result.value.version, absolutePath: result.value.absolutePath }
+        : { ok: false, code: result.error.code, message: result.error.message })
+    // 右栏文件预览编辑器(CodeMirror 6 + Ctrl+S 保存):definition 以 extension
+    // 优先级覆盖同后缀的官方只读预览(openWith 菜单仍可切回)。
+    filesCtx.effect(() => filesCtx.documentPreviews.register({
+      id: ENTERPRISE_FILE_EDITOR_ID,
+      extensions: ENTERPRISE_FILE_EDITOR_EXTENSIONS,
+      priority: 'extension',
+      title: () => '编辑器',
+      loading: 'bytes-complete',
+      wrap: false,
+    }), 'ui-enterprise: file editor definition')
+    filesCtx.slots.inject('sidebar.right.tab.document', () => filesCtx.slots.register({
+      name: 'sidebar.right.tab.document',
+      key: ENTERPRISE_FILE_EDITOR_ID,
+      inject: (): EnterpriseFileEditorInjected => ({ saveFile }),
+    }, EnterpriseFileEditor))
+  })
+  try { await consumers } catch (error) { await consumers.dispose(); await disposeRemote(); throw error }
+  return async () => { await consumers.dispose(); await disposeRemote() }
+}
 
 export function apply(ctx: ClientContext): void {
   if (typeof document !== 'undefined') {
     document.documentElement.dataset.dshEnterpriseProfile = 'true'
   }
+
+  // 企业文件写 remote:两阶段挂载(见 mountEnterpriseFiles)——先挂 remote
+  // contribution,再在注入 `remote.enterpriseFiles` 的子 fiber 里注册编辑器。
+  // 不能把该 namespace 写进本插件 inject(等于等自己 mount 的服务,死锁);
+  // 也不能在 apply 闭包里直接解析:effect 子 fiber 装的服务对 apply fiber 的
+  // 向上查找不可见(报 without inject),apply 执行期 fiber.runtime 未就绪时
+  // 更是软查找返回 undefined。voice-input 的 mountVoiceInput 是同款官方先例。
+  ctx.effect(() => mountEnterpriseFiles(ctx), 'ui-enterprise: enterpriseFiles mount')
 
   const workbench = new EnterpriseWorkbench({
     sessions: ctx.sessions,
@@ -101,6 +160,14 @@ export function apply(ctx: ClientContext): void {
 
   // 输入框 '@' 实例空间文件触发源:绑定待办的会话候选 → 纯文本插入(退订器由 effect 持有)。
   ctx.effect(() => inputTriggers.registerSource(buildInstanceWorkspaceSource(workbench)), 'ui-enterprise: @instanceWorkspace source')
+
+  // 「引用到对话」chip 触发源:不出菜单候选,承载右栏选区引用 chip 的点击
+  // 定位(openReference)与模型序列化(codec);chip 的插入在
+  // QuoteToConversationAction(退订器由 effect 持有)。
+  ctx.effect(
+    () => inputTriggers.registerSource(buildFileQuoteSource({ sidebarRight: ctx.sidebarRight, sessions: ctx.sessions })),
+    'ui-enterprise: fileQuote source',
+  )
 
   // 右边栏卡死哨兵:按钮+面板一起消失的脱节状态自愈 + 证据日志(见
   // workbench.armStuckSentinel;自愈只恢复 frame 轨道,不碰 surface)。
@@ -210,6 +277,8 @@ export function apply(ctx: ClientContext): void {
   }, KbChipsDock))
 
   // 工作空间文件行「上传到知识库」:readBytes 无 range 读全文(受 maxFileBytes 上限) → 代理 multipart 上传。
+  // workspaceFiles 由 api/remotes 预先挂载且在本插件 inject 声明,回调内按需
+  // 解析合法——与 self-mount 的 enterpriseFiles 不同,无需子 fiber。
   const readWorkspaceFile: KbUploadInjected['readWorkspaceFile'] =
     (sessionId, path, signal) => ctx.remote.workspaceFiles.readBytes(sessionId, path, {}, signal)
   ctx.slots.inject('sidebar.files.entry.action', () => ctx.slots.register({
@@ -226,6 +295,18 @@ export function apply(ctx: ClientContext): void {
     id: 'instance-upload',
     inject: () => ({ readWorkspaceFile, workbench }),
   }, InstanceUploadAction))
+
+  // 右栏文件预览「引用到对话」:预览正文右键选区 → 结构化引用 chip 经
+  // inputActions 插入输入草稿,发送时序列化为带行号署名的 markdown 围栏
+  // (座位由 ui-sidebar-documentpreview 的 TextPreview 声明,监听挂预览根,
+  // 选区落在纯文本渲染器的行标记内才弹菜单)。
+  ctx.slots.inject('sidebar.right.tab.document.actions', () => ctx.slots.register({
+    name: 'sidebar.right.tab.document.actions',
+    id: 'enterprise-quote-to-conversation',
+  }, QuoteToConversationAction))
+
+  // 右栏文件预览编辑器的注册在 mountEnterpriseFiles 内:保存闭包依赖
+  // self-mount 的 enterpriseFiles namespace,必须在注入它的子 fiber 里创建。
 
   // 企业服务配置:settings.section 座位的聚合配置页(volatile 字段即时生效)。
   ctx.slots.inject('settings.section', () => ctx.slots.register({

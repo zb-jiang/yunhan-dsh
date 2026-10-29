@@ -38,6 +38,7 @@
     "@deepseek-ai/dsh-platform-user-console": "workspace:*",
     "@deepseek-ai/dsh-platform-user-api": "workspace:*",
     "@deepseek-ai/dsh-user-identity-context": "workspace:*",
+    "@deepseek-ai/dsh-enterprise-file-write": "workspace:*",
     "@deepseek-ai/dsh-flowable-task-proxy": "workspace:*",
     "@deepseek-ai/cordis-plugin-logger-console": "workspace:~",
     "@deepseek-ai/dsh-skill-sync": "workspace:*",

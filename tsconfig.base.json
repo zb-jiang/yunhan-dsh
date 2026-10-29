@@ -207,6 +207,9 @@
       "@deepseek-ai/dsh-agent/types": ["./packages/core/agent/src/types.ts"],
       "@deepseek-ai/dsh-agent/brand": ["./packages/core/agent/src/brand.ts"],
       "@deepseek-ai/dsh-enterprise-backend/startup": ["./packages/bundle/enterprise-backend/src/startup.ts"],
+      // enterprise/file-write is named after its role, not its directory, so these stay hand-written.
+      "@deepseek-ai/dsh-enterprise-file-write": ["./packages/enterprise/file-write/src"],
+      "@deepseek-ai/dsh-enterprise-file-write/types": ["./packages/enterprise/file-write/src/types.ts"],
       "@deepseek-ai/dsh-headless/startup": ["./packages/bundle/headless/src/startup.ts"],
       "@deepseek-ai/dsh-web-app/startup": ["./packages/bundle/web-app/src/startup.ts"],
       "@deepseek-ai/dsh-client-*/client": ["./packages/client/*/src/client"],

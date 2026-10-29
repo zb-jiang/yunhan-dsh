@@ -47,6 +47,27 @@ getToken(): string | undefined
 
 Source: [`packages/enterprise/user-identity-context/src/index.ts`](../../packages/enterprise/user-identity-context/src/index.ts)
 
+<a id="ctxenterprisefiles--enterprisefiles"></a>
+
+### `ctx.enterpriseFiles` — `EnterpriseFiles`
+
+Host Remote text writes into one Session's workspace over the composed filesystem.
+
+```ts cordis-catalog
+/**
+ * Write one text file inside the Session's workspace, creating or replacing it.
+ * @param sessionId - Session identity whose workspace root confines the write.
+ * @param request - the target path, full replacement text, and optional expected version.
+ * @param signal - caller cancellation.
+ * @returns the file's absolute path, its version after the write, and whether it was created or updated.
+ */
+@Remote async write(sessionId: SessionId, request: EnterpriseFileWriteRequest, signal: AbortSignal): Promise<EnterpriseFileWriteResult>
+```
+
+Types: [SessionId](core.md)
+
+Source: [`packages/enterprise/file-write/src/index.ts`](../../packages/enterprise/file-write/src/index.ts)
+
 <a id="ctxplatformusers--platformuserservice"></a>
 
 ### `ctx.platformUsers` — `PlatformUserService`

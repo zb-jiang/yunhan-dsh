@@ -309,6 +309,9 @@ flowchart LR
   svc_skillSync["ctx.skillSync<br/>Enterprise skill distribution daemon"]
   pkg_pocket_access["pocket-access"]
   svc_pocketAccess["ctx.pocketAccess<br/>Phone-facing reverse proxy over the local webserver"]
+  pkg_enterprise_file_write["enterprise-file-write"]
+  svc_enterpriseFiles["ctx.enterpriseFiles<br/>Enterprise workspace file write channel"]
+  pkg_client_ui_enterprise["client-ui-enterprise"]
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -351,6 +354,7 @@ flowchart LR
   pkg_deepseek_account --> svc_deepseekAccount
   pkg_deepseek_account_platform --> svc_deepseekAccount
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_enterprise_file_write --> svc_enterpriseFiles
   pkg_experimental_agent_team --> svc_agentTeams
   pkg_experimental_api_speech_to_text --> svc_speechController
   pkg_experimental_browser_use_chrome_devtools_mcp --> svc_browserUse
@@ -511,6 +515,7 @@ flowchart LR
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
   svc_directoryPicker --> pkg_api_workspace_controller
   svc_dynamicCordisRunner --> pkg_tool_cordis
+  svc_enterpriseFiles --> pkg_client_ui_enterprise
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
   svc_fs --> pkg_tool_fs
@@ -740,5 +745,6 @@ flowchart LR
 | `ctx.platformUsers` | `seam` | [`platform-user`](../packages/enterprise/platform-user) | [`platform-user-console`](../packages/enterprise/platform-user-console) | [`platform-user-console`](../packages/enterprise/platform-user-console), [`platform-user-api`](../packages/enterprise/platform-user-api) | - | console provider 通过 JWKS 本地验签 Supabase Auth JWT 并解析治理记录；auth API 消费该读取入口。 |
 | `ctx.skillSync` | `service` | [`skill-sync`](../packages/enterprise/skill-sync) | - | - | - | 周期性把登录员工所需的 skill 下载到本地缓存，并为 todo 的 skillRefs 提供 ensureInstalled 入口。 |
 | `ctx.pocketAccess` | `service` | [`pocket-access`](../packages/enterprise/pocket-access) | - | - | - | 把员工桌面 webserver 发布给局域网或可选隧道中的配对手机，只放行携带配对设备 cookie 或同账号 Bearer 令牌的请求；管理路由负责配对、吊销与隧道生命周期。 |
+| `ctx.enterpriseFiles` | `service` | [`enterprise-file-write`](../packages/enterprise/file-write) | - | [`client-ui-enterprise`](../packages/client/ui-enterprise) | - | 解析 Session 工作区根目录，在 workspace-write 沙箱策略下以乐观版本检查写入编辑器提供的文本；浏览器文件编辑器经 enterpriseFiles Remote 命名空间保存。 |
 
 维护模式：混合模式。服务从 Cordis 声明中发现；接口、实现和消费方角色在 `scripts/gen-doc-graphs.ts` 中分类，并设有完整性守卫。

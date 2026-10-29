@@ -126,6 +126,13 @@
     - id: session-delete
       name: '@deepseek-ai/dsh-session-delete'
 
+    # 企业文件写入 remote（enterpriseFiles）：编辑器 Ctrl+S 保存通道，路径
+    # 遏制 + 乐观并发 + 单次写入大小上限；保存走 workspace-write 沙箱策略。
+    - id: enterprise-file-write
+      name: '@deepseek-ai/dsh-enterprise-file-write'
+      config:
+        maxWriteBytes: !!js Number(process.env.ENTERPRISE_FILE_WRITE_MAX_BYTES ?? 2097152)
+
     # 手机访问代理：总开关开启时在 0.0.0.0:3081 起动 LAN 代理（双闸门：
     # 配对 cookie + 同账号 Bearer），管理路由 /api/enterprise/pocket/* 仅
     # loopback；bindPort 被占用自动顺延，实际端口进设置页与二维码。

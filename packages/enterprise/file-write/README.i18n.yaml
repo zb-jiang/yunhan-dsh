@@ -1,0 +1,52 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/enterprise/file-write/README.md
+/:
+  en: 1011535a8c20aae7
+  zh: 714be751163c6952
+/deepseek-ai-dsh-enterprise-file-write:
+  en: d5a6c99bc68c4e67
+  zh: 18c7e6ffe6c49acc
+/deepseek-ai-dsh-enterprise-file-write/summary:
+  en: 940122a3cf86636d
+  zh: 8bce8b65578fe670
+/deepseek-ai-dsh-enterprise-file-write/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f14f34fce35a8d90
+/deepseek-ai-dsh-enterprise-file-write/use-this-package:
+  en: ba7e70fbdd2a8a92
+  zh: 2366a026c25023bc
+/deepseek-ai-dsh-enterprise-file-write/use-this-package/minimal-configuration:
+  en: 7601b82a201de67d
+  zh: 9fa25e72e5f91ca0
+/deepseek-ai-dsh-enterprise-file-write/use-this-package/what-a-write-call-does:
+  en: b4b6b3ec6ffe8dfe
+  zh: 3444d7bdc606f47c
+/deepseek-ai-dsh-enterprise-file-write/understand-the-implementation:
+  en: c75599b18254aa11
+  zh: 29b3be7e036131d4
+/deepseek-ai-dsh-enterprise-file-write/understand-the-implementation/workspace-root-resolution-follows-the-session:
+  en: d47a7d309e346b53
+  zh: efaee91071b31d1f
+/deepseek-ai-dsh-enterprise-file-write/understand-the-implementation/optimistic-concurrency-through-the-fs-intent:
+  en: ae27c388d9af3b5a
+  zh: d15c4b4930137507
+/deepseek-ai-dsh-enterprise-file-write/understand-the-implementation/sandbox-policy-and-error-mapping:
+  en: d6b0b85e59928570
+  zh: f9bc7478ff81799c
+/deepseek-ai-dsh-enterprise-file-write/further-exploration:
+  en: 2f41ae0b243ad499
+  zh: 3c5961ba93b98fa9
+/deepseek-ai-dsh-enterprise-file-write/model-experience:
+  en: 80a659e8c9f027b2
+  zh: fa7d922ab0935537
+/deepseek-ai-dsh-enterprise-file-write/model-experience/kv-cache-effect:
+  en: 19247c6d09703f5b
+  zh: 6c838f4835d42ad3
+/deepseek-ai-dsh-enterprise-file-write/known-limitations-and-deferred-work:
+  en: 9a4d54ac746f4cb3
+  zh: 9be777dac80d33b0
+/deepseek-ai-dsh-enterprise-file-write/known-limitations-and-deferred-work/dev-note:
+  en: f53b16a4fc7206df
+  zh: 0b80a330e0ca709a

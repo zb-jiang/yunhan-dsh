@@ -25,6 +25,7 @@ The enterprise group hosts the employee-facing platform layer: auth endpoints ve
 |---------|------|
 | [`backend-task/`](backend-task/README.md) | Runs DSH backend tasks server-side: submits the interpolated node prompt to a backend profile and polls for the JSON result |
 | [`flowable-task-proxy/`](flowable-task-proxy/README.md) | Pure HTTP forwarding for Flowable task endpoints |
+| [`file-write/`](file-write/README.md) | Workspace-confined text write channel behind the enterprise file editor: optimistic-concurrency saves under the workspace-write sandbox policy |
 | [`instance-workspace/`](instance-workspace/README.md) | Model-facing tools over the per-instance cloud workspace: file CRUD, the employee-side proxy routes, and the per-turn `<instance_workspace>` block |
 | [`kb-context/`](kb-context/README.md) | Injects a per-turn `<knowledge_base>` model-visible block fed by web-console knowledge-base reports |
 | [`knowledge/`](knowledge/README.md) | Knowledge-base lookup tool the model calls during enterprise sessions |

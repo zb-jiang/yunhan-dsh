@@ -4094,6 +4094,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '{ hooks: { tabInfo: SlotHookFactory<\'sidebar.right.tab.document\', UseSidebarRightTabInfo> } }',
     declaredBy: 'an entry in \'sidebar.right.pane.tab\' (client-ui-sidebar-documentpreview), so it exists while that entry is mounted',
     occupants: [
+      'client-ui-enterprise EnterpriseFileEditor',
       'client-ui-sidebar-documentpreview CodeBody',
       'client-ui-sidebar-documentpreview LazyExcelBody',
       'client-ui-sidebar-documentpreview HtmlBody',
@@ -4212,6 +4213,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'sidebar.right.pane.tab\' (client-ui-sidebar-documentpreview), so it exists while that entry is mounted',
     occupants: [
+      'client-ui-enterprise QuoteToConversationAction id \'enterprise-quote-to-conversation\'',
       'client-ui-open-in-app OpenPathAction id \'open-in-app\'',
     ],
     replaceRisk: 'none',

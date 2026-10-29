@@ -1082,6 +1082,19 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'enterpriseFiles',
+    summary: 'Host Remote text writes into one Session\'s workspace over the composed filesystem.',
+    description: 'Host Remote text writes into one Session\'s workspace over the composed filesystem.',
+    methods: [
+      {
+        signature: '@Remote async write(sessionId: SessionId, request: EnterpriseFileWriteRequest, signal: AbortSignal): Promise<EnterpriseFileWriteResult>',
+        description: 'Write one text file inside the Session\'s workspace, creating or replacing it.',
+        parameters: [{ name: 'sessionId', description: 'Session identity whose workspace root confines the write.' }, { name: 'request', description: 'the target path, full replacement text, and optional expected version.' }, { name: 'signal', description: 'caller cancellation.' }],
+        returns: 'the file\'s absolute path, its version after the write, and whether it was created or updated.',
+      },
+    ],
+  },
+  {
     key: 'fileReferences',
     summary: 'Host capability for cancellable file-reference discovery.',
     description: 'Host capability for cancellable file-reference discovery.',
@@ -5658,6 +5671,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'EncodedImageAttachment',
     declaration: 'export interface EncodedImageAttachment {\n    mediaType: ImageMediaType;\n    data: string;\n    name?: string;\n}',
+  },
+  {
+    name: 'EnterpriseFileWriteRequest',
+    declaration: 'export interface EnterpriseFileWriteRequest {\n    readonly path: string;\n    readonly content: string;\n    readonly expectedVersion?: string;\n}',
+  },
+  {
+    name: 'EnterpriseFileWriteResult',
+    declaration: 'export interface EnterpriseFileWriteResult {\n    readonly absolutePath: string;\n    readonly version: string;\n    readonly operation: \'create\' | \'update\';\n}',
   },
   {
     name: 'EpochHeader',

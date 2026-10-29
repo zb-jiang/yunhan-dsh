@@ -252,6 +252,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
 
   'packages/client/ui-enterprise': { kind: 'none', reason: 'Browser-side enterprise workbench UI; it renders state and registers no prompt, tool, or session event.' },
   'packages/enterprise/backend-task': { kind: 'none', reason: 'The runner submits the interpolated node prompt as an ordinary user message; the BPMN node configuration owns every model-visible contribution.' },
+  'packages/enterprise/file-write': { kind: 'none', reason: 'The service writes editor-provided text into the Session workspace; it registers no prompt, tool, or session event.' },
   'packages/enterprise/flowable-task-proxy': { kind: 'none', reason: 'Pure HTTP forwarding for task endpoints; it registers nothing model-facing.' },
   'packages/enterprise/llm-access': { kind: 'none', reason: 'The adapter forwards already-assembled requests to the enterprise quota proxy unchanged.' },
   'packages/enterprise/pocket-access': { kind: 'none', reason: 'The proxy forwards browser traffic and manages tunnels; it registers nothing model-facing.' },

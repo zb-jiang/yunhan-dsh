@@ -188,6 +188,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-backend-task` | yes | Server-side unattended DSH backend task runner: REST submit/poll endpoints over the webserver, one non-interactive Agent session per task, registry heartbeat and skill sync daemons against web-console |
+| `@deepseek-ai/dsh-enterprise-file-write` | yes | Enterprise workspace file write Remote: workspace-confined text writes with optimistic concurrency over the enterpriseFiles Remote namespace |
 | `@deepseek-ai/dsh-flowable-task-proxy` | yes | HTTP proxy for /dsh/tasks and /dsh/history from the DSH webserver to the flowable-engine |
 | `@deepseek-ai/dsh-instance-workspace` | yes | Process-instance cloud workspace access: model-facing workspace_list/read/write/upload/download/delete tools, the employee-facing local proxy and session-binding report route, and the per-turn <instance_workspace> pre-step injection (JWT mode on the enterprise profile, service-key mode on the unattended backend profile) |
 | `@deepseek-ai/dsh-kb-context` | yes | Enterprise session knowledge-base context: employee-client session-to-application reports plus a per-turn model-visible kb block |

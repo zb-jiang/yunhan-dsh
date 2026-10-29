@@ -153,6 +153,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   platformUsers: 'enterprise.md',
   skillSync: 'enterprise.md',
   pocketAccess: 'enterprise.md',
+  enterpriseFiles: 'enterprise.md',
 }
 
 /**
@@ -992,6 +993,8 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   PlatformUser: 'enterprise governance user record is owned by packages/enterprise/platform-user/README.md',
   PlatformUserProvider: 'enterprise platform-user provider contract is owned by packages/enterprise/platform-user/README.md',
   PocketAccessSnapshot: 'service-local status snapshot is owned by packages/enterprise/pocket-access/src/index.ts',
+  EnterpriseFileWriteRequest: 'enterprise file write request contract is owned by packages/enterprise/file-write/src/types.ts',
+  EnterpriseFileWriteResult: 'enterprise file write result contract is owned by packages/enterprise/file-write/src/types.ts',
 }
 
 /** Repository data policy consumed by the Cordis catalog projector. */

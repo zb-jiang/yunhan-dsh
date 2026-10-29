@@ -1,0 +1,61 @@
+/* 企业文件编辑器布局：编辑区撑满预览容器,状态条固定底部。 */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.editorHost {
+  flex: 1;
+  min-height: 0;
+}
+
+.editorHost :global(.cm-editor) {
+  height: 100%;
+}
+
+.editorHost :global(.cm-scroller) {
+  overflow: auto;
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 10px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+  font-size: 12px;
+}
+
+.statusInfo {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.statusError {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.statusLine {
+  padding: 16px;
+  font-size: 13px;
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.saveButton {
+  flex-shrink: 0;
+  padding: 2px 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.saveButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

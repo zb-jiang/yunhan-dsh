@@ -262,6 +262,14 @@ export interface InputActions {
    * @returns false when the draft changed or submission locked the editor.
    */
   insertText(text: string, span: TokenSpan): boolean
+  /**
+   * Insert one structured reference chip — the same outcome an input-trigger
+   * pick produces (source-routed serialization and preview on click).
+   * @param ref - the reference insertion (chip identity and projections).
+   * @param span - captured selection and draft revision.
+   * @returns false when the draft changed or submission locked the editor.
+   */
+  insertReference(ref: ReferenceInsert, span: TokenSpan): boolean
   /** Replace the whole draft with plain text, removing inline reference chips. */
   setDraft(text: string): void
   /** Write the current semantic document through the mounted persistence callback. */

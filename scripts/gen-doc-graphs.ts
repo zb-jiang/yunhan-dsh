@@ -937,6 +937,14 @@ const SERVICE_ROLES: ServiceRole[] = [
     mode: 'service',
     note: 'Publishes the employee webserver to paired phones on the LAN or through an optional tunnel, admitting only paired-device cookies or same-account bearer tokens; management routes drive pairing, revocation, and the tunnel lifecycle.',
   },
+  {
+    key: 'enterpriseFiles',
+    pkg: 'enterprise-file-write',
+    title: 'Enterprise workspace file write channel',
+    mode: 'service',
+    consumers: ['client-ui-enterprise'],
+    note: 'Resolves the Session workspace root and writes editor-provided text under the workspace-write sandbox policy with optimistic version checking; the browser file editor saves through the enterpriseFiles Remote namespace.',
+  },
 ]
 
 function generatedHeader(title: string): string[] {

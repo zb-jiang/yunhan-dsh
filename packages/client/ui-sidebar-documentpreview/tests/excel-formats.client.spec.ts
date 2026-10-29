@@ -62,6 +62,15 @@ it('maps optional row metadata, empty formula caches, errors, and Date values', 
   expect(missingResults).toBe(1)
 })
 
+it('sizes the xls matrix from the used range, not sparse column metadata', () => {
+  // BIFF 导出系统会写覆盖全部 257 列的 COLINFO 元数据,内容只有 5 列;
+  // 元数据长度若计入面积,小文件会被误判超过 maxCells。
+  const workbook = legacyWorkbook()
+  const sheet = workbook.Sheets['预算']!
+  sheet['!cols'] = Array.from({ length: 257 }, () => ({ wpx: 80 }))
+  expect(mapXlsWorkbook(workbook, limits).sheets[0]).toMatchObject({ row: 5, column: 3 })
+})
+
 it('rejects damaged, renamed, hidden-only, and oversized legacy workbooks', async () => {
   for (const bytes of [encode('a,b\n1,2'), encode('<html>not a workbook</html>'), new Uint8Array([9, 8, 0]), new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])]) {
     await expect(convertExcel(bytes, 'xls', limits)).rejects.toMatchObject({ code: 'invalid' })

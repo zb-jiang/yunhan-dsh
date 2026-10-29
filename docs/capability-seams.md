@@ -307,6 +307,9 @@ flowchart LR
   svc_skillSync["ctx.skillSync<br/>Enterprise skill distribution daemon"]
   pkg_pocket_access["pocket-access"]
   svc_pocketAccess["ctx.pocketAccess<br/>Phone-facing reverse proxy over the local webserver"]
+  pkg_enterprise_file_write["enterprise-file-write"]
+  svc_enterpriseFiles["ctx.enterpriseFiles<br/>Enterprise workspace file write channel"]
+  pkg_client_ui_enterprise["client-ui-enterprise"]
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -349,6 +352,7 @@ flowchart LR
   pkg_deepseek_account --> svc_deepseekAccount
   pkg_deepseek_account_platform --> svc_deepseekAccount
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_enterprise_file_write --> svc_enterpriseFiles
   pkg_experimental_agent_team --> svc_agentTeams
   pkg_experimental_api_speech_to_text --> svc_speechController
   pkg_experimental_browser_use_chrome_devtools_mcp --> svc_browserUse
@@ -509,6 +513,7 @@ flowchart LR
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
   svc_directoryPicker --> pkg_api_workspace_controller
   svc_dynamicCordisRunner --> pkg_tool_cordis
+  svc_enterpriseFiles --> pkg_client_ui_enterprise
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
   svc_fs --> pkg_tool_fs
@@ -738,5 +743,6 @@ flowchart LR
 | `ctx.platformUsers` | `seam` | [`platform-user`](../packages/enterprise/platform-user) | [`platform-user-console`](../packages/enterprise/platform-user-console) | [`platform-user-console`](../packages/enterprise/platform-user-console), [`platform-user-api`](../packages/enterprise/platform-user-api) | - | The console provider verifies Supabase Auth JWTs locally via JWKS and resolves the governance record; the auth API consumes the read entry point. |
 | `ctx.skillSync` | `service` | [`skill-sync`](../packages/enterprise/skill-sync) | - | - | - | Periodically downloads the signed-in employee required skills to a local cache and offers an ensureInstalled entry point for todo skillRefs. |
 | `ctx.pocketAccess` | `service` | [`pocket-access`](../packages/enterprise/pocket-access) | - | - | - | Publishes the employee webserver to paired phones on the LAN or through an optional tunnel, admitting only paired-device cookies or same-account bearer tokens; management routes drive pairing, revocation, and the tunnel lifecycle. |
+| `ctx.enterpriseFiles` | `service` | [`enterprise-file-write`](../packages/enterprise/file-write) | - | [`client-ui-enterprise`](../packages/client/ui-enterprise) | - | Resolves the Session workspace root and writes editor-provided text under the workspace-write sandbox policy with optimistic version checking; the browser file editor saves through the enterpriseFiles Remote namespace. |
 
 Maintenance mode: hybrid: services are discovered from Cordis declarations; interface/implementation/consumer roles are classified in `scripts/gen-doc-graphs.ts` with a completeness guard.

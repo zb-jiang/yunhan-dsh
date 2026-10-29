@@ -488,6 +488,7 @@ function makeHarness(
     inputActions: {
       captureInsertion: () => ({ start: 0, end: 0, draftRev: 0 }),
       insertText: () => false,
+      insertReference: () => false,
       setDraft: () => {},
       persistDraft: () => {},
       addAttachments: () => true,

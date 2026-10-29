@@ -870,6 +870,26 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-deepseek-account-platform -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-enterprise-file-write -->
+<a id="deepseek-aidsh-enterprise-file-write"></a>
+
+## `@deepseek-ai/dsh-enterprise-file-write`
+
+- `inject`: `fs` · `sandboxPolicy` · `sessions` · `typert`
+- `source`: [`packages/enterprise/file-write/src/index.ts:35`](../packages/enterprise/file-write/src/index.ts)
+
+```ts config-catalog
+/** Deployment caps on one write. */
+export interface Config {
+  /**
+   * Inclusive byte cap on one write's UTF-8 content; a larger write is
+   * refused, not shortened, because a silently cut save would corrupt the file.
+   */
+  readonly maxWriteBytes: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-enterprise-file-write -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-experimental-agent-team -->
 <a id="deepseek-aidsh-experimental-agent-team"></a>
 
