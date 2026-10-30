@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-user-identity-context",
   "description": "Enterprise session-identity context: ctx.currentUser store plus a per-turn model-visible identity block",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

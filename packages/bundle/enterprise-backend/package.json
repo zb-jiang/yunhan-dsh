@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-enterprise-backend",
   "description": "The dsh backend-profile bundle: server-side unattended backend task runner over dsh-base (webserver + backend-task plugin; no browser UI)",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-enterprise-file-write",
   "description": "Enterprise workspace file write Remote: workspace-confined text writes with optimistic concurrency over the enterpriseFiles Remote namespace",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

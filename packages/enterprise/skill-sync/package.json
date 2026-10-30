@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-skill-sync",
   "description": "Enterprise skill distribution: periodic required-skill scan against flowable-engine, download from SkillHub into a dedicated cache root, and injection into ctx.skills",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

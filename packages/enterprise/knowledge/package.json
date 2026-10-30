@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge",
   "description": "Enterprise knowledge base access on the employee side: webserver proxy to web-console /api/kb plus model-facing kb_search/kb_read/kb_list tools",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

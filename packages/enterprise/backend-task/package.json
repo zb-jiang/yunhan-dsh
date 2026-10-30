@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-backend-task",
   "description": "Server-side unattended DSH backend task runner: REST submit/poll endpoints over the webserver, one non-interactive Agent session per task, registry heartbeat and skill sync daemons against web-console",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

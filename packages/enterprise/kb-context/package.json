@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-kb-context",
   "description": "Enterprise session knowledge-base context: employee-client session-to-application reports plus a per-turn model-visible kb block",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

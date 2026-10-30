@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-platform-user-console",
   "description": "Web-Console-backed read-only provider for the platform-user seam (JWKS JWT verify + /api/users/me self-read)",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-enterprise-app",
   "description": "The dsh enterprise-surface bundle: enterprise platform-user authentication patch layer over dsh-web-app",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.1-rc.4",
   "publishConfig": {
     "access": "public"
   },
