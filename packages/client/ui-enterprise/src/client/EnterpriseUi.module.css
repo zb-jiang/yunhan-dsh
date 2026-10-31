@@ -548,7 +548,7 @@
 .configSheet {
   display: flex;
   flex-direction: column;
-  width: min(620px, 100%);
+  width: min(780px, 100%);
   max-height: min(78vh, 720px);
   border: 1px solid var(--dsw-alias-border-l2, rgba(30, 64, 175, 0.14));
   border-radius: 14px;

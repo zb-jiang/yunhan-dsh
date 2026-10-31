@@ -7,7 +7,7 @@
  * supabase 显示 SUPABASE_URL/ANON_KEY,casdoor/customer-oidc 显示
  * SSO_ISSUER/JWKS_URL/CLIENT_ID/SCOPES;后端 platform-user-api 与
  * platform-user-console 已暴露同名 volatile 字段)、管理控制台(Console URL)、
- * 流程引擎(Engine URL)、技能分发(SkillHub URL/Token/同步间隔)。保存经
+ * 流程引擎(Engine URL)、技能分发(SkillHub URL/Token/市场 namespace/同步间隔)。保存经
  * ctx.remote.settings.update 写入用户 profile 文档,volatile 字段即时生效、
  * 持久化(重启后仍生效,优先级高于启动环境变量)。认证服务组整组应用(provider
  * 决定其余字段语义,两种模式的登录参数互斥:auth-session 按判别联合切换;
@@ -128,6 +128,7 @@ const GROUPS: readonly GroupSpec[] = [
     fields: [
       { ns: 'skill-sync', key: 'skillhubBaseUrl', label: 'SKILLHUB_URL', hint: 'SkillHub 后端地址', probe: 'root' },
       { ns: 'skill-sync', key: 'skillhubToken', label: 'SKILLHUB_API_TOKEN', hint: 'SkillHub 分发 token', secret: true },
+      { ns: 'skill-sync', key: 'marketNamespace', label: 'SKILL_MKTPLAC_NAMESPACE', hint: '技能库面板市场目录的 namespace;空 = 回退启动环境变量,都空 = 市场未开放' },
       { ns: 'skill-sync', key: 'intervalMs', label: 'SKILL_SYNC_INTERVAL_MS', hint: '同步间隔毫秒(10 分钟 = 600000)', number: true },
     ],
   },
