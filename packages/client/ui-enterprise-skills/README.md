@@ -68,7 +68,7 @@ skill-sync owns every datum and every write; this package renders its catalog an
 <a id="further-exploration"></a>
 ## Further Exploration
 
-- [skill-sync](../../enterprise/skill-sync/README.md) — the host half: the governance endpoints, the write lock, and source provenance in `state.json`.
+- [skill-sync](../../enterprise/skill-sync/README.md) — the host half: the governance endpoints, the write lock, and the `source` field in `state.json`.
 - [Enterprise subsystem](../../../docs/subsystems/enterprise.md) — how the enterprise profile composes the services this panel drives.
 - [ui-sidebar](../ui-sidebar/README.md) and [ui-layout](../ui-layout/README.md) — the panel list the entry registers into and the main slot the page occupies.
 

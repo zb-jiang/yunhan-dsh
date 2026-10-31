@@ -68,7 +68,7 @@ skill-sync 拥有全部数据与全部写操作；本包渲染其目录并分发
 <a id="further-exploration"></a>
 ## 延伸阅读
 
-- [skill-sync](../../enterprise/skill-sync/README.zh.md) — 宿主半区：治理端点、写锁与 `state.json` 来源溯源。
+- [skill-sync](../../enterprise/skill-sync/README.zh.md) — 宿主半区：治理端点、写锁与 `state.json` 的 `source` 字段。
 - [企业子系统](../../../docs/subsystems/enterprise.zh.md) — enterprise profile 如何组合本面板驱动的各服务。
 - [ui-sidebar](../ui-sidebar/README.zh.md) 与 [ui-layout](../ui-layout/README.zh.md) — 入口注册进的面板列表与页面占用的主 slot。
 

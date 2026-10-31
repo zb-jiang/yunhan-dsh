@@ -23,6 +23,7 @@ import {
   type MenuItemConstructorOptions,
 } from 'electron'
 import { resolveDesktopPaths } from './paths.ts'
+import { resolveDesktopHome, type DesktopHomeResolution } from './home-resolution.ts'
 import { DesktopProjectManager, WELCOME_GATE_APPLIES } from './project-manager.ts'
 import { DesktopHostFatalError, DesktopHostProcess, DesktopHostUncleanExitError } from './host-process.ts'
 import { DesktopPlatformView, PLATFORM_IPC, platformBounds } from './platform-view.ts'
@@ -72,6 +73,11 @@ let shuttingDown = false
 let skipQuitConfirmation = false
 let windowsLanguage: string | undefined
 /**
+ * The `--dsh-home` resolution from `main()`; crash recovery reads the same value before
+ * it runs, and undefined falls back to the official chain through `resolveDesktopPaths`.
+ */
+let desktopHome: DesktopHomeResolution | undefined
+/**
  * Whether the backend has reached ready: false until the first ready, back to
  * false when a restart returns it to starting, frozen during shutdown so a
  * failure while tearing down a ready backend still reads as `running`.
@@ -97,7 +103,7 @@ const recovery = new DesktopFatalRecovery({
   show: options => dialog.showMessageBox(options),
   stop: () => { shuttingDown = true; return stopForRecovery() },
   disablePlugins: async () => {
-    const manager = new DesktopProjectManager(resolveDesktopPaths(), runtimeResources())
+    const manager = new DesktopProjectManager(resolveDesktopPaths(desktopHome?.configured), runtimeResources())
     const backupPath = await manager.disableAllPlugins()
     console.info('Desktop profile recovery completed:', { profilePatchBackup: backupPath ?? null, homePatch: 'unchanged' })
   },
@@ -315,12 +321,16 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
 }
 
 async function main(): Promise<void> {
+  // First: an invalid --dsh-home value must reject the launch before any state changes.
+  const home = resolveDesktopHome(process.argv, process.env)
+  desktopHome = home
+  console.warn(`desktop home: ${home.homeDir} (source: ${home.source})`)
   const desktopSettings = readDesktopSettings(app.getPath('userData'))
   void pruneCrashReports(app.getPath('logs'))
   const journalDirectory = process.env.DSH_DESKTOP_UPDATE_JOURNAL_DIR
   const updateJournal = journalDirectory === undefined ? undefined : new DesktopUpdateJournal(journalDirectory, app.getVersion())
   const resources = runtimeResources()
-  const paths = resolveDesktopPaths()
+  const paths = resolveDesktopPaths(home.configured)
   const development = !app.isPackaged
   const primaryRuntime = development
     ? developmentPrimaryRuntime()
@@ -331,7 +341,11 @@ async function main(): Promise<void> {
   const loginShellRead = new AbortController()
   // The probe runs in its own process group, which outlives Desktop unless the read is aborted.
   app.on('will-quit', () => { loginShellRead.abort() })
-  const loginShell = readDesktopLoginShellEnvironment(process.env, resolveDesktopLoginShellConfig(process.env), {
+  // A `--dsh-home` argument must survive the login-shell merge: `LAUNCHER_OWNED_PREFIXES` keeps `DSH_*` from rc overrides.
+  const loginShellBaseEnvironment = home.configured === undefined
+    ? process.env
+    : { ...process.env, DSH_HOME: home.configured }
+  const loginShell = readDesktopLoginShellEnvironment(loginShellBaseEnvironment, resolveDesktopLoginShellConfig(process.env), {
     signal: loginShellRead.signal,
   }).then((result) => {
     for (const failure of result.failures) console.warn(`desktop login shell: ${failure.shell} failed (${failure.reason})`)
@@ -438,7 +452,12 @@ async function main(): Promise<void> {
   const backend = new DesktopBackendController((onFailure) => {
     const hostInspectPort = developmentHostInspectPort(development)
     const host = new DesktopHostProcess(resources.node, resources.dsh, activeProject,
-      hostInspectPort, { ...hostEnvironment, DSH_CLIENT_VERSION: desktopClientVersion() }, onFailure,
+      hostInspectPort, {
+        ...hostEnvironment,
+        DSH_CLIENT_VERSION: desktopClientVersion(),
+        // Same-source injection: with `--dsh-home` the subprocess sees exactly the value the shell resolved.
+        ...(home.configured === undefined ? {} : { DSH_HOME: home.configured }),
+      }, onFailure,
       primaryRuntime,
       resources, (next) => { platformView.setSession(next) })
     return {
