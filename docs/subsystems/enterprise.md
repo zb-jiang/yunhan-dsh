@@ -2,7 +2,7 @@
 
 English | [中文](enterprise.zh.md)
 
-The enterprise profile mounts three services: the platform-user governance seam (`ctx.platformUsers`), the latest verified employee identity on this DSH instance (`ctx.currentUser`), and enterprise skill sync (`ctx.skillSync`). The package READMEs own the behavioral contracts: [platform-user](../../packages/enterprise/platform-user/README.md), [user-identity-context](../../packages/enterprise/user-identity-context/README.md), and [skill-sync](../../packages/enterprise/skill-sync/README.md).
+The enterprise profile mounts three services: the platform-user governance seam (`ctx.platformUsers`), the latest verified employee identity on this DSH instance (`ctx.currentUser`), and enterprise skill sync (`ctx.skillSync`). The employee-side skills panel is the browser half: the [ui-enterprise-skills](../../packages/client/ui-enterprise-skills/README.md) client package reads and writes enterprise skills through skill-sync's governance endpoints. The package READMEs own the behavioral contracts: [platform-user](../../packages/enterprise/platform-user/README.md), [user-identity-context](../../packages/enterprise/user-identity-context/README.md), and [skill-sync](../../packages/enterprise/skill-sync/README.md).
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -187,7 +187,7 @@ Source: [`packages/enterprise/pocket-access/src/index.ts`](../../packages/enterp
 
 ```ts cordis-catalog
 /**
- * 启动服务:缓存目录不存在时创建,随后立即跑一轮同步(不等第一个 interval)。
+ * 启动服务:创建流程缓存目录与员工抽屉目录,随后立即跑一轮同步(不等第一个 interval)。
  * 本服务由 apply() 内普通构造挂载(非 class 插件),cordis 不会自动调用
  * `[Service.init]`,故由 apply 显式调用本方法。
  */
@@ -207,6 +207,55 @@ async sync(): Promise<void>
  * @returns 仍缺失的 skill 名(同步后依旧不可用,调用方走降级提示)。
  */
 async ensureInstalled(names: readonly string[]): Promise<readonly string[]>
+
+/**
+ * 市场目录:`marketNamespace` 命名空间的 SkillHub 清单与本地安装状态合并;
+ * 未配置时 catalogOpen=false。namespace 不存在(404)与网络/服务错误在组级
+ * error 文案中区分,面板可分别提示「检查配置」与「稍后重试」。
+ *
+ * <p>匿名浏览(authenticated=false)时 local 不含 required 条目:匿名请求
+ * 没有 JWT,无法确认本地 required 快照仍与流程要求一致,面板据此隐藏
+ * 流程要求组。读操作无副作用,市场目录与上传技能照常返回。
+ *
+ * @param authenticated - 请求是否携带有效员工 JWT(catalog 端点解析)。
+ * @returns 目录快照:登录状态、市场开放状态、市场 namespace 清单组(失败
+ *   携带 error)与本地已装清单。
+ */
+async listCatalog(authenticated: boolean): Promise<SkillCatalog>
+
+/**
+ * 从市场安装/更新一个 skill(写锁内执行),落盘到 `userSkillDir`。
+ *
+ * <p>冲突语义:目标与 `required` 来源已装记录重名时,fingerprint 相同且目录
+ * 在 → 幂等返回已安装;不同 → 409 拒绝(版本由流程管理,不可市场覆盖)。
+ * `userSkillDir` 已有同名目录但无账本记录(手工放入)→ 409 请先卸载。
+ * 其余来源(upload/skillhub)重名视为更新(重装即更新)。
+ *
+ * @param namespace - SkillHub 命名空间。
+ * @param slug - skill 裸名(调用方已过 SKILL_NAME_PATTERN 校验)。
+ * @returns alreadyInstalled=true 表示幂等命中,未发生下载。
+ */
+async installFromSkillhub(namespace: string, slug: string): Promise<{ alreadyInstalled: boolean }>
+
+/**
+ * 卸载一个技能(写锁内执行):删除 `userSkillDir` 下的技能目录及账本记录
+ * (如有)。`required` 来源拒绝(版本由流程管理);目录与账本记录都不存在
+ * 时 404(fail loud,不静默成功)。
+ *
+ * @param slug - skill 裸名(调用方已过 SKILL_NAME_PATTERN 校验)。
+ */
+async uninstallSkill(slug: string): Promise<void>
+
+/**
+ * 员工 zip 上传导入(写锁内执行),落盘到 `userSkillDir`:解压 → 定位/归一根
+ * SKILL.md → 最小 frontmatter 校验(name 必填且过 SKILL_NAME_PATTERN)→
+ * 同名已装 409(required 或抽屉目录任一命中)→ 安装并记 `upload` 来源
+ * (SKILL.md description 一并记录供面板展示)。
+ *
+ * @param zipBytes - 请求体原始字节(调用方已限上传大小)。
+ * @returns 安装成功的 skill 裸名。
+ */
+async importSkillZip(zipBytes: Uint8Array): Promise<{ name: string }>
 ```
 
 Source: [`packages/enterprise/skill-sync/src/index.ts`](../../packages/enterprise/skill-sync/src/index.ts)

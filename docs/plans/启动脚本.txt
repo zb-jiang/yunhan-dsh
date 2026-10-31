@@ -88,6 +88,7 @@ $env:WEB_CONSOLE_URL="http://127.0.0.1:8080"   #手机端 relay 回调须用桌�
 $env:SKILL_SYNC_INTERVAL_MS=600000
 $env:SKILLHUB_URL="http://127.0.0.1:8095"
 $env:SKILLHUB_API_TOKEN="sk_It1SA2xPE_J8vRl_boCDEsRpjcD3rX6tq6tkaPkn7kA"
+$env:SKILL_MKTPLAC_NAMESPACE="public"
 cd d:\works\deepseek-harness
 pnpm dsh --profile enterprise
 
@@ -194,10 +195,11 @@ git merge master
 #    全部解决后: git add . && git merge --continue
 
 # 4. 验证
-$env:NODE_OPTIONS='--max-old-space-size=8192'
 pnpm install
 pnpm run lint
+$env:NODE_OPTIONS='--max-old-space-size=8192'
 pnpm run hygiene
+$env:DSH_GATE_CONCURRENCY='3'
 pnpm run doc-sync
 pnpm run typecheck
 pnpm run build

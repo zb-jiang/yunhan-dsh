@@ -65,12 +65,18 @@
 
     # 企业 skill 分发：daemon 周期调 /dsh/skills/required 预装
     # SkillHub 已发布 skill 到 $DSH_HOME/skill-sync/skills 并注册进 ctx.skills。
+    # 市场安装/zip 导入落员工抽屉 $DSH_HOME/skills（默认 filesystem provider
+    # 服务 agent，面板目录扫描把手工放入的文件夹同等治理）。
+    # marketNamespace：技能库面板市场目录的企业验证 namespace（单一），
+    # 空串=回退环境变量 SKILL_MKTPLAC_NAMESPACE；都空=市场未开放
+    # （面板显示说明文案，catalog 端点仍可用看本地清单）。
     - id: skill-sync
       name: '@deepseek-ai/dsh-skill-sync'
       config:
         flowableBaseUrl: !!js process.env.FLOWABLE_ENGINE_URL ?? 'http://127.0.0.1:8090'
         skillhubBaseUrl: !!js process.env.SKILLHUB_URL ?? 'http://127.0.0.1:8095'
         skillhubToken: !!js process.env.SKILLHUB_API_TOKEN ?? ''
+        marketNamespace: ''
         intervalMs: !!js Number(process.env.SKILL_SYNC_INTERVAL_MS ?? 600000)
 
     # 企业知识库访问：本地 webserver 代理 /api/enterprise/kb、
@@ -155,6 +161,11 @@
 
     - id: ui-enterprise
       name: '@deepseek-ai/dsh-client-ui-enterprise'
+
+    # 技能库面板：侧边栏「技能库」入口 + 主面板（三组来源卡片、市场安装、
+    # zip 导入、卸载），经本地 webserver 调 skill-sync 治理端点。
+    - id: ui-enterprise-skills
+      name: '@deepseek-ai/dsh-client-ui-enterprise-skills'
 
 # 右侧栏浏览器：web-app 补丁默认仅 desktop profile 启用（disabled 随
 # profileContext.name 计算），企业层用同 id 补丁行覆盖为常开。

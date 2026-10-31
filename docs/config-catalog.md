@@ -3431,7 +3431,7 @@ export interface Config {
 
 - `inject`: `skills` · `currentUser` · `webServer`
 - `refs`: `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/enterprise/skill-sync/src/index.ts:49`](../packages/enterprise/skill-sync/src/index.ts)
+- `source`: [`packages/enterprise/skill-sync/src/index.ts:85`](../packages/enterprise/skill-sync/src/index.ts)
 
 ```ts config-catalog
 /** 插件配置,全部来自 enterprise profile 的 cordis.yml config 段。 */
@@ -3442,10 +3442,18 @@ export interface Config {
   skillhubBaseUrl: Volatile<string>
   /** SkillHub 只读分发 token;空串时跳过清单/下载(仅靠已装缓存);volatile:设置面板可改,即时生效。 */
   skillhubToken: Volatile<string>
+  /**
+   * 市场目录命名的企业验证开放技能 namespace;空串 = 未配置(回退环境变量
+   * `SKILL_MKTPLAC_NAMESPACE`,两者都空 = 市场未开放,面板显示空态);
+   * volatile:设置面板可改,即时生效。
+   */
+  marketNamespace: Volatile<string>
   /** daemon 扫描间隔毫秒;volatile:设置面板可改,变更即重排 daemon 定时器。 */
   intervalMs: Volatile<number>
-  /** 覆盖缓存目录;缺省用 `$DSH_HOME/skill-sync/skills`。 */
+  /** 流程要求技能的缓存目录(daemon 独占写者);缺省用 `$DSH_HOME/skill-sync/skills`。 */
   skillDir?: string
+  /** 员工技能抽屉:市场安装/zip 导入的落盘目录,也是面板目录扫描的治理范围;缺省用 `$DSH_HOME/skills`。 */
+  userSkillDir?: string
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-skill-sync -->
@@ -4946,6 +4954,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | — | [`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-directory-picker-native` | — | [`packages/client/ui-directory-picker-native/src/index.ts`](../packages/client/ui-directory-picker-native/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-enterprise` | — | [`packages/client/ui-enterprise/src/index.ts`](../packages/client/ui-enterprise/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-enterprise-skills` | — | [`packages/client/ui-enterprise-skills/src/index.ts`](../packages/client/ui-enterprise-skills/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-entry-customization` | — | [`packages/client/ui-entry-customization/src/index.ts`](../packages/client/ui-entry-customization/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-goal` | — | [`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-input-trigger` | — | [`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts) |

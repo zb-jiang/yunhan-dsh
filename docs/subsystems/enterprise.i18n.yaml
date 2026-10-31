@@ -3,5 +3,5 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/enterprise.md
 /enterprise-platform:
-  en: 29092a872952f3e2
-  zh: 8cf2a942814c7b1a
+  en: 7e509af8bcfbf8ea
+  zh: 1949feba47e7f608

@@ -79,6 +79,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | no | In-app directory browsing surface: the workspace directory-flow owner rendering the host's listing and creation primitives |
 | `@deepseek-ai/dsh-client-ui-directory-picker-native` | no | Native directory-picker surface: the renderless workspace directory-flow occupant driving the local Desktop or Host OS chooser |
 | `@deepseek-ai/dsh-client-ui-enterprise` | no | Enterprise workbench UI: auth gate + task-queue sidebar + task-archive details over the three-column shell |
+| `@deepseek-ai/dsh-client-ui-enterprise-skills` | no | Enterprise skill governance panel: the sidebar Skills entry lists process-required, local (uploaded or hand-copied), and market-installed skills, and installs, imports (zip), and uninstalls them through the local webserver |
 | `@deepseek-ai/dsh-client-ui-entry-customization` | no | Customize plugin entries in the left sidebar, conversation views, and right sidebar, and quickly create new plugins. |
 | `@deepseek-ai/dsh-client-ui-goal` | no | Session goal surface: GoalBar docked above the composer, read from the goal session projection |
 | `@deepseek-ai/dsh-client-ui-input-trigger` | no | Input trigger pipeline: '/' and '@' detection, candidate menu, pick routing to registered sources |

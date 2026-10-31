@@ -9,8 +9,8 @@
   en: 0a6e38c283c5c3b5
   zh: 1fe9e388eff93002
 /deepseek-ai-dsh-skill-sync/summary:
-  en: e5ac19d659ec2837
-  zh: ed940d47ac9b4d6f
+  en: 9ddda757e2d345c0
+  zh: 2be28140d8b33289
 /deepseek-ai-dsh-skill-sync/table-of-contents:
   en: d152484eb41ac6b4
   zh: f14f34fce35a8d90
@@ -18,11 +18,14 @@
   en: b3f9e0556e0861b3
   zh: 5712ba347a490d8c
 /deepseek-ai-dsh-skill-sync/use-this-package/minimal-configuration:
-  en: b61e4bc5ce458664
-  zh: 5c68c4a307da1690
+  en: fc013588a1082147
+  zh: 7d24a48767f7e0ef
+/deepseek-ai-dsh-skill-sync/use-this-package/two-directories-one-agent-view:
+  en: d8373cf89cc28add
+  zh: 544e333444dcd44f
 /deepseek-ai-dsh-skill-sync/use-this-package/what-each-endpoint-does:
-  en: c4954328eb65d3a8
-  zh: 18ec8cda21e9b7fc
+  en: f7551e0d027c48ae
+  zh: 9156af3484114a64
 /deepseek-ai-dsh-skill-sync/understand-the-implementation:
   en: c75599b18254aa11
   zh: d31fae373d95d6a0
@@ -32,6 +35,9 @@
 /deepseek-ai-dsh-skill-sync/understand-the-implementation/fingerprint-diff-atomic-install:
   en: 93860e924c88d789
   zh: 8bb92a343d4d6b4a
+/deepseek-ai-dsh-skill-sync/understand-the-implementation/one-writer-behind-a-write-lock:
+  en: 8a25695c378103e7
+  zh: 414f69d5ed8ad559
 /deepseek-ai-dsh-skill-sync/understand-the-implementation/degrade-never-block:
   en: 6e654e9ecc97bdbd
   zh: 16ab3a0c8c6ffa65
@@ -45,8 +51,8 @@
   en: 85b2fcaac3023cef
   zh: 9b7fb6ba452d96d2
 /deepseek-ai-dsh-skill-sync/known-limitations-and-deferred-work:
-  en: 08b20c6943d1febe
-  zh: 40c945d5dde6e671
+  en: aff942454ba90232
+  zh: 455f3df95b80c0bf
 /deepseek-ai-dsh-skill-sync/known-limitations-and-deferred-work/dev-note:
   en: 3f91dae3e2553e31
   zh: 41a315bfa2e13d55

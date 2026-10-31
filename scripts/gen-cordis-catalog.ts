@@ -992,6 +992,7 @@ export const TYPE_LINK_EXEMPTIONS: Readonly<Record<string, string>> = {
   WebTerminalId: 'Browser terminal identity is owned by packages/api/terminal-controller/README.md',
   PlatformUser: 'enterprise governance user record is owned by packages/enterprise/platform-user/README.md',
   PlatformUserProvider: 'enterprise platform-user provider contract is owned by packages/enterprise/platform-user/README.md',
+  SkillCatalog: 'skills-panel catalog snapshot contract is owned by packages/enterprise/skill-sync/src/index.ts',
   PocketAccessSnapshot: 'service-local status snapshot is owned by packages/enterprise/pocket-access/src/index.ts',
   EnterpriseFileWriteRequest: 'enterprise file write request contract is owned by packages/enterprise/file-write/src/types.ts',
   EnterpriseFileWriteResult: 'enterprise file write result contract is owned by packages/enterprise/file-write/src/types.ts',

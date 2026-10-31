@@ -1,0 +1,446 @@
+/* 技能库面板:已安装/市场目录双 tab 工作台 + 匿名横幅 + 导入/卸载对话框。 */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 1040px;
+  padding: 24px 32px;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  flex: none;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  color: var(--dsw-alias-label-primary);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 30px;
+}
+
+.intro {
+  margin: 4px 0 0;
+  max-width: 560px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.headerActions {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+}
+
+/* 匿名浏览横幅:信息性提示,不阻断浏览。 */
+.anonymousNotice {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  border: 1px dashed var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.3));
+  border-radius: 8px;
+}
+
+.anonymousDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--dsw-static-blue-500);
+  border-radius: 50%;
+}
+
+.notice {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 13px;
+  line-height: 20px;
+  border-radius: 8px;
+}
+
+.noticeSuccess {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-status-positive-bg, rgba(34, 197, 94, 0.12));
+}
+
+.noticeError {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-status-negative-bg, rgba(239, 68, 68, 0.12));
+}
+
+.noticeDismiss {
+  padding: 0 4px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 16px;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.noticeDismiss:hover {
+  color: var(--dsw-alias-label-primary);
+}
+
+/* 双 tab:底部 1px 分隔线,活动 tab 用 2px 蓝色指示条。 */
+.tabBar {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  border-bottom: 1px solid var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.2));
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 14px;
+  margin-bottom: -1px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.tabActive {
+  color: var(--dsw-alias-label-primary);
+  font-weight: 600;
+  border-bottom-color: var(--dsw-static-blue-500);
+}
+
+.tabCount {
+  min-width: 20px;
+  padding: 0 6px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  text-align: center;
+  background: var(--dsw-alias-interactive-bg-hover);
+  border-radius: 999px;
+}
+
+.tabActive .tabCount {
+  color: var(--dsw-alias-label-primary);
+  background: color-mix(in srgb, var(--dsw-static-blue-500) 16%, transparent);
+}
+
+.search {
+  flex: none;
+  max-width: 360px;
+}
+
+.stateText {
+  margin: 0;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.stateBox {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.2));
+  border-radius: 12px;
+}
+
+.stateDetail {
+  margin: 0;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-label-secondary));
+  font-size: 12px;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupTitle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+  color: var(--dsw-alias-label-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.groupCount {
+  padding: 0 8px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  border-radius: 999px;
+}
+
+.groupHint {
+  margin: 0;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-label-secondary));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.groupEmpty {
+  margin: 0;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-label-secondary));
+  font-size: 13px;
+  line-height: 20px;
+}
+
+/* 空态:居中块 + 虚线圆环图形。 */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 40px 16px;
+  border: 1px dashed var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.25));
+  border-radius: 12px;
+}
+
+.emptyGlyph {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: 2px dashed var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.35));
+  border-radius: 50%;
+}
+
+.emptyGlyph::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  content: '';
+  background: var(--dsw-alias-interactive-bg-hover-accent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.cards {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.card {
+  /* 网格项默认 min-width:auto,长内容会把 1fr 轨道撑破导致每行列数变少 */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.2));
+  border-radius: 12px;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  animation: card-rise 0.28s ease both;
+  animation-delay: calc(min(var(--i, 0), 12) * 24ms);
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--dsw-static-blue-500) 45%, transparent);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+  transform: translateY(-1px);
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+    transition: border-color 0.15s ease;
+  }
+}
+
+.cardHead {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardName {
+  color: var(--dsw-alias-label-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  word-break: break-all;
+}
+
+.tag {
+  flex: none;
+  padding: 1px 8px;
+  font-size: 11px;
+  line-height: 16px;
+  border-radius: 999px;
+}
+
+.source_required {
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.source_upload {
+  color: var(--dsw-alias-label-primary);
+  background: rgba(59, 130, 246, 0.14);
+}
+
+.source_skillhub {
+  color: var(--dsw-alias-label-primary);
+  background: rgba(168, 85, 247, 0.14);
+}
+
+.source_manual {
+  color: var(--dsw-alias-label-primary);
+  background: rgba(22, 163, 74, 0.14);
+}
+
+.cardSummary {
+  display: -webkit-box;
+  flex: 1;
+  margin: 0;
+  overflow: hidden;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cardFoot {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 26px;
+}
+
+.cardVersion {
+  flex: 1;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-label-secondary));
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.cardNamespace {
+  flex: none;
+  max-width: 45%;
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-label-secondary));
+  font-size: 11px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.installedTag {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.importDialog {
+  max-width: 480px;
+}
+
+.dropZone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 16px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  border: 1px dashed var(--dsw-alias-border-primary, rgba(128, 128, 128, 0.35));
+  border-radius: 12px;
+}
+
+.dropZone:hover,
+.dropActive {
+  background: var(--dsw-alias-interactive-bg-hover);
+  border-color: color-mix(in srgb, var(--dsw-static-blue-500) 45%, transparent);
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.dropHint {
+  margin: 0;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-label-secondary));
+  font-size: 12px;
+  line-height: 18px;
+}
