@@ -51,7 +51,9 @@
     "@deepseek-ai/dsh-host-directory-picker-browse": "workspace:*",
     "@deepseek-ai/dsh-client-ui-directory-picker-browse": "workspace:*",
     "@deepseek-ai/dsh-client-ui-enterprise": "workspace:*",
-    "@deepseek-ai/dsh-client-ui-enterprise-skills": "workspace:*"
+    "@deepseek-ai/dsh-client-ui-enterprise-skills": "workspace:*",
+    "@deepseek-ai/dsh-plugin-market": "workspace:*",
+    "@deepseek-ai/dsh-client-ui-plugin-market": "workspace:*"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"

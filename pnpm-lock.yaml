@@ -2524,6 +2524,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-enterprise-skills':
         specifier: workspace:*
         version: link:../../client/ui-enterprise-skills
+      '@deepseek-ai/dsh-client-ui-plugin-market':
+        specifier: workspace:*
+        version: link:../../client/ui-plugin-market
       '@deepseek-ai/dsh-enterprise-file-write':
         specifier: workspace:*
         version: link:../../enterprise/file-write
@@ -2551,6 +2554,9 @@ importers:
       '@deepseek-ai/dsh-platform-user-console':
         specifier: workspace:*
         version: link:../../enterprise/platform-user-console
+      '@deepseek-ai/dsh-plugin-market':
+        specifier: workspace:*
+        version: link:../../boot/plugin-market
       '@deepseek-ai/dsh-pocket-access':
         specifier: workspace:*
         version: link:../../enterprise/pocket-access

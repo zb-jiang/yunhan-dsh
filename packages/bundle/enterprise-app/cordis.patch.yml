@@ -167,6 +167,33 @@
     - id: ui-enterprise-skills
       name: '@deepseek-ai/dsh-client-ui-enterprise-skills'
 
+    # 插件市场（官方 experimental plugin-market-bundle 的 patch 内容就地挂载）：
+    # plugin-market host 服务读取用户配置的索引源（官方 format 1 JSON），
+    # ui-plugin-market 在 Plugins 页贡献「发现」标签（搜索/分类/能力徽章/
+    # engines.dsh 兼容过滤/安装确认）。员工自助安装社区插件走官方
+    # pluginManager.installBundle 管线。disabled 条件照官方：仅 profile
+    # 部署启用（enterprise profile 恒有 profileContext）。挂载后插件页
+    # 出现「已安装 | 发现」双标签（标签栏仅在有贡献标签时渲染）。
+    # indexes 为官方 schema 的 volatile 字段：这里给的是出厂默认源
+    # （realguan/dsh-plugin-market 每日重建的社区索引，双镜像全预置：
+    # jsDelivr CDN 国内访问快 / GitHub Pages 数据最新约10分钟延迟）。
+    # 上游 README 提示两地址内容相同、只加一个可避免重复显示；云汉按
+    # 用户决策两个都出厂预置（重复显示的代价已知悉），员工可在
+    # 「管理索引源」自行删减。员工在「管理索引源」里的增删经 settings
+    # 服务写入 profile 用户层 patch 的同条目并整体覆盖本默认——员工
+    # 删掉默认源后开箱源不再回填，与官方"用户自管理索引源"语义一致。
+    # 设计依据：docs/plans/2026-11-01-yunhan-plugin-market-design.md（r3）。
+    # experimental 转正前：跟 tag 回归清单须含「发现页可开/可加源/可装卸」。
+    - id: plugin-market
+      name: '@deepseek-ai/dsh-plugin-market'
+      disabled: !!js "!ctx.get('profileContext')"
+      config:
+        indexes:
+          - https://cdn.jsdelivr.net/gh/realguan/dsh-plugin-market@dist/dsh-index.json
+          - https://realguan.github.io/dsh-plugin-market/dsh-index.json
+    - id: ui-plugin-market
+      name: '@deepseek-ai/dsh-client-ui-plugin-market'
+
 # 右侧栏浏览器：web-app 补丁默认仅 desktop profile 启用（disabled 随
 # profileContext.name 计算），企业层用同 id 补丁行覆盖为常开。
 - id: ui-sidebar-browser
