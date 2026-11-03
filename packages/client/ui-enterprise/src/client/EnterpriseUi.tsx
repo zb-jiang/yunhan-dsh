@@ -113,8 +113,8 @@ let authInitialized = false
 // ── Guest store (匿名使用偏好,独立于认证快照) ──
 
 /**
- * 匿名使用放行态:用户在登录页点过「匿名使用」且尚未登录。初始值读本地偏好,
- * 与认证快照分离——登录/退出/SSO 应用的清偏好路径各自动它的内存快照。
+ * 个人工作台放行态:用户在模式选择首屏选过「个人AI工作台」且尚未登录。初始值读
+ * 本地偏好,与认证快照分离——登录/退出/SSO 应用的清偏好路径各自动它的内存快照。
  */
 let guestSnapshot = readAnonymousPreference()
 const guestListeners = new Set<() => void>()
@@ -128,7 +128,7 @@ function getGuestSnapshot(): boolean {
   return guestSnapshot
 }
 
-/** 置匿名放行(登录页「匿名使用」按钮):写本地偏好 + 通知订阅者。 */
+/** 置匿名放行(模式选择首屏「进入个人工作台」卡片):写本地偏好 + 通知订阅者。 */
 function enterGuestMode(): void {
   writeAnonymousPreference()
   guestSnapshot = true
@@ -579,6 +579,71 @@ function PasswordAuthPanel({
   )
 }
 
+// ── 模式选择首屏(企业/个人双工作台入口) ──
+
+/** 企业模式卡的行首图标(办公楼)。 */
+const BuildingIcon = () => (
+  <svg viewBox="0 0 20 20" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+    <rect x="3.5" y="3.5" width="8.5" height="13" rx="1.5" />
+    <path d="M12 8.5h3.2c.7 0 1.3.6 1.3 1.3v5.2c0 .8-.6 1.5-1.4 1.5H12" />
+    <path d="M2 16.5h16" strokeLinecap="round" />
+    <path d="M6.1 6.8h1.2M8.4 6.8h1.2M6.1 9.6h1.2M8.4 9.6h1.2M6.1 12.4h1.2M8.4 12.4h1.2" strokeLinecap="round" />
+  </svg>
+)
+
+/** 个人模式卡的行首图标(四角星光,个人 AI 助理)。 */
+const SparkleIcon = () => (
+  <svg viewBox="0 0 20 20" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden>
+    <path d="M10 3.2c.9 3.4 1.9 4.4 5.3 5.3-3.4.9-4.4 1.9-5.3 5.3-.9-3.4-1.9-4.4-5.3-5.3 3.4-.9 4.4-1.9 5.3-5.3Z" />
+    <path d="M15 12.6c.4 1.5.9 2 2.4 2.4-1.5.4-2 .9-2.4 2.4-.4-1.5-.9-2-2.4-2.4 1.5-.4 2-.9 2.4-2.4Z" />
+  </svg>
+)
+
+/**
+ * 模式选择首屏:企业/个人两张对等模式大卡。选个人直接放行进入本机工作台,
+ * 选企业进登录表单;两种模式共享同一套本机会话数据,登录与匿名偏好可互相迁移。
+ */
+function ModeSelectScreen({
+  onEnterprise,
+  onPersonal,
+}: {
+  onEnterprise: () => void
+  onPersonal: () => void
+}) {
+  return (
+    <div className={css.modeSelect}>
+      <div className={css.modeBrand}><BrandWordmark /></div>
+      <div className={css.modeTitle}>选择你的工作台</div>
+      <div className={css.modeSubtitle}>两种模式的数据与会话随时可以互相迁移</div>
+      <div className={css.modeCards}>
+        <section className={clsx(css.modeCard, css.modeCardEnterprise)}>
+          <div className={css.modeCardIcon}><BuildingIcon /></div>
+          <div className={css.modeCardBadge}>企业账号登录</div>
+          <div className={css.modeCardName}>企业AI工作台</div>
+          <ul className={css.modeFeatures}>
+            <li><CheckIcon />企业组织架构与 SSO 单点登录</li>
+            <li><CheckIcon />待办任务处理与流程共享空间</li>
+            <li><CheckIcon />企业知识库与既有系统集成</li>
+            <li><CheckIcon />技能治理 · 算力授权 · 审计</li>
+          </ul>
+          <button type="button" className={css.modeCta} onClick={onEnterprise}>进入企业工作台</button>
+        </section>
+        <section className={clsx(css.modeCard, css.modeCardPersonal)}>
+          <div className={css.modeCardIcon}><SparkleIcon /></div>
+          <div className={css.modeCardBadge}>本机即开即用</div>
+          <div className={css.modeCardName}>个人AI工作台</div>
+          <ul className={css.modeFeatures}>
+            <li><CheckIcon />打开即用，无需账号</li>
+            <li><CheckIcon />官方插件市场</li>
+            <li><CheckIcon />技能治理</li>
+          </ul>
+          <button type="button" className={css.modeCta} onClick={onPersonal}>进入个人工作台</button>
+        </section>
+      </div>
+    </div>
+  )
+}
+
 // ── Service config sheet (登录页常驻逃生门) ──
 
 /** 齿轮图标(服务配置入口)。 */
@@ -653,6 +718,8 @@ function ServiceConfigSheet({
 export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesInjected }) {
   const { currentUser, loading, mode, loginError, login, register, logout } = useAuth()
   const [configOpen, setConfigOpen] = useState(false)
+  /** 未登录视图:mode-select=双工作台模式选择首屏,enterprise-login=企业登录表单。 */
+  const [view, setView] = useState<'mode-select' | 'enterprise-login'>('mode-select')
   /** 非 null 时弹 Modal 内嵌认证中心登录页(iframe),null 收起。 */
   const [oidcFrameUrl, setOidcFrameUrl] = useState<string | null>(null)
   /** iframe 引用:load 后读其地址提取授权码,兜住认证中心不发 postMessage 的第三方扫码路径。 */
@@ -756,76 +823,65 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
           <span>服务配置</span>
         </button>
       )}
-      <div className={css.authPageShell}>
-        <div className={css.authHero}>
-          <div className={css.authBadge}>Enterprise Profile</div>
-          <div className={css.authBrand}>
-            <BrandWordmark />
-          </div>
-          <div className={css.authPageTitle}>云汉企业AI工作台</div>
-          <div className={css.authPageSubtitle}>
-            基于DeepSeek Harness 企业AI工作台。
-          </div>
-          <ul className={css.authFeatures}>
-            <li><CheckIcon />待办任务一站式处理</li>
-            <li><CheckIcon />AI 会话辅助完成任务</li>
-            <li><CheckIcon />流程进度与变量全程可视</li>
-          </ul>
-        </div>
-        <div className={css.authPageCard}>
-          <div className={css.authPageHeader}>
-            <div className={css.authCardTitle}>
-              {authState === 'loading' && '检查登录状态'}
-              {authState === 'anonymous' && (mode === 'oidc' ? '企业账号登录' : '登录或注册')}
-              {authState === 'pending' && '等待审批'}
-              {authState === 'blocked' && '账号不可用'}
+      {/* 未登录时的视图状态机:默认模式选择首屏,选企业后进登录表单;
+          loading/pending/blocked 直接落在登录卡(此时不需要模式分流) */}
+      {authState === 'anonymous' && view === 'mode-select' ? (
+        <ModeSelectScreen
+          onEnterprise={() => { setView('enterprise-login') }}
+          onPersonal={() => { enterGuestMode() }}
+        />
+      ) : (
+        <div className={css.authLoginShell}>
+          <div className={css.authPageCard}>
+            <div className={css.authPageHeader}>
+              <div className={css.authCardTitle}>
+                {authState === 'loading' && '检查登录状态'}
+                {authState === 'anonymous' && (mode === 'oidc' ? '企业账号登录' : '登录或注册')}
+                {authState === 'pending' && '等待审批'}
+                {authState === 'blocked' && '账号不可用'}
+              </div>
+              <div className={css.authCardSubtitle}>
+                {authState === 'loading' && '正在确认你的企业身份信息...'}
+                {authState === 'anonymous' && (mode === 'oidc' ? '通过企业认证中心验证身份后进入工作台。' : '使用企业账号进入当前工作台。')}
+                {authState === 'pending' && '你的账号已注册成功，等待系统管理员审批后才能进入平台。'}
+                {authState === 'blocked' && `当前账号已${currentUser?.status === 'disabled' ? '禁用' : '锁定'}，请联系管理员处理。`}
+              </div>
             </div>
-            <div className={css.authCardSubtitle}>
-              {authState === 'loading' && '正在确认你的企业身份信息...'}
-              {authState === 'anonymous' && (mode === 'oidc' ? '通过企业认证中心验证身份后进入工作台。' : '使用企业账号进入当前工作台。')}
-              {authState === 'pending' && '你的账号已注册成功，等待系统管理员审批后才能进入平台。'}
-              {authState === 'blocked' && `当前账号已${currentUser?.status === 'disabled' ? '禁用' : '锁定'}，请联系管理员处理。`}
-            </div>
-          </div>
-          {authState === 'anonymous' && (
-            <>
-              <AuthPanel
-                mode={mode}
-                loginError={loginError}
-                onLogin={login}
-                onRegister={register}
-                onOidcLogin={openOidcFrame}
-              />
-              <div className={css.anonymousEntry}>
+            {authState === 'anonymous' && (
+              <>
+                <AuthPanel
+                  mode={mode}
+                  loginError={loginError}
+                  onLogin={login}
+                  onRegister={register}
+                  onOidcLogin={openOidcFrame}
+                />
+                <button
+                  type="button"
+                  className={css.backLink}
+                  onClick={() => { setView('mode-select') }}
+                >
+                  ← 返回模式选择
+                </button>
+              </>
+            )}
+            {(authState === 'pending' || authState === 'blocked') && (
+              <div className={css.authBlockedActions}>
                 <button
                   type="button"
                   className={css.authSecondaryButton}
-                  onClick={() => { enterGuestMode() }}
+                  onClick={() => { void logout() }}
                 >
-                  匿名使用
+                  切换账号
                 </button>
                 <div className={css.hint}>
-                  不登录直接使用本机工作台，模型在设置中自行配置；待办、企业模型登录后可用。
+                  点击后会退出当前账号，返回模式选择页，以便使用其他账号登录。
                 </div>
               </div>
-            </>
-          )}
-          {(authState === 'pending' || authState === 'blocked') && (
-            <div className={css.authBlockedActions}>
-              <button
-                type="button"
-                className={css.authSecondaryButton}
-                onClick={() => { void logout() }}
-              >
-                切换账号
-              </button>
-              <div className={css.hint}>
-                点击后会退出当前账号，返回登录页，以便使用其他账号登录。
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
       {configOpen && services !== undefined && (
         <ServiceConfigSheet services={services} onClose={() => { setConfigOpen(false) }} />
       )}

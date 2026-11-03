@@ -22,7 +22,7 @@ const REFRESH_TOKEN_KEY = 'dsh.enterprise.refresh'
 /** OIDC 授权码流程的一次性 PKCE verifier 与 state(跳转离开页面回来后消费)。 */
 const OIDC_VERIFIER_KEY = 'dsh.enterprise.oidc.verifier'
 const OIDC_STATE_KEY = 'dsh.enterprise.oidc.state'
-/** 匿名使用偏好:用户在登录页选择「匿名使用」后置位,放行未登录进入本机工作台。 */
+/** 个人工作台偏好:用户在模式选择首屏选「个人AI工作台」后置位,放行未登录进入本机工作台。 */
 const ANONYMOUS_PREFERENCE_KEY = 'dsh.enterprise.anonymous'
 
 /** 当前认证模式,由 initAuth 读 config 后设置;module-level 供非响应式调用点读取。 */
@@ -126,7 +126,7 @@ export function clearStoredLoginState(): void {
 }
 
 /**
- * 读取匿名使用偏好(登录页「匿名使用」按钮置位;未登录但放行进入本机工作台)。
+ * 读取个人工作台偏好(模式选择首屏「进入个人工作台」置位;未登录但放行进入本机工作台)。
  * @returns 偏好开启与否。
  */
 export function readAnonymousPreference(): boolean {
@@ -134,7 +134,7 @@ export function readAnonymousPreference(): boolean {
 }
 
 /**
- * 置匿名使用偏好:登录页「匿名使用」按钮调用,后续启动未登录直接进入本机工作台。
+ * 置个人工作台偏好:模式选择首屏「进入个人工作台」调用,后续启动未登录直接进入本机工作台。
  */
 export function writeAnonymousPreference(): void {
   window.localStorage.setItem(ANONYMOUS_PREFERENCE_KEY, '1')
