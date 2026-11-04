@@ -77,9 +77,9 @@ interface SettledIndex {
 /**
  * Cancellable, reusable fuzzy index rooted at one agent working directory.
  * Directory-scoped queries list live state; bare fuzzy queries share one
- * bounded traversal. Only the first query of a workspace waits for that
- * traversal — an invalidated index keeps answering while its replacement
- * builds behind the caret.
+ * bounded traversal. A query against a fresh index answers immediately; the
+ * first query after an invalidation waits for the replacement traversal so
+ * created and deleted files are visible the moment the menu next opens.
  */
 export class WorkspaceFileSearch {
   private readonly excludedDirectories: ReadonlySet<string>
@@ -130,11 +130,12 @@ export class WorkspaceFileSearch {
   }
 
   /**
-   * Mark the index stale so a later bare query observes a fresh tree.
+   * Mark the index stale so the next bare query observes a fresh tree.
    *
-   * The stale entries are kept and keep answering: a rebuild costs one
-   * traversal of the whole workspace, and putting that in front of the caret
-   * is what a caller invalidating on every tool result would otherwise pay.
+   * The stale entries are kept as the fallback answer for a rebuild that
+   * fails: one traversal of the whole workspace is what the next bare query
+   * waits for, so a caller invalidating on every tool result pays that
+   * traversal once, not per keystroke.
    */
   invalidate(): void {
     this.invalidations += 1
@@ -150,21 +151,22 @@ export class WorkspaceFileSearch {
   }
 
   /**
-   * The entries a bare fuzzy query ranks. Only the first query of a workspace
-   * waits for a traversal; afterwards a stale index answers immediately and
-   * its replacement builds in the background.
+   * The entries a bare fuzzy query ranks. A fresh index answers immediately;
+   * a stale one waits for its replacement traversal, falling back to the
+   * stale entries when that traversal fails.
    * @param signal - cancels this caller's wait without killing a shared traversal.
-   * @returns indexed paths, at most one invalidation behind the tree.
+   * @returns indexed paths matching the tree as of the latest invalidation.
    */
   private async indexFor(signal: AbortSignal): Promise<readonly IndexedPath[]> {
     const settled = this.settled
     if (settled === undefined) return waitForPromise(this.ensureIndex(), signal)
     if (settled.startedAt < this.invalidations) {
-      void this.ensureIndex().catch(() => {
-        // A background refresh failure is not this caller's error: the stale
-        // entries still answer and `settled.startedAt` stays behind, so the
+      return waitForPromise(this.ensureIndex().catch(() => {
+        // A refresh failure is not this caller's error: the stale entries
+        // answer in its place, and `settled.startedAt` stays behind, so the
         // next bare query starts a fresh attempt.
-      })
+        return settled.entries
+      }), signal)
     }
     return settled.entries
   }

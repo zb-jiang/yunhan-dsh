@@ -288,6 +288,21 @@ describe('@instanceWorkspace trigger source', () => {
     expect(fetcher).not.toHaveBeenCalled()
   })
 
+  it('drops disk-missing rows so externally deleted files are not offered', async () => {
+    const all = [
+      wsFile({ relPath: 'present.txt' }),
+      wsFile({ relPath: 'gone.txt', diskMissing: true }),
+    ]
+    const fetcher = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve(jsonRes({ success: true, data: all })))
+    vi.stubGlobal('fetch', fetcher)
+    const source = buildInstanceWorkspaceSource(stubWorkbench({ 's-1': 'inst-1' }))
+
+    const items = await source.candidates({ sessionId: 's-1' } as ClientSessionContext, {
+      query: '', signal: new AbortController().signal,
+    } as CandidateRequest)
+    expect(items.map(item => item.name)).toEqual(['present.txt'])
+  })
+
   it('filters candidates by relPath case-insensitively and caps at 20', async () => {
     const all = Array.from({ length: 22 }, (_unused, index) => wsFile({ relPath: `f-${String(index).padStart(2, '0')}.txt` }))
     const fetcher = vi.fn((_url: string, _init?: RequestInit) => Promise.resolve(jsonRes({ success: true, data: all })))

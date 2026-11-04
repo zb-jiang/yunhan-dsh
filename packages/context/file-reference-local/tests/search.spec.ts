@@ -173,7 +173,7 @@ describe('WorkspaceFileSearch', () => {
     ])
   })
 
-  it('serves an invalidated index while its replacement builds, then swaps it in', async () => {
+  it('rebuilds an invalidated index before answering, so created and deleted files are visible on the first query', async () => {
     const root = await workspace()
     const files = search(root)
     const signal = new AbortController().signal
@@ -182,13 +182,16 @@ describe('WorkspaceFileSearch', () => {
     // No invalidation: the settled traversal is still the answer.
     expect(await files.list('fresh-file', signal)).toEqual([])
     files.invalidate()
-    // The stale entries answer this query; the rebuild runs behind the caret.
+    // The next query waits for the replacement traversal, so a file created
+    // since the settled index is visible the moment the menu next opens.
+    expect(await files.list('fresh-file', signal)).toEqual([
+      { path: 'fresh-file.ts', kind: 'file' },
+    ])
+    // A deletion is visible through the same path: one invalidation, one
+    // fresh traversal, no stale row survives it.
+    await rm(join(root, 'fresh-file.ts'))
+    files.invalidate()
     expect(await files.list('fresh-file', signal)).toEqual([])
-    await vi.waitFor(async () => {
-      expect(await files.list('fresh-file', signal)).toEqual([
-        { path: 'fresh-file.ts', kind: 'file' },
-      ])
-    })
     files.dispose()
     expect(await files.list('fresh-file', signal)).toEqual([])
     files.dispose()

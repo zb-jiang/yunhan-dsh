@@ -39,6 +39,9 @@ export function buildInstanceWorkspaceSource(workbench: EnterpriseWorkbench): In
       const needle = query.trim().toLowerCase()
       return files
         .filter((file) => {
+          // 磁盘缺失的行(元数据还在、文件已被外部删除)不可作为候选:
+          // 选中插入的引用 AI 侧读不到内容。
+          if (file.diskMissing) return false
           if (needle === '') return true
           return file.relPath.toLowerCase().includes(needle)
         })
