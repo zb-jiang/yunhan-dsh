@@ -89,7 +89,7 @@ class DshBackendTaskDelegateTest {
                 }
             });
         DshBackendClient stubClient = new DshBackendClient(
-            new DshBackendProperties(1, 5), new ObjectMapper()) {
+            new DshBackendProperties(1, 5, "test-service-key"), new ObjectMapper()) {
             @Override
             public Map<String, Object> execute(String baseUrl, String prompt,
                                                 List<String> skillRefs, String activityId,

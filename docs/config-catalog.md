@@ -407,6 +407,12 @@ export interface Config {
   registerIntervalMs: number
   /** 覆盖 skill 缓存目录;缺省用 `$DSH_HOME/backend-task/skills`。 */
   skillDir?: string
+  /**
+   * 平台服务密钥(`X-Service-Key` 请求头):任务端点只接受引擎
+   * `dsh.backend.service-key` 同源(平台统一 `DSH_SERVICE_KEY`)的携带方,
+   * 防止可达 webserver 的任意主机提交无人值守 AI 任务。空白时启动即报错。
+   */
+  serviceKey: string
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-backend-task -->

@@ -113,6 +113,45 @@ class BpmnValidationServiceTest {
         assertThat(result.errors()).anyMatch(e -> e.contains("isExecutable 必须为 true"));
     }
 
+    // ===== userTask 办理人来源必填 + 单 process 约束(2026-11-03 修复清单 #4 #5) =====
+
+    @Test
+    void userTaskWithoutCandidateSourceIsRejected() {
+        // 无 candidateUsers/candidateGroups 也无 dsh:assignmentRule → 发布拒绝
+        BpmnValidationResult result = service.validate(nodeIdentifierBpmn(
+            "<userTask id=\"task\" name=\"任务\"/>"), UUID.randomUUID());
+        assertThat(result.errors()).anyMatch(e ->
+            e.contains("userTask[id=task, name=任务] 未配置办理人来源"));
+    }
+
+    @Test
+    void multiProcessFileIsRejected() {
+        BpmnValidationResult result = service.validate("""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                         xmlns:flowable="http://flowable.org/bpmn"
+                         xmlns:dsh="http://dsh.ai/bpmn"
+                         targetNamespace="http://dsh.test">
+              <process id="process_one" isExecutable="true">
+                <startEvent id="start1" name="开始"/>
+                <userTask id="task1" name="任务一" flowable:candidateUsers="user-a"/>
+                <sequenceFlow id="f1" sourceRef="start1" targetRef="task1"/>
+                <sequenceFlow id="f2" sourceRef="task1" targetRef="end1"/>
+                <endEvent id="end1" name="结束"/>
+              </process>
+              <process id="process_two" isExecutable="true">
+                <startEvent id="start2" name="开始"/>
+                <userTask id="task2" name="任务二" flowable:candidateUsers="user-a"/>
+                <sequenceFlow id="f3" sourceRef="start2" targetRef="task2"/>
+                <sequenceFlow id="f4" sourceRef="task2" targetRef="end2"/>
+                <endEvent id="end2" name="结束"/>
+              </process>
+            </definitions>""", UUID.randomUUID());
+        assertThat(result.errors())
+            .anyMatch(e -> e.contains("包含 2 个 <process>(process_one, process_two)"))
+            .anyMatch(e -> e.contains("拆分成多个文件"));
+    }
+
     @Test
     void standardInitiatorDeclarationPassesWithPromptAndConditionReferences() {
         BpmnValidationResult result = service.validate(bpmn("""
@@ -518,12 +557,13 @@ class BpmnValidationServiceTest {
         return """
             <?xml version="1.0" encoding="UTF-8"?>
             <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                         xmlns:flowable="http://flowable.org/bpmn"
                          xmlns:dsh="http://dsh.ai/bpmn"
                          targetNamespace="http://dsh.test">
               <process id="validation_test_process" isExecutable="true">
             %s
                 <startEvent id="start" name="开始"/>
-                <userTask id="task" name="任务">
+                <userTask id="task" name="任务" flowable:candidateUsers="user-a,user-b">
             %s
                 </userTask>
                 <sequenceFlow id="flow2" sourceRef="task" targetRef="end"/>
@@ -1155,13 +1195,14 @@ class BpmnValidationServiceTest {
         return """
             <?xml version="1.0" encoding="UTF-8"?>
             <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                         xmlns:flowable="http://flowable.org/bpmn"
                          xmlns:dsh="http://dsh.ai/bpmn"
                          targetNamespace="http://dsh.test">
               <process id="validation_test_process" isExecutable="true">
             %s
                 <startEvent id="start" name="开始"/>
             %s
-                <userTask id="task" name="任务">
+                <userTask id="task" name="任务" flowable:candidateUsers="user-a,user-b">
             %s
                 </userTask>
                 <sequenceFlow id="flow2" sourceRef="task" targetRef="end"/>

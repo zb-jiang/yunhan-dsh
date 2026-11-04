@@ -73,7 +73,7 @@ public class DshBackendClient {
         return pollUntilReady(baseUrl, taskId, activityId);
     }
 
-    /** 提交任务:POST /api/backend/tasks → 202 { taskId }。 */
+    /** 提交任务:POST /api/backend/tasks → 202 { taskId }(带 X-Service-Key 鉴权头)。 */
     private String submit(String baseUrl, String prompt,
                            List<String> skillRefs, String activityId,
                            String processInstanceId,
@@ -81,6 +81,7 @@ public class DshBackendClient {
         String url = baseUrl + "/api/backend/tasks";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("X-Service-Key", properties.serviceKey());
         Map<String, Object> payload = new HashMap<>();
         payload.put("prompt", prompt == null ? "" : prompt);
         payload.put("skillRefs", skillRefs == null ? List.of() : skillRefs);
@@ -124,14 +125,16 @@ public class DshBackendClient {
         }
     }
 
-    /** 轮询直到 ready / failed / 超时;ready 返回 result。 */
+    /** 轮询直到 ready / failed / 超时;ready 返回 result(带 X-Service-Key 鉴权头)。 */
     private Map<String, Object> pollUntilReady(String baseUrl, String taskId, String activityId) {
         String url = baseUrl + "/api/backend/tasks/" + taskId;
         long deadline = System.currentTimeMillis() + properties.callTimeoutSeconds() * 1000;
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Service-Key", properties.serviceKey());
         while (System.currentTimeMillis() < deadline) {
             ResponseEntity<String> response;
             try {
-                response = restTemplate.exchange(url, HttpMethod.GET, null, String.class);
+                response = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
             } catch (RestClientException e) {
                 throw new IllegalStateException("backend profile 轮询失败(" + url + ", activity "
                     + activityId + "): " + e.getMessage(), e);

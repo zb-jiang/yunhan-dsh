@@ -6,7 +6,7 @@ $env:SUPABASE_DB_USER="postgres"
 $env:SUPABASE_DB_PASSWORD="passw0rd"
 $env:SUPABASE_URL="https://tmommaaeuqnhanbtqmti.supabase.co"
 $env:SOR_SERVICE_KEY = "demo-service-key"   #报销流程的service task需要通过服务密钥和expense SOR后端交互
-$env:DSH_SERVICE_KEY = "demo-webconsole-service-key"   #知识库集成：backend task提交前按流程定义解析所属工程知识库；须与web-console、backend profile一致
+$env:DSH_SERVICE_KEY = "demo-webconsole-service-key"   #平台服务密钥(必须)：知识库集成 + backend task 端点 X-Service-Key 鉴权(dsh.backend.service-key)；未设引擎启动即报错；须与 web-console、backend profile 一致
 cd d:\works\deepseek-harness\apps\flowable-engine
 mvn clean package -DskipTests
 java -jar .\target\dsh-flowable-engine-0.1.0-SNAPSHOT.jar --server.port=8090
@@ -102,25 +102,34 @@ $env:NODE_USE_ENV_PROXY="1"
 ----------------------------------------------------------------------------------------------------------------------
 
 启动DSH backend profile
-1)  设置工作空间  D:\works\test
-2）在C:\Users\zbjiang\.dsh\profiles\enterprise-backend\cordis.patch.yml 中配置
-
-- id: llm-deepseek
+1）设置工作空间  D:\works\test
+2）模型配置在 $DSH_HOME\profiles\enterprise-backend\cordis.patch.yml
+   首次启动自动生成该目录(package.json + 空模板 cordis.patch.yml + pnpm-workspace.yaml),先启动一次→停止→编辑模型配置→再启动
+   模型配置示例(第三方 OpenAI 兼容端点,此处以本机 new-api 中转为例)：
+- id: llm-pi-ai
   config:
-    baseURL: https://api.deepseek.com
-    apiKeyEnv: BACKEND_LLM_API_KEY
-    models:
-      - id: deepseek-flash
-        contextWindow: 128000
-        maxTokens: 8192
+    providers:
+      new-api:                        # route 名 = provider 值,自定义
+        displayName: New API
+        apiKeyEnv: THIRD_PARTY_API_KEY # 密钥放这个环境变量里(启动段设 $env:THIRD_PARTY_API_KEY)
+        api: openai-completions        # OpenAI 兼容协议固定值
+        baseURL: http://127.0.0.1:3000/v1   # 填到 /v1;硅基流动=https://api.siliconflow.cn/v1,vLLM=http://<host>:8000/v1
+        models:
+          - id: gpt-4o                 # 必须与端点实际暴露的模型名一致(new-api 渠道里配的模型名)
+            name: GPT-4o
+            contextWindow: 128000
+            maxTokens: 8192
 
 - id: agent-default-model
   config:
-    provider: deepseek-official
-    model: deepseek-flash
+    provider: new-api                  # = route 名
+    model: gpt-4o
+   备选:DeepSeek 官方用 llm-deepseek 插件(baseURL https://api.deepseek.com + apiKeyEnv + models),provider 填 deepseek-official
+   pi-ai 自带目录的供应商(openai/anthropic/google 等)更简单:providers.<name> 下只需 apiKeyEnv,models 可省略(继承目录)
 
 cd D:\works\test
-$env:BACKEND_LLM_API_KEY="sk-123456"
+$env:DSH_HOME="D:\DSH-Backend"
+$env:THIRD_PARTY_API_KEY="sk-123456"
 $env:WEB_CONSOLE_URL="http://127.0.0.1:8080"
 $env:DSH_BACKEND_URL="http://127.0.0.1:3190"   # backend profile对完宣告在什么URL监听
 $env:DSH_BACKEND_NAME="backend-1"
@@ -129,13 +138,44 @@ $env:DSH_BACKEND_HOST="127.0.0.1"   #upstream 0.2.1 起 webserver 拒绝 0.0.0.0
 $env:DSH_BACKEND_SYNC_INTERVAL_MS=600000
 $env:SKILLHUB_URL="http://127.0.0.1:8095"
 $env:SKILLHUB_API_TOKEN="sk_It1SA2xPE_J8vRl_boCDEsRpjcD3rX6tq6tkaPkn7kA"
-$env:DSH_SERVICE_KEY="demo-webconsole-service-key"   #知识库集成（必须）：knowledge 插件经服务密钥调 web-console /api/backend/kb/** 只读端点；不设则 kb 功能关闭；须与web-console、flowable一致
-D:\works\deepseek-harness\node_modules\.bin\tsx.cmd --tsconfig D:\works\deepseek-harness\tsconfig.base.json D:\works\deepseek-harness\apps\cli\src\bin.ts --profile enterprise-backend
+$env:DSH_SERVICE_KEY="demo-webconsole-service-key"   #平台服务密钥(必须)：backend task REST 端点 X-Service-Key 鉴权(未设插件启动即报错) + knowledge 插件经服务密钥调 web-console /api/backend/kb/** 只读端点；须与web-console、flowable一致
 
-测试
-$body = [Text.Encoding]::UTF8.GetBytes('{"prompt":"生成一个JSON对象，包含两个字段：status 字符串值为 ok，msg 字符串值为 你好。只输出JSON，不要任何其他文字。"}')
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3190/api/backend/tasks -ContentType "application/json; charset=utf-8" -Body $body
-Invoke-RestMethod http://127.0.0.1:3190/api/backend/tasks/b7faed2f-e1cd-4ab3-82af-354735d10cc4
+# ═══════════ 生产部署(服务器,云汉内部分发,不发公共npm) ═══════════
+# 产物 = 编译产物 lib/ + 实体化 node_modules,无源码无测试。
+# 重要: 产物不可跨平台复用——native 二进制(node-pty prebuilds/koffi 平台包等)按执行 deploy 的机器平台安装
+# (deploy 时 darwin/linux 平台包被跳过,见 WARN "Unsupported platform")。目标服务器是什么平台,就在同平台环境执行 deploy。
+#
+# [共同步骤|构建机(与目标服务器同平台,需完整仓库+pnpm)]
+#   1. pnpm install + pnpm run build (bundle 依赖变更后必须重跑,否则 deploy 闭包不带新包)
+#   2. pnpm --filter @deepseek-ai/dsh deploy --prod <产物目录>
+#      - 目标目录不能是盘符根下一级(D:\DSH-runtime 会报 EPERM mkdir 'D:\',pnpm 11 Windows bug),放深一层即可
+#      - 产物里的 pnpm-workspace.yaml/pnpm-lock.yaml 是 deploy 机制组成部分,勿删(删了重装会报 cosmokit workspace 错)
+#   3. 验证闭包: 产物 node_modules\.pnpm 里应有 dsh-llm-pi-ai/dsh-knowledge/dsh-backend-task 虚拟目录
+#   4. 整目录打 zip/tar 拷服务器(node_modules 必须一起带),服务器只需 Node 22.19+/24,无需 pnpm
+#
+# [Windows 服务器]
+#   deploy 末尾的 [ERR_PNPM_IGNORED_BUILDS] dsh-subprocess-local 直接忽略:
+#   该 postinstall 是恢复 node-pty macOS spawn helper 可执行位,Windows 上空转退出(no-op),不修不影响运行。
+#   服务器解压后设好环境变量(见上方环境变量段)直接跑:
+node D:\DSH-runtime\backend\lib\bin.js --profile enterprise-backend
+#
+# [Linux 服务器(将来如需)]
+#   1. 在 Linux 构建机装 Node 22.19+/24 + pnpm(corepack enable),检出仓库后执行与上面相同的 build+deploy
+#      (Linux 上产物自动带 Linux 的 node-pty/koffi 二进制,spawn helper 也在)
+#   2. deploy 末尾的 [ERR_PNPM_IGNORED_BUILDS] 在 Linux 上必须处理(不能忽略):
+#      把产物 pnpm-workspace.yaml 里 '...dsh-subprocess-local...: set this to true or false' 占位行改为 true,
+#      然后在产物目录跑 pnpm install —— 否则 spawn helper 无执行权限,PTY 会话全挂
+#   3. 打 tar 拷服务器解压,设好环境变量后:
+#      node /opt/dsh-runtime/backend/lib/bin.js --profile enterprise-backend
+#
+# 长期正规化(可选):内网搭 verdaccio 私有 registry,发布整族包后服务器 npm i -g @deepseek-ai/dsh --registry=<内网registry> 启动,scope 保留 @deepseek-ai 不用改代码
+
+测试   #任务端点已启用 X-Service-Key 鉴权：不带/带错头返回 401
+# POST 请求体必填 prompt + processInstanceId(审计锚点,绑流程实例,缺了 400)；skillRefs 可选(字符串数组)；返回 { taskId }
+$body = [Text.Encoding]::UTF8.GetBytes('{"prompt":"生成一个JSON对象，包含两个字段：status 字符串值为 ok，msg 字符串值为 你好。只输出JSON，不要任何其他文字。","processInstanceId":"smoke-test-instance"}')
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3190/api/backend/tasks -ContentType "application/json; charset=utf-8" -Headers @{ "X-Service-Key" = $env:DSH_SERVICE_KEY } -Body $body
+# 轮询：用上一步返回的 taskId 替换下面的 id；ready 时 result 为解析后的 JSON 对象
+Invoke-RestMethod -Uri http://127.0.0.1:3190/api/backend/tasks/c0c7144a-6218-4ce1-a211-bd3cf663c706 -Headers @{ "X-Service-Key" = $env:DSH_SERVICE_KEY }
 
 
 ----------------------------------------------------------------------------------------------------------------------

@@ -53,8 +53,12 @@ flowable:
   # V1 设 1000 平衡内存占用与突发流量;实际很难触达上限(自动节点 Job 速率低)。
   async-executor-queue-capacity: 1000
   # Job 锁时长(毫秒):避免多实例并发抢同一 Job 时重复执行。
-  # 默认 async-job-lock-time=5min,timer-lock-time=1min;LLM 长耗时不影响锁语义(锁防止并发抢,不是超时)。
-  async-executor-async-job-lock-time: 300000
+  # 默认 async-job-lock-time=5min,timer-lock-time=1min。
+  # 约束:async-job-lock-time 必须 > dsh.backend.call-timeout-seconds——backend task
+  # delegate 占锁执行期间锁到期的话,Flowable 会把同一 Job 重新派发给别的执行线程,
+  # 造成同一 backend task 重复提交 LLM 会话(双倍费用)且并发写流程变量。
+  # 660000(11min) > call-timeout 600s(10min);调大 call-timeout 时同步上调本值。
+  async-executor-async-job-lock-time: 660000
   async-executor-timer-lock-time: 300000
   # 暴露 Flowable 官方 REST API(/process-api/*)
   rest-api-enabled: true
@@ -82,6 +86,9 @@ dsh:
     poll-interval-seconds: 3
     # 单次任务调用总超时(秒,含轮询累计);超时抛异常触发 async Job 重试
     call-timeout-seconds: 600
+    # backend profile 任务端点的 X-Service-Key 密钥(平台统一 DSH_SERVICE_KEY,
+    # 与 backend-task 插件 serviceKey 同源);空白时引擎启动即报错
+    service-key: ${DSH_SERVICE_KEY:}
 
   # web-console 集成(2026-10 知识库):backend task 提交前按流程定义解析所属
   # 工程知识库。service-key 须与 web-console dsh.service-key、backend profile

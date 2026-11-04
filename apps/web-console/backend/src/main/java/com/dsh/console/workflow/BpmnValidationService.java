@@ -44,6 +44,9 @@ import org.w3c.dom.NodeList;
  *       产品语义;多实例禁配 loopCardinality——计数形式会让引擎放弃补齐
  *       collection,任务无办理人挂起。</li>
  *   <li>userTask 至少要有候选角色或候选用户(spec §7.2 规则 1)。</li>
+ *   <li>一个 BPMN 文件只允许一个 {@code <process>}:发布链路的 process key /
+ *       上下文声明只取第一个,而整个 XML 原样部署进引擎,多 process 文件会静默
+ *       半部署出管理面不可见的幽灵定义,直接拒绝发布。</li>
  *   <li>serviceTask 必须配 {@code flowable:delegateExpression} 或 {@code flowable:expression}
  *       之一(引擎 ServiceTaskParseHandler 两种都路由;spec §10.1 自动节点规则)。</li>
  *   <li>表达式面(flowable:expression / delegateExpression 属性、conditionExpression /
@@ -160,6 +163,10 @@ public class BpmnValidationService {
         // 1.6) process 可执行性:isExecutable 必须显式为 true
         validateProcessExecutable(doc, errors);
 
+        // 1.7) 单 process 约束:多 process 文件会静默半部署(第二个及之后的 process
+        // 被真实部署进引擎,却不落 web-console 数据库,成为管理面不可见的幽灵定义)
+        validateSingleProcess(doc, errors);
+
         // 2) 取本应用所有 role_id 集合,校验归属
         List<AppRoleDto> appRoles = roleRepository.listByApp(appId);
         Set<String> validRoleIds = appRoles.stream()
@@ -170,6 +177,10 @@ public class BpmnValidationService {
             .map(r -> r.id().toString())
             .collect(Collectors.toSet());
         validateRoleReferences(root, validRoleIds, activeRoleIds, errors);
+
+        // 2.2) userTask 必须有办理人来源(spec §7.2 规则 1):无候选角色的 userTask
+        // 运行期无 assignee、不出现在任何人的待办,流程静默卡死且无报错
+        validateUserTaskHasCandidateSource(doc, errors);
 
         // 2.4) 组织维度审批规则(design 2026-09-19 §5):范围/虚拟角色枚举合法、
         // 互斥(虚拟角色锁定同行政线)、fixedUnit 必填且部门存在
@@ -259,6 +270,68 @@ public class BpmnValidationService {
                 errors.add(String.format(
                     "process[id=%s] 的 isExecutable 必须为 true(false 的流程部署后无法发起实例)",
                     id));
+            }
+        }
+    }
+
+    /**
+     * 单 process 约束:一个 BPMN 文件只允许一个 {@code <process>}。发布链路对
+     * process key / 上下文声明只取第一个,而整个 XML 原样部署进引擎——第二个及
+     * 之后的 process 会被真实部署却不落 web-console 数据库,成为管理面不可见、
+     * 无法禁用/归档的「幽灵定义」,故直接拒绝(错误信息列出个数与各 process key,
+     * 提示拆分文件);不做「警告后剥除」的宽模式——静默改写用户上传的 XML 比拒绝
+     * 更容易埋坑。
+     */
+    private void validateSingleProcess(Document doc, List<String> errors) {
+        NodeList processes = doc.getElementsByTagNameNS(BPMN_NS, "process");
+        if (processes.getLength() <= 1) {
+            return;
+        }
+        List<String> keys = new ArrayList<>();
+        for (int i = 0; i < processes.getLength(); i++) {
+            keys.add(((Element) processes.item(i)).getAttribute("id"));
+        }
+        errors.add(String.format(
+            "BPMN 文件包含 %d 个 <process>(%s):一个文件只允许一个流程定义,"
+                + "请拆分成多个文件分别发布",
+            processes.getLength(), String.join(", ", keys)));
+    }
+
+    /**
+     * userTask 办理人来源必填(spec §7.2 规则 1):每个 userTask 至少要有
+     * {@code flowable:candidateGroups}/{@code flowable:candidateUsers} 或
+     * {@code dsh:assignmentRule} 的任一候选来源(candidateRoleId / virtualRole /
+     * orgScope / fixedUnitId)。全部缺失时任务运行期无 assignee、不出现在任何人的
+     * 待办,流程静默卡死且无报错;前端属性面板必填只能防手工画布,XML 导入在此拦下。
+     */
+    private void validateUserTaskHasCandidateSource(Document doc, List<String> errors) {
+        NodeList userTasks = doc.getElementsByTagNameNS(BPMN_NS, "userTask");
+        for (int i = 0; i < userTasks.getLength(); i++) {
+            Element task = (Element) userTasks.item(i);
+            String taskId = task.getAttribute("id");
+            String taskName = task.getAttribute("name");
+
+            boolean hasFlowableCandidates =
+                hasText(task.getAttributeNS(FLOWABLE_NS, "candidateGroups"))
+                    || hasText(task.getAttributeNS(FLOWABLE_NS, "candidateUsers"));
+            boolean hasDshCandidates = false;
+            NodeList dshAssignments = task.getElementsByTagNameNS(DSH_NS, "assignmentRule");
+            for (int j = 0; j < dshAssignments.getLength(); j++) {
+                Element ar = (Element) dshAssignments.item(j);
+                if (hasText(ar.getAttribute("candidateRoleId"))
+                    || hasText(ar.getAttribute("virtualRole"))
+                    || hasText(ar.getAttribute("orgScope"))
+                    || hasText(ar.getAttribute("fixedUnitId"))) {
+                    hasDshCandidates = true;
+                    break;
+                }
+            }
+            if (!hasFlowableCandidates && !hasDshCandidates) {
+                errors.add(String.format(
+                    "userTask[id=%s, name=%s] 未配置办理人来源:请在属性面板选择候选角色,"
+                        + "或配置 flowable:candidateGroups/candidateUsers;否则任务无人可领,"
+                        + "流程将静默卡死",
+                    taskId, taskName));
             }
         }
     }

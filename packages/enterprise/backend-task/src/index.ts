@@ -22,7 +22,7 @@
  * @module @deepseek-ai/dsh-backend-task
  */
 
-import { randomUUID } from 'node:crypto'
+import { randomUUID, timingSafeEqual } from 'node:crypto'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
@@ -77,6 +77,12 @@ export interface Config {
   registerIntervalMs: number
   /** 覆盖 skill 缓存目录;缺省用 `$DSH_HOME/backend-task/skills`。 */
   skillDir?: string
+  /**
+   * 平台服务密钥(`X-Service-Key` 请求头):任务端点只接受引擎
+   * `dsh.backend.service-key` 同源(平台统一 `DSH_SERVICE_KEY`)的携带方,
+   * 防止可达 webserver 的任意主机提交无人值守 AI 任务。空白时启动即报错。
+   */
+  serviceKey: string
 }
 
 export const Config: z<Config> = z.object({
@@ -88,6 +94,7 @@ export const Config: z<Config> = z.object({
   syncIntervalMs: z.number().default(DEFAULT_SYNC_INTERVAL_MS),
   registerIntervalMs: z.number().default(DEFAULT_REGISTER_INTERVAL_MS),
   skillDir: z.string(),
+  serviceKey: z.string().default(''),
 })
 
 /** 已解析的运行选项(apply 阶段完成校验与默认值合并)。 */
@@ -100,6 +107,7 @@ export interface BackendTaskOptions {
   readonly syncIntervalMs: number
   readonly registerIntervalMs: number
   readonly skillDir: string
+  readonly serviceKey: string
 }
 
 /** 内存任务表的运行时状态。 */
@@ -300,6 +308,18 @@ async function runBackendTask(
   }
   task.status = 'ready'
   task.result = result
+}
+
+/**
+ * 任务端点鉴权:`X-Service-Key` 请求头与配置密钥恒时比对(语义对齐 web-console
+ * 的 ServiceKeyAuthFilter);缺失、非字符串或长度/取值不符一律拒绝。
+ */
+function requestAuthorized(req: import('node:http').IncomingMessage, serviceKey: string): boolean {
+  const presented = req.headers['x-service-key']
+  if (typeof presented !== 'string') return false
+  const expected = Buffer.from(serviceKey, 'utf8')
+  const actual = Buffer.from(presented, 'utf8')
+  return expected.length === actual.length && timingSafeEqual(expected, actual)
 }
 
 /**
@@ -505,6 +525,13 @@ export function apply(ctx: Context, config: Config): void {
     skillDir: config.skillDir !== undefined && config.skillDir !== ''
       ? config.skillDir
       : dshHomePath('backend-task', 'skills'),
+    serviceKey: config.serviceKey,
+  }
+  // 鉴权密钥 fail loud(平台服务密钥约定:与 web-console dsh.service-key、
+  // flowable-engine dsh.backend.service-key 同源 DSH_SERVICE_KEY);空白时任务
+  // 端点无法区分合法调用方,拒绝启动而非带病暴露无人值守 AI 任务入口。
+  if (options.serviceKey === '') {
+    throw new Error('backend-task: serviceKey 未配置(设 DSH_SERVICE_KEY,须与 flowable-engine 一致)')
   }
   new URL(options.webConsoleBaseUrl)
   new URL(options.selfUrl)
@@ -525,6 +552,10 @@ export function apply(ctx: Context, config: Config): void {
       kind: 'prefix',
       path: TASK_ROUTE_PREFIX,
       handler: (req, res) => {
+        if (!requestAuthorized(req, options.serviceKey)) {
+          sendJson(res, 401, { error: 'X-Service-Key 缺失或不匹配' })
+          return
+        }
         const urlPath = new URL(req.url ?? '/', 'http://localhost').pathname
         dispatchTasks(ctx, deps, tasks, req.method ?? 'GET', urlPath, req, res)
           .catch((error: unknown) => {

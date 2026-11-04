@@ -36,6 +36,8 @@
         port: !!js Number(process.env.DSH_BACKEND_PORT ?? 3190)
 
     # 后台任务运行器：REST 端点 + 注册/心跳 daemon + skill 同步 daemon。
+    # serviceKey：任务端点 X-Service-Key 鉴权密钥（未配置启动即报错），须与
+    # flowable-engine dsh.backend.service-key 同源（平台统一 DSH_SERVICE_KEY）。
     - id: backend-task
       name: '@deepseek-ai/dsh-backend-task'
       config:
@@ -46,6 +48,7 @@
         skillhubToken: !!js process.env.SKILLHUB_API_TOKEN ?? ''
         syncIntervalMs: !!js Number(process.env.DSH_BACKEND_SYNC_INTERVAL_MS ?? 300000)
         registerIntervalMs: !!js Number(process.env.DSH_BACKEND_REGISTER_INTERVAL_MS ?? 60000)
+        serviceKey: !!js process.env.DSH_SERVICE_KEY ?? ''
 
     # 知识库工具(kb_search/kb_read/kb_list):无登录身份,任务 payload 携带 kbId
     # 时经服务密钥白名单端点(/api/backend/kb/*)访问 web-console。serviceKey 须与

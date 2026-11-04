@@ -60,7 +60,12 @@ import org.springframework.web.server.ResponseStatusException;
  * <p><b>历史级别</b>:由 {@link com.dsh.flowable.config.FlowableConfig} 配置 {@code HistoryLevel.FULL},
  * 所有历史表({@code ACT_HI_*})都写入数据,本端点查询前提成立。
  *
- * <p><b>鉴权</b>:V1 单企业内部信任,任何已认证用户都能查全部历史;V2 可加按部门/角色可见范围。
+ * <p><b>鉴权</b>:JWT 认证之外强制资源归属——任务/实例列表强制「仅本人相关」
+ * (客户端传入的 assignee/startedBy 在非实例级查询中被忽略,防越权枚举他人数据);
+ * 实例级端点(activities/variables/process-log 及按实例 id 的任务/实例查询)要求
+ * 请求者是实例参与人(发起人或历史任务办理人),非参与人 403(见
+ * {@link #requireParticipant})。引擎无 platform_roles 可见性,不设管理员旁路;
+ * bpmn-xml 是定义级资源(无实例归属语义),不在此列。
  *
  * <p><b>分页</b>:V1 用 page/size 简单分页(默认 size=50,最大 200),返回 plain list;
  * V2 可改为 Spring HATEOAS 或 Page 对象。
@@ -72,6 +77,44 @@ public class DshHistoryController {
     /** 单页最大返回条数,防止前端误传大 size 拖垮引擎。 */
     private static final int MAX_PAGE_SIZE = 200;
     private static final int DEFAULT_PAGE_SIZE = 50;
+
+    /**
+     * 取 JWT sub(平台 user.id);缺失说明认证链路异常(端点位于 authenticated 之外
+     * 才可能发生),直接 401 fail loud。
+     */
+    private static String requireUserId(Jwt jwt) {
+        if (jwt == null || jwt.getSubject() == null || jwt.getSubject().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "缺少有效的用户身份");
+        }
+        return jwt.getSubject();
+    }
+
+    /**
+     * 实例归属校验:请求者必须是「实例参与人」——发起人(startUserId)或该实例任一
+     * 历史任务的办理人;实例不存在 404,非参与人 403。引擎无 platform_roles 可见性,
+     * 不设管理员旁路(web-console 实例审计走 {@code /api/process-instances/*},
+     * 不经过本控制器)。
+     */
+    private void requireParticipant(String processInstanceId, String userId) {
+        HistoricProcessInstance instance = historyService.createHistoricProcessInstanceQuery()
+            .processInstanceId(processInstanceId)
+            .singleResult();
+        if (instance == null) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "流程实例不存在: " + processInstanceId);
+        }
+        if (userId.equals(instance.getStartUserId())) {
+            return;
+        }
+        long assigneeCount = historyService.createHistoricTaskInstanceQuery()
+            .processInstanceId(processInstanceId)
+            .taskAssignee(userId)
+            .count();
+        if (assigneeCount == 0) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "无权访问该流程实例的历史数据:仅实例参与人(发起人/办理人)可查");
+        }
+    }
 
     private final HistoryService historyService;
     private final RepositoryService repositoryService;
@@ -90,8 +133,9 @@ public class DshHistoryController {
      *
      * <p>用 {@code includeTaskLocalVariables} 一次查全部 local 变量,避免逐条回查拿 dsh_node_meta。
      *
-     * @param processInstanceId 可选;按实例过滤
-     * @param assignee          可选;按处理人(Supabase user.id)过滤;传 JWT sub 可查"我处理过的"
+     * @param processInstanceId 可选;按实例过滤(须为实例参与人,见 {@link #requireParticipant})
+     * @param assignee          可选;按处理人(Supabase user.id)过滤;仅实例级查询内可用,
+     *                          非实例级查询强制按当前 JWT 用户过滤(防越权枚举他人任务)
      * @param finished          可选;{@code true} 只看已完成,{@code false} 只看进行中,不传不过滤
      * @param page              页码(0-based),默认 0
      * @param size              单页条数,默认 50,上限 200
@@ -105,12 +149,10 @@ public class DshHistoryController {
         @RequestParam(name = "size", defaultValue = "50") int size,
         @AuthenticationPrincipal Jwt jwt
     ) {
-        // 便捷入口:不传 assignee 且不带实例范围时,默认查当前 JWT 用户的历史任务("我处理过的");
-        // 带 processInstanceId 时是实例级审计查询,返回该实例全部任务,不按用户过滤
-        String effectiveAssignee = assignee;
-        if (effectiveAssignee == null && jwt != null
-                && (processInstanceId == null || processInstanceId.isBlank())) {
-            effectiveAssignee = jwt.getSubject();
+        String userId = requireUserId(jwt);
+        boolean instanceScoped = processInstanceId != null && !processInstanceId.isBlank();
+        if (instanceScoped) {
+            requireParticipant(processInstanceId, userId);
         }
 
         int safeSize = clampSize(size);
@@ -119,11 +161,15 @@ public class DshHistoryController {
         var query = historyService.createHistoricTaskInstanceQuery()
             .includeTaskLocalVariables()
             .orderByHistoricTaskInstanceStartTime().desc();
-        if (processInstanceId != null && !processInstanceId.isBlank()) {
+        if (instanceScoped) {
+            // 参与人可见实例内全部任务(含他人办理的节点记录),assignee 仅作本人收窄
             query.processInstanceId(processInstanceId);
-        }
-        if (effectiveAssignee != null && !effectiveAssignee.isBlank()) {
-            query.taskAssignee(effectiveAssignee);
+            if (assignee != null && !assignee.isBlank()) {
+                query.taskAssignee(assignee);
+            }
+        } else {
+            // 仅本人相关:忽略客户端传入的 assignee,强制按当前用户过滤
+            query.taskAssignee(userId);
         }
         if (Boolean.TRUE.equals(finished)) {
             query.finished();
@@ -145,13 +191,15 @@ public class DshHistoryController {
     /**
      * 查历史流程实例,可按实例 id/定义 id/发起人/状态/key 过滤。
      *
-     * <p>不传任何过滤参数时返回全部历史实例(按发起时间倒序,含运行中实例,
-     * {@code ACT_HI_PROCINST} 在实例启动时即写入)。管理员审计用;
-     * 普通用户建议传 {@code startedBy} 查自己发起的实例("我发起过的")。
+     * <p>不传实例 id 时强制「我发起的」(按发起时间倒序,含运行中实例);参与但非本人
+     * 发起的实例经带 processInstanceId 的查询获取(须为参与人)。管理员全量审计不在
+     * 本控制器(web-console 实例审计走 {@code /api/process-instances/*})。
      *
-     * @param processInstanceId     可选;按实例 id 精确过滤(查单个实例,含已结束的详情回退)
+     * @param processInstanceId     可选;按实例 id 精确过滤(查单个实例,含已结束的详情回退;
+     *                              须为实例参与人,见 {@link #requireParticipant})
      * @param processDefinitionId   可选;按流程定义 id 过滤(部署版本级,Web Console 按应用聚合用)
-     * @param startedBy             可选;按发起人 user.id 过滤
+     * @param startedBy             可选;按发起人 user.id 过滤;仅实例级查询内可用,
+     *                              非实例级查询强制按当前 JWT 用户过滤(防越权枚举他人实例)
      * @param state                 可选;{@code running} 只看运行中,{@code completed} 只看正常完成,
      *                              {@code terminated} 只看已终止(deleteReason 非空),不传看全部
      * @param processDefinitionKey  可选;按流程定义 key 过滤(同流程不同版本一并查)
@@ -166,21 +214,30 @@ public class DshHistoryController {
         @RequestParam(name = "state", required = false) String state,
         @RequestParam(name = "processDefinitionKey", required = false) String processDefinitionKey,
         @RequestParam(name = "page", defaultValue = "0") int page,
-        @RequestParam(name = "size", defaultValue = "50") int size
+        @RequestParam(name = "size", defaultValue = "50") int size,
+        @AuthenticationPrincipal Jwt jwt
     ) {
+        String userId = requireUserId(jwt);
+        boolean instanceScoped = processInstanceId != null && !processInstanceId.isBlank();
+        if (instanceScoped) {
+            requireParticipant(processInstanceId, userId);
+        }
         int safeSize = clampSize(size);
         int firstResult = Math.max(0, page) * safeSize;
 
         var query = historyService.createHistoricProcessInstanceQuery()
             .orderByProcessInstanceStartTime().desc();
-        if (processInstanceId != null && !processInstanceId.isBlank()) {
+        if (instanceScoped) {
             query.processInstanceId(processInstanceId);
+        } else {
+            // 仅本人相关:忽略客户端传入的 startedBy,强制按当前用户过滤
+            query.startedBy(userId);
+        }
+        if (instanceScoped && startedBy != null && !startedBy.isBlank()) {
+            query.startedBy(startedBy);
         }
         if (processDefinitionId != null && !processDefinitionId.isBlank()) {
             query.processDefinitionId(processDefinitionId);
-        }
-        if (startedBy != null && !startedBy.isBlank()) {
-            query.startedBy(startedBy);
         }
         // completed/terminated 都按 finished() 取数后本地过滤 deleteReason
         // (HistoricProcessInstanceQuery 没有 deleteReason isNull 过滤 API),过滤后再分页
@@ -266,13 +323,15 @@ public class DshHistoryController {
      */
     @GetMapping("/activities")
     public List<HistoricActivityDto> getHistoricActivities(
-        @RequestParam(name = "processInstanceId", required = false) String processInstanceId
+        @RequestParam(name = "processInstanceId", required = false) String processInstanceId,
+        @AuthenticationPrincipal Jwt jwt
     ) {
         if (processInstanceId == null || processInstanceId.isBlank()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "processInstanceId parameter is required for /dsh/history/activities");
         }
+        requireParticipant(processInstanceId, requireUserId(jwt));
         List<HistoricActivityInstance> activities = historyService.createHistoricActivityInstanceQuery()
             .processInstanceId(processInstanceId)
             .orderByHistoricActivityInstanceStartTime().asc()
@@ -292,13 +351,15 @@ public class DshHistoryController {
      */
     @GetMapping("/variables")
     public List<HistoricVariableDto> getHistoricVariables(
-        @RequestParam(name = "processInstanceId", required = false) String processInstanceId
+        @RequestParam(name = "processInstanceId", required = false) String processInstanceId,
+        @AuthenticationPrincipal Jwt jwt
     ) {
         if (processInstanceId == null || processInstanceId.isBlank()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "processInstanceId parameter is required for /dsh/history/variables");
         }
+        requireParticipant(processInstanceId, requireUserId(jwt));
         List<HistoricVariableInstance> variables = historyService.createHistoricVariableInstanceQuery()
             .processInstanceId(processInstanceId)
             .list();
@@ -367,13 +428,15 @@ public class DshHistoryController {
      */
     @GetMapping("/process-log")
     public List<ProcessLogEntryDto> getProcessLog(
-        @RequestParam(name = "processInstanceId", required = false) String processInstanceId
+        @RequestParam(name = "processInstanceId", required = false) String processInstanceId,
+        @AuthenticationPrincipal Jwt jwt
     ) {
         if (processInstanceId == null || processInstanceId.isBlank()) {
             throw new ResponseStatusException(
                 HttpStatus.BAD_REQUEST,
                 "processInstanceId parameter is required for /dsh/history/process-log");
         }
+        requireParticipant(processInstanceId, requireUserId(jwt));
         try {
             UUID.fromString(processInstanceId);
         } catch (IllegalArgumentException e) {

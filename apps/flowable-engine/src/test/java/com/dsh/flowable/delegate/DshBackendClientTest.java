@@ -37,6 +37,9 @@ class DshBackendClientTest {
     /** POST 提交的请求体(测试断言 prompt/skillRefs 的 UTF-8 往返)。 */
     private volatile Map<String, Object> submittedBody;
 
+    /** POST 提交携带的 X-Service-Key 头(鉴权头断言)。 */
+    private volatile String submittedServiceKey;
+
     /** failed 任务的 error 文本;非 null 时 GET 返回 failed。 */
     private volatile String failedError;
 
@@ -52,6 +55,7 @@ class DshBackendClientTest {
             String path = exchange.getRequestURI().getPath();
             String method = exchange.getRequestMethod();
             if ("POST".equals(method) && path.equals("/api/backend/tasks")) {
+                submittedServiceKey = exchange.getRequestHeaders().getFirst("X-Service-Key");
                 submittedBody = mapper.readValue(
                     exchange.getRequestBody().readAllBytes(),
                     new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
@@ -87,7 +91,8 @@ class DshBackendClientTest {
 
     private DshBackendClient client(long pollIntervalSeconds, long callTimeoutSeconds) {
         return new DshBackendClient(
-            new DshBackendProperties(pollIntervalSeconds, callTimeoutSeconds), mapper);
+            new DshBackendProperties(pollIntervalSeconds, callTimeoutSeconds, "test-service-key"),
+            mapper);
     }
 
     @Test
@@ -145,6 +150,22 @@ class DshBackendClientTest {
             deadUrl, "任意", List.of(), "act-6", "inst-1", null))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("提交失败");
+    }
+
+    @Test
+    void submitsCarryServiceKeyHeader() {
+        // 任务端点已启用 X-Service-Key 鉴权:提交必须携带配置密钥,否则 backend
+        // profile 401 拒绝
+        runningRounds = 0;
+        client(1, 10).execute(baseUrl, "任意", List.of(), "act-11", "inst-1", null);
+        assertThat(submittedServiceKey).isEqualTo("test-service-key");
+    }
+
+    @Test
+    void blankServiceKeyFailsAtStartup() {
+        assertThatThrownBy(() -> new DshBackendProperties(1, 10, " "))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("service-key");
     }
 
     @Test

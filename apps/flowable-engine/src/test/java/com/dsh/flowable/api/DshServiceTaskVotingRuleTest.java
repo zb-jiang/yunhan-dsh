@@ -131,7 +131,7 @@ class DshServiceTaskVotingRuleTest {
     /** backend task 桩:记录每实例调用的 profile URL,返回固定 result JSON。 */
     private DshBackendTaskDelegate backendTaskDelegate(DshExtensionResolver resolver) {
         DshBackendClient stubClient = new DshBackendClient(
-            new DshBackendProperties(1, 5), new ObjectMapper()) {
+            new DshBackendProperties(1, 5, "test-service-key"), new ObjectMapper()) {
             @Override
             public Map<String, Object> execute(String baseUrl, String prompt,
                                                List<String> skillRefs, String activityId,

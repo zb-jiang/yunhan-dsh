@@ -101,11 +101,13 @@ function stubSkills() {
   }
 }
 
-/** 端点请求桩:Emitter 形状,注册监听后的下一个宏任务推送 body 与 end(readJsonBody 事件模式)。 */
-function stubRequest(method: string, url: string, body?: Buffer) {
-  const req = new EventEmitter() as EventEmitter & { method: string; url: string }
+/** 端点请求桩:Emitter 形状,注册监听后的下一个宏任务推送 body 与 end(readJsonBody 事件模式)。
+ * 默认携带 X-Service-Key(生产上 flowable-engine 的请求总是带头);无头/错头用例显式传 headers。 */
+function stubRequest(method: string, url: string, body?: Buffer, headers?: Record<string, string>) {
+  const req = new EventEmitter() as EventEmitter & { method: string; url: string; headers: Record<string, string> }
   req.method = method
   req.url = url
+  req.headers = headers ?? { 'x-service-key': TEST_SERVICE_KEY }
   setImmediate(() => {
     if (body !== undefined) req.emit('data', body)
     req.emit('end')
@@ -168,6 +170,8 @@ const consoleRoutes = () => [
   },
 ]
 
+const TEST_SERVICE_KEY = 'test-service-key'
+
 const CONFIG = {
   webConsoleBaseUrl: 'http://console:8080/',
   selfUrl: 'http://backend-1:3190/',
@@ -176,6 +180,7 @@ const CONFIG = {
   skillhubToken: '',
   syncIntervalMs: 100_000,
   registerIntervalMs: 100_000,
+  serviceKey: TEST_SERVICE_KEY,
 }
 
 describe('backend-task', () => {
@@ -460,6 +465,20 @@ describe('backend-task', () => {
     expect(badRoute.status).toBe(404)
   })
 
+  it('任务端点鉴权:无头/错头 X-Service-Key → 401(密钥恒时比对)', async () => {
+    const { route } = mount('{"a":1}')
+    const body = Buffer.from(JSON.stringify({ prompt: 'p', processInstanceId: 'pi-1' }))
+    const noHeader = stubResponse()
+    await route.handler(stubRequest('POST', '/api/backend/tasks', body, {}), noHeader)
+    expect(noHeader.status).toBe(401)
+    const wrongHeader = stubResponse()
+    await route.handler(
+      stubRequest('POST', '/api/backend/tasks', body, { 'x-service-key': 'wrong-key' }),
+      wrongHeader,
+    )
+    expect(wrongHeader.status).toBe(401)
+  })
+
   it('apply 校验配置:非法 baseUrl 与非正数间隔立即抛错(misconfiguration fails loud)', () => {
     vi.stubGlobal('fetch', stubFetch([]))
     ctx.provide('agents', stubAgents('{}', { kind: 'completed' }) as never)
@@ -471,5 +490,6 @@ describe('backend-task', () => {
     expect(() => { apply(ctx, { ...CONFIG, skillDir, selfUrl: 'not-a-url' }) }).toThrow()
     expect(() => { apply(ctx, { ...CONFIG, skillDir, registerIntervalMs: 0 }) }).toThrow('registerIntervalMs')
     expect(() => { apply(ctx, { ...CONFIG, skillDir, syncIntervalMs: -1 }) }).toThrow('syncIntervalMs')
+    expect(() => { apply(ctx, { ...CONFIG, skillDir, serviceKey: '' }) }).toThrow('serviceKey')
   })
 })
