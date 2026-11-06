@@ -9,6 +9,8 @@ apps/desktop/*.p12
 node_modules/
 lib/
 *.tsbuildinfo
+# pnpm pack 的 tarball 产物只在分发时使用,不入库
+*.tgz
 pnpm-debug.log
 .pnpm-store/
 .cache/
@@ -52,6 +54,8 @@ worktrees/
 .agents/worktrees/
 .typert-*/
 .workbuddy/
+# 本地 agent 工具运行状态,不入库
+.agent-teams/
 native/system/test/bin/
 # tsc -b host-face 在 source-plane 包的 src/ 旁就地产出编译结果,不入库
 vendor/*/src/*.js

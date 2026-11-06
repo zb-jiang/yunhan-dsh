@@ -1,0 +1,52 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/plugins/ppt-client/README.md
+/:
+  en: 7eb5a539dac1ff56
+  zh: 51afaa06f5d57bda
+/deepseek-ai-dsh-ppt-client:
+  en: 3cb4a0e2cd2120be
+  zh: 5ef46f77e78cd509
+/deepseek-ai-dsh-ppt-client/summary:
+  en: 0c998152715cc416
+  zh: 97023d2863bd867b
+/deepseek-ai-dsh-ppt-client/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 0ef1b4db0834220c
+/deepseek-ai-dsh-ppt-client/use-this-package:
+  en: 80148a39f23151c5
+  zh: b8257d3da608922c
+/deepseek-ai-dsh-ppt-client/use-this-package/when-to-choose-it:
+  en: 15d79c6f6737b119
+  zh: 5b5cca0adee164e2
+/deepseek-ai-dsh-ppt-client/use-this-package/minimal-configuration:
+  en: e5019462cdf6ddb1
+  zh: 02a85495ee8948d9
+/deepseek-ai-dsh-ppt-client/understand-the-implementation:
+  en: 9d1644fefab9edfd
+  zh: 5b59113b22bc2354
+/deepseek-ai-dsh-ppt-client/further-exploration:
+  en: 41dadf7b96fb7002
+  zh: a3296e1d8b0c3cb8
+/deepseek-ai-dsh-ppt-client/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-ppt-client/model-experience/template-directive-chip-prefix:
+  en: ae8dddd3ceb6d8d2
+  zh: ae8dddd3ceb6d8d2
+/deepseek-ai-dsh-ppt-client/model-experience/template-directive-chip-prefix/what-the-model-sees:
+  en: 68e298f803915816
+  zh: dca81aaedd3b8614
+/deepseek-ai-dsh-ppt-client/model-experience/template-directive-chip-prefix/token-effect:
+  en: 99f22d3a937d1b0c
+  zh: c5872e20d698a3fa
+/deepseek-ai-dsh-ppt-client/model-experience/template-directive-chip-prefix/kv-cache-effect:
+  en: 7928554d9b702785
+  zh: 2ddda23b5fce342b
+/deepseek-ai-dsh-ppt-client/known-limitations-and-deferred-work:
+  en: 7cb802a53f5be0fc
+  zh: 33d057081b5e185d
+/deepseek-ai-dsh-ppt-client/known-limitations-and-deferred-work/dev-note:
+  en: eed7ff89d67b7c61
+  zh: 768912057db8ac63

@@ -22,7 +22,9 @@ pre-commit:
       stage_fixed: true
 
     - name: whitespace (staged)
-      run: git diff --cached --check
+      # vendored plugin assets keep upstream formatting verbatim; the doc gates
+      # exclude the same prefix (see .agents/UPSTREAM-MERGE.md).
+      run: git diff --cached --check -- . ':(exclude)packages/plugins/ppt-core/assets/**'
 
     - name: pi-ai provider metadata
       glob: '{pnpm-lock.yaml,packages/llm/llm-pi-ai/package.json,packages/llm/llm-pi-ai/scripts/gen-provider-data.ts,packages/llm/llm-pi-ai/src/provider-data.generated.ts}'

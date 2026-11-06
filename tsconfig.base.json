@@ -466,6 +466,8 @@
       "@deepseek-ai/dsh-plugin-market-index": ["./packages/util/plugin-market-index/src"],
       "@deepseek-ai/dsh-plugin-package-inventory-deepseek": ["./packages/llm/plugin-package-inventory-deepseek/src"],
       "@deepseek-ai/dsh-pocket-access": ["./packages/enterprise/pocket-access/src"],
+      "@deepseek-ai/dsh-ppt-client": ["./packages/plugins/ppt-client/src"],
+      "@deepseek-ai/dsh-ppt-core": ["./packages/plugins/ppt-core/src"],
       "@deepseek-ai/dsh-process-start": ["./packages/enterprise/process-start/src"],
       "@deepseek-ai/dsh-ptc-runtime": ["./packages/ptc-runtime/ptc-runtime/src"],
       "@deepseek-ai/dsh-ptc-runtime-node": ["./packages/ptc-runtime/ptc-runtime-node/src"],

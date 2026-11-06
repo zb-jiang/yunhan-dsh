@@ -1,0 +1,54 @@
+{
+  "name": "@deepseek-ai/dsh-ppt-core",
+  "description": "AI 生成 PPT 插件宿主侧:模板库、RPC 端点、ppt-master skill 注册、Python 检测与生图配置;与 dsh-ppt-client 一起经 cordis.patch.yml 作为可安装插件分发",
+  "version": "0.2.1-rc.4",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "lib/index.js",
+    "cordis.patch.yml",
+    "assets",
+    "lib/types/**/*.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/plugins/ppt-core"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@deepseek-ai/dsh-ppt-client": "workspace:*"
+  },
+  "bundleDependencies": [
+    "@deepseek-ai/dsh-ppt-client"
+  ],
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/schemastery": "workspace:~"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-home-paths": "workspace:*",
+    "@deepseek-ai/dsh-skill": "workspace:*",
+    "@deepseek-ai/dsh-system-prompt": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

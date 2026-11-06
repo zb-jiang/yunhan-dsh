@@ -100,6 +100,9 @@ export function repositoryGitDirty(root: string): boolean | undefined {
     cwd: root,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
+    // 结果只用来判空,但大规模暂存(整包资产入库)时逐文件一行能超过
+    // spawnSync 默认 1MB 的 stdout 上限(ENOBUFS),放宽到 64MB。
+    maxBuffer: 64 * 1024 * 1024,
   })
   if (status.error !== undefined) throw status.error
   if (status.status !== 0) {

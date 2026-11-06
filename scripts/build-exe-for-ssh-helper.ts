@@ -155,7 +155,9 @@ export async function buildSshHelper(argv: string[]): Promise<void> {
     const metadata = artifactManifestSchema.parse({
       format: 1, version: definition.version, target,
       commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-      dirty: execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim() !== '',
+      // Whole-repository porcelain listing exceeds Node's 1 MiB default on the
+      // enterprise fork; 64 MiB matches the other scripts' ENOBUFS deviation.
+      dirty: execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim() !== '',
       protocol: hello.protocol, nodeVersion: hello.nodeVersion,
       files: await Promise.all((await payloadFiles(product)).map(async path => ({
         path, sha256: await fileDigest(join(product, path)), mode: (await lstat(join(product, path))).mode & 0o777,

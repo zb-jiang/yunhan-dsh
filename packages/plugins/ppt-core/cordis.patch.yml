@@ -1,0 +1,5 @@
+- insert:
+    - id: ppt-core
+      name: '@deepseek-ai/dsh-ppt-core'
+    - id: ppt-client
+      name: '@deepseek-ai/dsh-ppt-client'

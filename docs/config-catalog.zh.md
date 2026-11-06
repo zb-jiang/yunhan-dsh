@@ -2771,6 +2771,29 @@ export interface Config {
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-pocket-access -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-ppt-core -->
+<a id="deepseek-aidsh-ppt-core"></a>
+
+## `@deepseek-ai/dsh-ppt-core`
+
+- `inject`: `webServer` · `skills` · `systemPrompt`
+- `source`: [`packages/plugins/ppt-core/src/index.ts:34`](../packages/plugins/ppt-core/src/index.ts)
+
+```ts config-catalog
+/** 插件配置;全部可空,空串 = 未配置。文件缺失时作为设置种子默认值。 */
+export interface Config {
+  /** 生图后端(ppt-master IMAGE_BACKEND 取值,如 openai/gemini)。 */
+  imageBackend?: string
+  /** 生图服务商 API Key(只存员工本机,GET 响应永不回传明文)。 */
+  imageApiKey?: string
+  /** OpenAI 兼容中转基地址;官方端点留空。 */
+  imageBaseUrl?: string
+  /** 生图模型名。 */
+  imageModel?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-ppt-core -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-process-start -->
 <a id="deepseek-aidsh-process-start"></a>
 
@@ -5030,6 +5053,7 @@ export interface Config {
 | `@deepseek-ai/dsh-mcp-resources` | `tools` | [`packages/mcp/mcp-resources/src/index.ts`](../packages/mcp/mcp-resources/src/index.ts) |
 | `@deepseek-ai/dsh-otel` | — | [`packages/telemetry/otel/src/index.ts`](../packages/telemetry/otel/src/index.ts) |
 | `@deepseek-ai/dsh-platform-user` | — | [`packages/enterprise/platform-user/src/index.ts`](../packages/enterprise/platform-user/src/index.ts) |
+| `@deepseek-ai/dsh-ppt-client` | — | [`packages/plugins/ppt-client/src/index.ts`](../packages/plugins/ppt-client/src/index.ts) |
 | `@deepseek-ai/dsh-sandbox-ssh` | `ssh` | [`packages/ssh/sandbox-ssh/src/index.ts`](../packages/ssh/sandbox-ssh/src/index.ts) |
 | `@deepseek-ai/dsh-session` | — | [`packages/core/session/src/index.ts`](../packages/core/session/src/index.ts) |
 | `@deepseek-ai/dsh-session-checkpoint-policy` | `llm` · `sessionPersistence` · `sessions` · `tools` | [`packages/session/session-checkpoint-policy/src/index.ts`](../packages/session/session-checkpoint-policy/src/index.ts) |

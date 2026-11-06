@@ -30,7 +30,9 @@ export interface CommandResult {
  * @returns The exit status and captured streams.
  */
 export function attempt(command: string, args: readonly string[], options: RunOptions = {}): CommandResult {
-  const result = spawnSync(command, [...args], { cwd: options.cwd, env: options.env, encoding: 'utf8' })
+  // Buffered callers include whole-repository Git listings (`status --porcelain`,
+  // `ls-files`) that exceed Node's 1 MiB default on the enterprise fork.
+  const result = spawnSync(command, [...args], { cwd: options.cwd, env: options.env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
   if (result.error !== undefined) throw result.error
   return { status: result.status, stdout: result.stdout, stderr: result.stderr }
 }
@@ -48,6 +50,7 @@ export function attemptEchoed(command: string, args: readonly string[], options:
     cwd: options.cwd,
     env: options.env,
     encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
     stdio: ['inherit', 'pipe', 'pipe'],
   })
   if (result.error !== undefined) throw result.error

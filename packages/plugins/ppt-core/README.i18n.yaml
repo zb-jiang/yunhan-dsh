@@ -1,0 +1,67 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/plugins/ppt-core/README.md
+/:
+  en: cc5bc927b4c01c7f
+  zh: aa1186625ef794e1
+/deepseek-ai-dsh-ppt-core:
+  en: 30f346aa71f52919
+  zh: b1be1ed5f844fa8f
+/deepseek-ai-dsh-ppt-core/summary:
+  en: e881c274f4ee513d
+  zh: fdcc602e033dfcc8
+/deepseek-ai-dsh-ppt-core/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 0ef1b4db0834220c
+/deepseek-ai-dsh-ppt-core/use-this-package:
+  en: 373b5493eb3c7e2b
+  zh: df38e448356eb009
+/deepseek-ai-dsh-ppt-core/use-this-package/when-to-choose-it:
+  en: 1c0c8b5bf431d6cb
+  zh: 213486fd127c73d1
+/deepseek-ai-dsh-ppt-core/use-this-package/minimal-configuration:
+  en: 1c8930ddb4631e41
+  zh: 4c30fe54d24e5af1
+/deepseek-ai-dsh-ppt-core/understand-the-implementation:
+  en: f2a3bb7139e72854
+  zh: 74ffd42f0c4ddd46
+/deepseek-ai-dsh-ppt-core/further-exploration:
+  en: e46afe5a8b7895cd
+  zh: 7314986865a22077
+/deepseek-ai-dsh-ppt-core/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-ppt-core/model-experience/system-prompt-capability-section:
+  en: 535d4235f4a6561c
+  zh: 535d4235f4a6561c
+/deepseek-ai-dsh-ppt-core/model-experience/system-prompt-capability-section/what-the-model-sees:
+  en: 1651504f25b8b324
+  zh: fef8ad8fd0eaf580
+/deepseek-ai-dsh-ppt-core/model-experience/system-prompt-capability-section/what-the-model-sees/rendered-section-abbreviated:
+  en: 13e469449179f1e3
+  zh: d5fd9114f759dbd3
+/deepseek-ai-dsh-ppt-core/model-experience/system-prompt-capability-section/token-effect:
+  en: da7d102303a3f265
+  zh: 08ccb8afc42764d9
+/deepseek-ai-dsh-ppt-core/model-experience/system-prompt-capability-section/kv-cache-effect:
+  en: 1479387024c2e3ae
+  zh: addf06e168975985
+/deepseek-ai-dsh-ppt-core/model-experience/extraction-prompt-for-a-new-template:
+  en: 27799a31a85aaf0c
+  zh: 27799a31a85aaf0c
+/deepseek-ai-dsh-ppt-core/model-experience/extraction-prompt-for-a-new-template/what-the-model-sees:
+  en: e3f2694c755e7783
+  zh: de69b4266667b545
+/deepseek-ai-dsh-ppt-core/model-experience/extraction-prompt-for-a-new-template/token-effect:
+  en: de97a0fbeb750ffa
+  zh: 10be03864a86dbb1
+/deepseek-ai-dsh-ppt-core/model-experience/extraction-prompt-for-a-new-template/kv-cache-effect:
+  en: 5ae67f62ae074c3c
+  zh: 88fccb5afa6007a6
+/deepseek-ai-dsh-ppt-core/known-limitations-and-deferred-work:
+  en: c245e48886218b8f
+  zh: 69362d072e5e7950
+/deepseek-ai-dsh-ppt-core/known-limitations-and-deferred-work/dev-note:
+  en: e67f633dc6fe7773
+  zh: 8ec3e73528ddb1a6

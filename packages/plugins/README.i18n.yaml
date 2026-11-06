@@ -1,0 +1,25 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/plugins/README.md
+/:
+  en: 29902d7eff51cfce
+  zh: 29902d7eff51cfce
+/plugins-installable-plugins:
+  en: 9ce7d50f6ddcad1a
+  zh: 29b77abf91676a22
+/plugins-installable-plugins/summary:
+  en: 741cc63a3e8bf6a7
+  zh: cb8861c15ddd7b7e
+/plugins-installable-plugins/table-of-contents:
+  en: 09848f4d056e4fc1
+  zh: 917f3e1f641b8be5
+/plugins-installable-plugins/packages:
+  en: 8a9e6ccb63742189
+  zh: d53f5a64fe4525b9
+/plugins-installable-plugins/related-documentation:
+  en: 7495517dc20b6c0e
+  zh: e1258a809b1e8ba1
+/plugins-installable-plugins/dev-note:
+  en: b75c8458928b72b9
+  zh: b75c8458928b72b9

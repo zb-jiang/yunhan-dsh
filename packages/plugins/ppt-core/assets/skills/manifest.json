@@ -1,0 +1,12 @@
+{
+  "skills": [
+    {
+      "name": "ppt-master",
+      "repo": "https://github.com/hugohe3/ppt-master",
+      "commit": "4a68cddaf40dc87891e6b64c6a69ef46adc1110c",
+      "path": "skills/ppt-master",
+      "license": "MIT",
+      "excluded": ["templates/sounds"]
+    }
+  ]
+}

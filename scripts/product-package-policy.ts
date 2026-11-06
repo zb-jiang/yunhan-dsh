@@ -16,6 +16,8 @@ export interface ProductPackagePolicy {
  * Optional integrations may be reached by an optional bundle without becoming default capabilities.
  */
 export const PRODUCT_PACKAGE_POLICY: Readonly<Record<string, ProductPackagePolicy>> = {
+  'packages/plugins/ppt-core': { category: 'optional', reason: 'Installable PPT generation plugin delivered as a cordis patch; users opt in via dsh plugin add.' },
+  'packages/plugins/ppt-client': { category: 'optional', reason: 'Client half of the installable PPT plugin, reached only through its patch manifest.' },
   'packages/browser-use/browser-use': { category: 'optional', reason: 'Service definition used by explicitly selected browser providers.' },
   'packages/computer-use/computer-use': { category: 'optional', reason: 'Service definition used by explicitly selected computer providers.' },
   'packages/lsp/lsp': { category: 'optional', reason: 'Service definition for deployment-configured language servers.' },

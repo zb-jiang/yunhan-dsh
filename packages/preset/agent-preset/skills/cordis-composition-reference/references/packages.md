@@ -348,6 +348,13 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-plan-mode` | yes | Logged per-agent plan mode with deployment guidance, a direct slash command, and a user-reviewed exit |
 
+## plugins
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-ppt-client` | no | AI 生成 PPT 插件客户端 UI:模板画廊、模板 chip、预览器、设置卡片与 Python 首用引导,经 ui-slots 挂载到对话界面 |
+| `@deepseek-ai/dsh-ppt-core` | yes | AI 生成 PPT 插件宿主侧:模板库、RPC 端点、ppt-master skill 注册、Python 检测与生图配置;与 dsh-ppt-client 一起经 cordis.patch.yml 作为可安装插件分发 |
+
 ## preset
 
 | Package | Config | Description |

@@ -8,7 +8,7 @@ import { historicalSchemaRegion } from './historical-schema-region.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const blockedTerm = 'prove' + 'nance'
-const excludedPrefixes = ['vendor/', '.agents/notes/archived/'] as const
+const excludedPrefixes = ['vendor/', 'packages/plugins/ppt-core/assets/', '.agents/notes/archived/'] as const
 
 /** One blocked term occurrence in a tracked path or text line. */
 export interface ConcreteTermViolation {
@@ -50,7 +50,9 @@ export function findConcreteTermViolations(file: string, source: string): Concre
 }
 
 function trackedFiles(repoRoot: string): string[] {
-  const files = execFileSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8' })
+  // The enterprise fork's plugin assets push the listing past Node's 1 MiB
+  // default; 64 MiB matches the other scripts' ENOBUFS deviation.
+  const files = execFileSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
     .split('\0')
     .filter(file => file !== '')
   if (!files.includes('AGENTS.md')

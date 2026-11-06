@@ -21,6 +21,7 @@ export const GROUPS_WITHOUT_SUBSYSTEM_PAGE: Readonly<Record<string, string>> = {
   'test-support': 'Repository test harnesses; docs/testing.md owns the testing policy they serve.',
   util: 'Low-level primitives whose business semantics remain with their consuming subsystems.',
   enterprise: 'Enterprise customization seam over existing Harness extension points; the group README and per-package READMEs own the deployment-facing contracts.',
+  plugins: 'Enterprise-only installable plugins delivered as cordis patches; the group README and per-package READMEs own the install and interaction contracts.',
 }
 
 /** Result of auditing package-group subsystem documentation. */

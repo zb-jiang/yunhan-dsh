@@ -10,6 +10,7 @@
     "docs/i18n/style-samples.md",
     "docs/i18n/terminology.md",
     "docs/i18n/translation-prompt.md",
-    "docs/plans/"
+    "docs/plans/",
+    "packages/plugins/ppt-core/assets/"
   ]
 }
