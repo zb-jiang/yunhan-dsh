@@ -38,7 +38,7 @@ export function GuestSidebarCard({ wide }: GuestSidebarCardProps) {
         <span className={css.guestCardGlyph} aria-hidden="true">
           <IconUserOutlineRegular size={14} />
         </span>
-        <span>个人模式</span>
+        <span>个人工作台</span>
       </div>
       <p className={css.guestCardHint}>会话与模型配置保存在本机，登录企业账号可升级到企业工作台。</p>
       <button type="button" className={css.guestCardButton} onClick={() => { exitGuestMode() }}>
