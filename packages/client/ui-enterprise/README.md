@@ -1,5 +1,5 @@
 ---
-description: "Enterprise workbench UI: auth gate + task-queue sidebar + task-archive details over the three-column shell."
+description: "Enterprise workbench UI: auth gate + full-window workflow panel + task-archive details over the three-column shell."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-ui-enterprise` is the browser half of the enterprise workbench: an auth overlay gating the shell on Supabase sign-in and approval status, a todo/completed task-queue sidebar in the nav, and a task-archive tab. Clicking a todo opens a workspace picker, creates a dedicated session, prefills the prompt without overwriting edits, and submits through the mapping dialog with a recorded receipt. Knowledge pickers, chips, '@' triggers, upload actions, service settings, and session deletion round it out. Bound todos expose the instance's cloud workspace: an instance-files tab (preview, download, delete), upload-to-instance on the workspace tree, and an '@' source for instance files.
+`dsh-client-ui-enterprise` is the browser half of the enterprise workbench: an auth overlay gating the shell on Supabase sign-in and approval status, a full-window workflow panel (stats, search, todo/completed lists) opened from the sidebar entry, and a task-archive tab. Clicking a todo opens a workspace picker, creates a session, prefills the prompt without overwriting edits, and submits through the mapping dialog with a receipt. Knowledge pickers, chips, '@' triggers, upload actions, service settings, and session deletion round it out. Bound todos expose the instance workspace: an instance-files tab, upload-to-instance on the workspace tree, and an '@' source for instance files.
 
 ## Table of Contents
 
@@ -33,7 +33,8 @@ This package is the `./client` bundle of the enterprise web client: the host-sid
 |---|---|---|
 | `shell.overlay` | EnterpriseOverlay | auth gate: login page, service-config dialog, blocked states (pending approval, disabled, locked) |
 | `shell.overlay` | PocketPairingExpired | pocket pairing-expiry page: probes the proxy gate once disconnected and covers the frame when the pairing is revoked/expired, LAN access is off, or the proxy stopped responding (master switch off / desktop down); the probe carries a short timeout (a TCP failure against a dead listener can hang tens of seconds in real networks), the stopped-responding page keeps polling and unmounts itself once the proxy is back, while the other conclusions are terminal; reachable only through the proxy, so the PC connects directly and never triggers it |
-| `sidebar.nav` | TaskQueueSidebar | todo + completed queue in the native sidebar's enterprise branch |
+| `main` + `sidebar.panellist` | WorkflowPanel / WorkflowPanelIcon | full-window workflow panel (stat cards, search, grouped todo/completed lists) opened from the sidebar's workflow entry with a pending-count badge |
+| `sidebar.footer.action` | UserFooterCard | signed-in user bar (display name + sign-out) at the sidebar footer |
 | `sidebar.right.pane.tab` | TaskArchivePanel | the archive tab (two-stage: type declaration plus keyed body) |
 | `sidebar.right.pane.tab` | InstanceFilesPanel | the instance-files tab (two-stage; opened programmatically for bound todos): the process instance's shared cloud file tree with preview, download, and delete |
 | `conversation.input.left` / `conversation.input.dock` | KbPickerButton / KbChipsDock | knowledge-document picker entry and selected-doc chips |
@@ -66,7 +67,7 @@ The Supabase session persists in localStorage with auto refresh. On `TOKEN_REFRE
 
 ### Todos never overwrite employee work
 
-Prompt prefill writes through the conversation draft path only when the draft is empty; failures surface as a sidebar notice. The first click on an unbound todo requires an explicit workspace confirmation — cancel produces no session. Bindings persist in localStorage so a refresh returns to the same session, and skill readiness degrades with a notice instead of blocking the session. Clicking a completed task reopens its submitting session first; when that session no longer exists (cleared locally), the main view falls back to a fresh new session and the task archive shows read-only in the right sidebar.
+Prompt prefill writes through the conversation draft path only when the draft is empty; failures surface as a panel notice. The first click on an unbound todo requires an explicit workspace confirmation — cancel produces no session. Bindings persist in localStorage so a refresh returns to the same session, and skill readiness degrades with a notice instead of blocking the session. Clicking a completed task reopens its submitting session first; when that session no longer exists (cleared locally), the main view falls back to a fresh new session and the task archive shows read-only in the right sidebar.
 
 </details>
 
@@ -96,7 +97,7 @@ Everything here reads stores and renders DOM; prompt prefill and kb chips travel
 These limits define what the package does not attempt. They are current constraints, not a task backlog.
 
 - **Web platform only** — the bundle targets the web client platform; there is no desktop variant.
-- **Renders server state** — queues and archive mirror the engine through the local webserver; when the engine is unreachable the sidebar shows the error, nothing more.
+- **Renders server state** — queues and archive mirror the engine through the local webserver; when the engine is unreachable the panel shows the error, nothing more.
 - **Ports asserted, not upstream** — task creation and tab opening go through structured ports asserted inside this package; upstream contracts stay untouched, so an upstream change can silently invalidate an assertion.
 - **localStorage-bound bindings** — task↔session bindings and completed receipts live in the browser; clearing site data forgets them, while engine history remains.
 

@@ -1,7 +1,7 @@
 /**
  * Workspace picker dialog: explicit workspace binding for a task.
  *
- * <p>首次点击未绑定待办时由 TaskQueueSidebar 渲染(workbench.openTask 置
+ * <p>首次点击未绑定待办时由 WorkflowPanel 渲染(workbench.openTask 置
  * pendingTask):员工从工作区列表中单选,或点"浏览本地文件夹"进入目录流程
  * occupant —— `sidebar.nav.directoryFlow` 洞的占用者(browse 档为页面内
  * 目录浏览器,native 档为 OS 原生对话框),本组件只按 owner 契约(open/

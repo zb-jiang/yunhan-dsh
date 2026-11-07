@@ -66,11 +66,17 @@ type SidebarRightTabDomainPort = {
   openTabIn(sessionId: SessionId, kind: string): void
 }
 
-/** 待办队列状态(侧栏与档案栏共享)。 */
+/** 待办队列状态(工作流面板与档案栏共享)。 */
 export type WorkbenchTasksState = {
   items: readonly Task[]
-  /** 已完成历史任务(引擎持久数据,侧栏"已完成"分组)。 */
+  /** 已完成历史任务(引擎持久数据,工作流面板"已完成"分组)。 */
   completed: readonly CompletedTask[]
+  /** 已完成列表当前加载条数上限(「加载更多」按一页递增;refresh 保持已加载量)。 */
+  completedSize: number
+  /** 已完成列表正在加载更多(「加载更多」按钮防连点)。 */
+  completedLoadingMore: boolean
+  /** 最近一次加载更多的失败提示;null = 成功或未触发(面板行内提示)。 */
+  completedMoreError: string | null
   loading: boolean
   error: string | null
   /** 最近一次预填失败的诊断提示;null = 成功或未触发(侧栏细提示)。 */
@@ -203,6 +209,9 @@ export interface WorkbenchDeps {
 /** 任务档案标签页的类型标识(rightbar 标签页系统 openTab 的 kind)。 */
 export const ARCHIVE_TAB_KIND = 'dsh-enterprise-archive'
 
+/** 已完成列表每页条数(引擎端点 size 参数;「加载更多」按此递增)。 */
+const COMPLETED_PAGE_SIZE = 20
+
 /** 任务档案标签页实现的注册 id(stage-two keyed 座位的 key)。 */
 export const ARCHIVE_TAB_ID = '@deepseek-ai/dsh-client-ui-enterprise/archive'
 
@@ -247,6 +256,7 @@ export class EnterpriseWorkbench {
     this.deps = deps
     this.tasks = createSnapshotStore<WorkbenchTasksState>({
       items: [], completed: [], loading: false, error: null,
+      completedSize: COMPLETED_PAGE_SIZE, completedLoadingMore: false, completedMoreError: null,
       prefillNotice: null, selectedCompleted: null, pendingTask: null,
       skillPreparing: false, skillNotice: null,
     })
@@ -264,14 +274,15 @@ export class EnterpriseWorkbench {
     this.completedSessions = loadCompletedSessions()
   }
 
-  /** 拉取当前用户待办与已完成列表(侧栏挂载与手动刷新共用)。 */
+  /** 拉取当前用户待办与已完成列表(工作流面板挂载与手动刷新共用;保持已加载量)。 */
   async refresh(): Promise<void> {
+    const completedSize = this.tasks.getSnapshot().completedSize
     this.tasks.update((draft) => {
       draft.loading = true
       draft.error = null
     })
     try {
-      const [items, completed] = await Promise.all([getMyTasks(), getCompletedTasks()])
+      const [items, completed] = await Promise.all([getMyTasks(), getCompletedTasks(completedSize)])
       this.tasks.update((draft) => {
         draft.items = items
         draft.completed = completed
@@ -290,10 +301,34 @@ export class EnterpriseWorkbench {
     }
   }
 
+  /** 已完成列表加载更多(按当前上限递增一页;失败记 completedMoreError 供面板行内提示)。 */
+  async loadMoreCompleted(): Promise<void> {
+    const current = this.tasks.getSnapshot()
+    if (current.completedLoadingMore || current.completed.length < current.completedSize) return
+    const nextSize = current.completedSize + COMPLETED_PAGE_SIZE
+    this.tasks.update((draft) => {
+      draft.completedLoadingMore = true
+      draft.completedMoreError = null
+    })
+    try {
+      const completed = await getCompletedTasks(nextSize)
+      this.tasks.update((draft) => {
+        draft.completed = completed
+        draft.completedSize = nextSize
+        draft.completedLoadingMore = false
+      })
+    } catch (e) {
+      this.tasks.update((draft) => {
+        draft.completedLoadingMore = false
+        draft.completedMoreError = e instanceof Error ? e.message : String(e)
+      })
+    }
+  }
+
   /**
    * 打开一个待办:先确保 skillRefs 就绪(即时安装,降级不阻断;见
    * ensureSkillsReady),然后回到已绑定会话;未绑定时进入"选择工作空间"
-   * 弹窗(pendingTask 置位,由 TaskQueueSidebar 渲染),员工显式选定并
+   * 弹窗(pendingTask 置位,由 WorkflowPanel 渲染),员工显式选定并
    * 确认后才经 confirmPendingTaskWorkspace 新建专属会话并预填任务指令。
    * 建会话走 createTaskSession(每任务一个干净会话;connectWorkspace
    * 会复用工作区的空白会话,其残留草稿会拦截预填且多任务会错绑到同一会话)。

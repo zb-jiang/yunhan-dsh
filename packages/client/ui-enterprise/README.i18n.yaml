@@ -3,14 +3,14 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-enterprise/README.md
 /:
-  en: 7c2a66a175c0f678
-  zh: 13565d269364251f
+  en: 5acbe376b6a9f78e
+  zh: 66b1603f033587ca
 /deepseek-ai-dsh-client-ui-enterprise:
   en: 288c828613284bbd
   zh: 57cc37ed734c3f74
 /deepseek-ai-dsh-client-ui-enterprise/summary:
-  en: 684b90b7067cb6b4
-  zh: 5fc910b741e0f686
+  en: a073c237570d12ee
+  zh: 2e2e31ca60048763
 /deepseek-ai-dsh-client-ui-enterprise/table-of-contents:
   en: d152484eb41ac6b4
   zh: f14f34fce35a8d90
@@ -18,8 +18,8 @@
   en: 3ad4da11e5ef6c61
   zh: 64a14b3ba86fc33b
 /deepseek-ai-dsh-client-ui-enterprise/use-this-package/where-each-piece-mounts:
-  en: 0bdb1acd4f448138
-  zh: b9ec2d3e431608a7
+  en: d81155186c6364ed
+  zh: a51cc836f481c293
 /deepseek-ai-dsh-client-ui-enterprise/understand-the-implementation:
   en: c75599b18254aa11
   zh: d31fae373d95d6a0
@@ -33,8 +33,8 @@
   en: ddd55e113e7063a7
   zh: c53d802aabc988e7
 /deepseek-ai-dsh-client-ui-enterprise/understand-the-implementation/todos-never-overwrite-employee-work:
-  en: 1c4f2b74bf10e957
-  zh: 39b3c7c5f9e6c0fc
+  en: 17dec6102fe7f5e4
+  zh: e6cff7607cd6b967
 /deepseek-ai-dsh-client-ui-enterprise/further-exploration:
   en: f3af1343e2a8f320
   zh: f235842403232210
@@ -45,8 +45,8 @@
   en: d4af60744dd612fd
   zh: 9115f7943921a47d
 /deepseek-ai-dsh-client-ui-enterprise/known-limitations-and-deferred-work:
-  en: afe0526b3d85d9cb
-  zh: 2b24c509361eead0
+  en: 81af26547298abfc
+  zh: 4f6804c3862b16a7
 /deepseek-ai-dsh-client-ui-enterprise/known-limitations-and-deferred-work/dev-note:
   en: 59ff96469ef4d1a5
   zh: abba2abf85a8b2d5

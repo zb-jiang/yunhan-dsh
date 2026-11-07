@@ -3,7 +3,7 @@
  *
  * <p>个人工作台放行(guest)时在侧栏底部(设置项上方)渲染升级引导——宽态是标题 +
  * 说明 + 通宽「切换到企业工作台」主按钮的紧凑卡,窄轨(56px)收缩为单图标按钮;
- * 点击退出个人模式回模式选择页。登录后(用户栏由 TaskQueueSidebar 的 footer 渲染)
+ * 点击退出个人模式回模式选择页。登录后(用户栏由 UserFooterCard 渲染)
  * 与未开启个人偏好(登录墙盖帧)时返回 null。
  */
 import { IconUserOutlineMedium, IconUserOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'

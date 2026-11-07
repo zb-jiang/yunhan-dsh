@@ -2460,6 +2460,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     occupants: [
       'client-ui-conversation ConversationPanel key \'conversation\'',
       'client-ui-enterprise-skills SkillsPanelPage',
+      'client-ui-enterprise WorkflowPanel',
       'client-ui-plugin-manager PluginManagerPage',
       'client-ui-schedule TaskManagerPage',
     ],
@@ -4102,6 +4103,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'sidebar\' (client-ui-sidebar), so it exists while that entry is mounted',
     occupants: [
       'client-ui-enterprise GuestSidebarCard id \'enterprise-guest\'',
+      'client-ui-enterprise UserFooterCard id \'enterprise-user\'',
       'client-ui-cordis CordisPanel id \'cordis-panel\'',
     ],
     replaceRisk: 'none',
@@ -4135,10 +4137,8 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     hookContext: '',
     slotInject: '',
     declaredBy: 'an entry in \'sidebar\' (client-ui-sidebar), so it exists while that entry is mounted',
-    occupants: [
-      'client-ui-enterprise TaskQueueSidebar',
-    ],
-    replaceRisk: 'shadows-shipped-ui',
+    occupants: [],
+    replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'sidebar.nav\', () => ctx.slots.register(\n      { name: \'sidebar.nav\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
     source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:28',
   },
@@ -4168,7 +4168,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     keyDomain: '',
     hookContext: '',
     slotInject: '',
-    declaredBy: 'an entry in \'sidebar.nav\' (client-ui-enterprise), so it exists while that entry is mounted',
+    declaredBy: 'an entry in \'main\' (client-ui-enterprise), so it exists while that entry is mounted',
     occupants: [
       'client-ui-directory-picker-browse BrowseDirectoryFlow',
       'client-ui-directory-picker-native NativeDirectoryFlow',
@@ -4225,6 +4225,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     declaredBy: 'an entry in \'sidebar\' (client-ui-sidebar), so it exists while that entry is mounted',
     occupants: [
       'client-ui-enterprise-skills SkillsPanelIcon',
+      'client-ui-enterprise WorkflowPanelIcon',
       'client-ui-plugin-manager PluginsPanelIcon',
       'client-ui-schedule TaskManagerIcon',
     ],

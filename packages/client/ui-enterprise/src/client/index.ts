@@ -1,8 +1,10 @@
 /**
  * 企业工作台客户端入口:三栏骨架的装配点。
  *
- * <p>待办队列注册进原生 sidebar 的 `sidebar.nav` 座位(SidebarRoot 的
- * enterpriseLayout 分支渲染),原生 workspaces 会话浏览/New Session/Settings
+ * <p>工作流面板(全窗口待办管理,替代原 sidebar.nav 上的紧凑待办队列)注册
+ * 进 ui-layout 的 `main` keyed 座位,入口图标登记 `sidebar.panellist`(顶部
+ * 功能入口区,带待办数徽标);登录用户栏占据 `sidebar.footer.action` 座位。
+ * 原生 workspaces 会话浏览/New Session/Settings
  * 全部保留(企业 profile 与上游 DSH 的合并面最大化保留原生能力);任务档案
  * 注册为 rightbar 标签页系统的 extension 类型(两阶段:类型入
  * ctx.sidebarRightTabs,主体入 `sidebar.right.pane.tab` keyed 座位),
@@ -28,7 +30,8 @@ import type { HostObservable } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: 拉入 ui-workspace 的 SlotMap 合并(sidebar.nav.directoryFlow 洞类型)。
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+// Type-only: 拉入 ui-layout 的 SlotMap 合并(main 面板 id 品牌类型)。
+import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { InputTriggerServiceContract } from '@deepseek-ai/dsh-client-ui-input-trigger/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
@@ -63,7 +66,9 @@ import { kbDocRule, KbDocNode } from './kb-doc-decorator.tsx'
 import { TaskArchivePanel } from './TaskArchivePanel.tsx'
 import { INSTANCE_FILES_TAB_ID, INSTANCE_FILES_TAB_KIND } from './instance-files-tab.ts'
 import { InstanceFilesPanel } from './InstanceFilesPanel.tsx'
-import { TaskQueueSidebar } from './TaskQueueSidebar.tsx'
+import { WorkflowPanel } from './WorkflowPanel.tsx'
+import { WorkflowPanelIcon } from './WorkflowPanelIcon.tsx'
+import { UserFooterCard } from './UserFooterCard.tsx'
 import { GuestSidebarCard } from './GuestSidebarCard.tsx'
 import { KbChipsDock } from './KbChipsDock.tsx'
 import { KbPickerButton } from './KbPickerButton.tsx'
@@ -87,6 +92,9 @@ export const inject = [
   'slots', 'sessions', 'workspaces', 'uiWorkspace', 'layout', 'conversation', 'uiConversation', 'inputTriggers', 'sidebarRight',
   'sidebarRightTabs', 'documentPreviews', 'remote', 'remote.workspaceFiles', 'remote.settings', 'connection',
 ]
+
+/** 工作流面板 id:侧栏入口与 main 面板共享(同 ui-enterprise-skills 的 PANEL_ID)。 */
+export const WORKFLOW_PANEL_ID = 'enterprise-workflow' as MainPanelId
 
 /**
  * 两阶段挂载企业文件写通道(voice-input `mountVoiceInput` 同款结构):先挂
@@ -207,18 +215,29 @@ export function apply(ctx: ClientContext): void {
     PocketPairingExpired,
   )
 
-  // 待办队列:原生 sidebar 的 enterprise nav 座位。children 声明本 entry
-  // 的目录流程洞(目录 surface 包经 slots.inject 按此延迟注册),占用源经
-  // hooks 下发——弹窗据此在洞空闲时隐藏"浏览本地文件夹"入口。
+  // 工作流面板:main keyed 座位(ui-enterprise-skills 同款 slots.inject 延迟
+  // 注册)。children 声明本 entry 承接的目录流程洞(目录 surface 包经
+  // slots.inject 按此延迟注册,洞名保持 sidebar.nav 时代的跨包契约不变),
+  // 占用源经 hooks 下发——选择弹窗据此在洞空闲时隐藏"浏览本地文件夹"入口。
   const directoryFlowSource: HostObservable<boolean> = {
     getSnapshot: () => ctx.slots.entries('sidebar.nav.directoryFlow').length > 0,
     subscribe: listener => ctx.slots.subscribe('sidebar.nav.directoryFlow', listener),
   }
-  ctx.slots.register({
-    name: 'sidebar.nav',
+  ctx.slots.inject('main', () => ctx.slots.register({
+    name: 'main',
+    key: WORKFLOW_PANEL_ID,
     children: { 'sidebar.nav.directoryFlow': { kind: 'single', scope: 'root' } },
     inject: () => ({ workbench, hooks: { directoryFlow: directoryFlowSource } }),
-  }, TaskQueueSidebar)
+  }, WorkflowPanel))
+  // 工作流侧栏入口:顶部功能入口区(插件 0/技能库 5/计划任务 10 之后),
+  // 图标自带待办数徽标(计数经 inject 的 workbench 读取)。
+  ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+    name: 'sidebar.panellist',
+    id: WORKFLOW_PANEL_ID,
+    order: 6,
+    label: () => '工作流',
+    inject: () => ({ workbench }),
+  }, WorkflowPanelIcon))
 
   // 匿名使用引导卡:侧栏底部(设置项上方)的登录入口——匿名放行态认证遮罩
   // 不盖帧,登录引导收进侧栏 footer(右上角悬浮条会挡顶栏控件,已废弃);
@@ -228,6 +247,14 @@ export function apply(ctx: ClientContext): void {
     id: 'enterprise-guest',
     order: 40,
   }, GuestSidebarCard)
+
+  // 登录用户栏:同一座位的登录态占据者(order 50 晚于引导卡),账户名 +
+  // 退出按钮(自原 TaskQueueSidebar 的 footer 迁移,匿名态由引导卡占据)。
+  ctx.slots.register({
+    name: 'sidebar.footer.action',
+    id: 'enterprise-user',
+    order: 50,
+  }, UserFooterCard)
 
   // 任务档案标签页,stage one:类型声明(extension 带,企业外部实现)。
   ctx.effect(() => ctx.sidebarRightTabs.register({

@@ -2,16 +2,20 @@
  * 任务档案标签页:rightbar 标签页系统 `sidebar.right.pane.tab` 座位的企业占据者。
  *
  * <p>当前会话绑定待办时展示任务档案四件套 —— 任务信息 / 任务指令(重新填入) /
- * 流程进度(部署版 BPMN 迷你图 + 执行记录,支持分支与并行)/ 上下文变量带值,
- * 并自动提取最近一个 AI 输出 JSON(整段会话向前扫描,不随后续纯文本回复
+ * 流程进度(部署版 BPMN 迷你图,支持分支与并行;下方"流程节点"执行记录为
+ * 折叠区块)/ 上下文变量带值(折叠区块)——流程节点与上下文变量两区块默认
+ * 折叠手动展开,并自动提取最近一个 AI 输出 JSON(整段会话向前扫描,不随后续纯文本回复
  * 丢失);需要更早的历史块时,在 AI 输出区的下拉中选回,选中值经映射确认
  * 对话框提交待办。提交后:会话回执能在"已完成"列表定位引擎历史任务时
  * 渲染完整完成档案(进度/变量/执行记录),否则退化为最小回执;选中已完成
  * 任务(无本地会话)渲染只读档案;未绑定会话渲染空态。会话区(中间栏)
  * 保持原生 ConversationRoot,员工零复制粘贴。
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, JsonTree } from '@deepseek-ai/dsh-client-ui-primitives'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import clsx from 'clsx'
+import {
+  Button, IconTriangleRightFillRegular, JsonTree,
+} from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
@@ -74,6 +78,54 @@ function activityTypeLabel(type: string): string {
 function formatValue(value: unknown): string {
   const text = value === undefined ? 'null' : JSON.stringify(value)
   return text.length > 160 ? `${text.slice(0, 159)}…` : text
+}
+
+/** 档案折叠区块头:chevron(展开右转 90°)+ 标题 + 计数;点击切换展开。
+ *  流程节点执行记录与上下文变量用(两区块默认折叠手动展开)。
+ */
+function ArchiveDisclosure(props: {
+  label: string
+  count: number
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  const { label, count, open, onToggle, children } = props
+  return (
+    <>
+      <button type="button" className={css.disclosure} aria-expanded={open} onClick={onToggle}>
+        <IconTriangleRightFillRegular
+          className={clsx(css.disclosureChevron, open && css.disclosureChevronOpen)}
+        />
+        <span className={css.disclosureLabel}>{label}</span>
+        <span className={css.disclosureCount}>{count}</span>
+      </button>
+      {open && children}
+    </>
+  )
+}
+
+/** 流程节点执行记录列表(流程进度迷你图下方的折叠区块内容)。 */
+function NodeRecords(props: { records: readonly HistoricActivity[] }) {
+  const { records } = props
+  if (records.length === 0) return <div className={css.hint}>暂无节点记录</div>
+  return (
+    <div className={css.records}>
+      {records.map(record => (
+        <div key={record.id} className={css.recordRow}>
+          <span className={`${css.recordDot} ${record.endTime === null ? css.recordDotActive : ''}`} />
+          <span className={css.recordName}>
+            {record.activityName ?? record.activityId}
+            <span className={css.recordType}>{activityTypeLabel(record.activityType)}</span>
+          </span>
+          <span className={css.recordTime}>
+            {record.startTime !== null ? formatShortTime(record.startTime) : ''}
+            {record.endTime === null ? ' …' : ''}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 /** 档案数据的实例定位面(待办与已完成历史任务共有的定位字段)。 */
@@ -189,6 +241,9 @@ export function TaskArchivePanel({ sessionId, useSession, useChat, useTabInfo, w
     () => new Map(archive.variables.map(v => [v.variableName, v])),
     [archive.variables],
   )
+  // 流程节点与上下文变量默认折叠手动展开;跨任务切换保持展开状态。
+  const [nodesOpen, setNodesOpen] = useState(false)
+  const [varsOpen, setVarsOpen] = useState(false)
 
   const handleSubmit = (variables: Record<string, unknown>): void => {
     if (task === undefined) return
@@ -250,7 +305,7 @@ export function TaskArchivePanel({ sessionId, useSession, useChat, useTabInfo, w
                     <span className={css.infoLabel}>到达时间</span>
                     <span className={css.infoValue}>{formatShortTime(task.createTime)}</span>
                     <span className={css.infoLabel}>流程实例</span>
-                    <span className={css.infoValue} title={task.processInstanceId}>
+                    <span className={clsx(css.infoValue, css.infoValueMono)} title={task.processInstanceId}>
                       {task.processInstanceId.slice(0, 13)}…
                     </span>
                   </div>
@@ -287,34 +342,30 @@ export function TaskArchivePanel({ sessionId, useSession, useChat, useTabInfo, w
                           currentActivityId={task.nodeId ?? task.taskDefinitionKey}
                         />
                       )}
-                      <div className={css.records}>
-                        {records.length === 0 && <div className={css.hint}>暂无执行记录</div>}
-                        {records.map(record => (
-                          <div key={record.id} className={css.recordRow}>
-                            <span
-                              className={`${css.recordDot} ${record.endTime === null ? css.recordDotActive : ''}`}
-                            />
-                            <span className={css.recordName}>
-                              {record.activityName ?? record.activityId}
-                              <span className={css.recordType}>{activityTypeLabel(record.activityType)}</span>
-                            </span>
-                            <span className={css.recordTime}>
-                              {record.startTime !== null ? formatShortTime(record.startTime) : ''}
-                              {record.endTime === null ? ' …' : ''}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
+                      <ArchiveDisclosure
+                        label="流程节点"
+                        count={records.length}
+                        open={nodesOpen}
+                        onToggle={() => { setNodesOpen(v => !v) }}
+                      >
+                        <NodeRecords records={records} />
+                      </ArchiveDisclosure>
                     </>
                   )}
                 </section>
 
                 <section className={css.section}>
-                  <div className={css.sectionTitle}>上下文变量</div>
-                  <ContextVariables
-                    declarations={task.dshMeta?.contextVariables ?? []}
-                    valuesByName={valuesByName}
-                  />
+                  <ArchiveDisclosure
+                    label="上下文变量"
+                    count={(task.dshMeta?.contextVariables ?? []).length}
+                    open={varsOpen}
+                    onToggle={() => { setVarsOpen(v => !v) }}
+                  >
+                    <ContextVariables
+                      declarations={task.dshMeta?.contextVariables ?? []}
+                      valuesByName={valuesByName}
+                    />
+                  </ArchiveDisclosure>
                 </section>
 
                 <section className={css.section}>
@@ -397,6 +448,9 @@ function CompletedArchive(props: {
     () => new Map(archive.variables.map(v => [v.variableName, v])),
     [archive.variables],
   )
+  // 与待办档案一致:流程节点与上下文变量默认折叠手动展开。
+  const [nodesOpen, setNodesOpen] = useState(false)
+  const [varsOpen, setVarsOpen] = useState(false)
 
   return (
     <>
@@ -423,7 +477,7 @@ function CompletedArchive(props: {
             <span className={css.infoLabel}>处理耗时</span>
             <span className={css.infoValue}>{formatDuration(task.durationInMillis) || '—'}</span>
             <span className={css.infoLabel}>流程实例</span>
-            <span className={css.infoValue} title={task.processInstanceId}>
+            <span className={clsx(css.infoValue, css.infoValueMono)} title={task.processInstanceId}>
               {task.processInstanceId.slice(0, 13)}…
             </span>
           </div>
@@ -438,32 +492,30 @@ function CompletedArchive(props: {
               {archive.diagram !== null && (
                 <ProcessDiagram diagram={archive.diagram} statuses={statuses} currentActivityId={null} />
               )}
-              <div className={css.records}>
-                {records.length === 0 && <div className={css.hint}>暂无执行记录</div>}
-                {records.map(record => (
-                  <div key={record.id} className={css.recordRow}>
-                    <span className={`${css.recordDot} ${record.endTime === null ? css.recordDotActive : ''}`} />
-                    <span className={css.recordName}>
-                      {record.activityName ?? record.activityId}
-                      <span className={css.recordType}>{activityTypeLabel(record.activityType)}</span>
-                    </span>
-                    <span className={css.recordTime}>
-                      {record.startTime !== null ? formatShortTime(record.startTime) : ''}
-                      {record.endTime === null ? ' …' : ''}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <ArchiveDisclosure
+                label="流程节点"
+                count={records.length}
+                open={nodesOpen}
+                onToggle={() => { setNodesOpen(v => !v) }}
+              >
+                <NodeRecords records={records} />
+              </ArchiveDisclosure>
             </>
           )}
         </section>
 
         <section className={css.section}>
-          <div className={css.sectionTitle}>上下文变量</div>
-          <ContextVariables
-            declarations={task.dshMeta?.contextVariables ?? []}
-            valuesByName={valuesByName}
-          />
+          <ArchiveDisclosure
+            label="上下文变量"
+            count={(task.dshMeta?.contextVariables ?? []).length}
+            open={varsOpen}
+            onToggle={() => { setVarsOpen(v => !v) }}
+          >
+            <ContextVariables
+              declarations={task.dshMeta?.contextVariables ?? []}
+              valuesByName={valuesByName}
+            />
+          </ArchiveDisclosure>
         </section>
       </div>
     </>

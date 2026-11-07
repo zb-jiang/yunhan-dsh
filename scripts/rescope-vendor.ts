@@ -733,6 +733,8 @@ function main(): void {
 
   for (const file of files) {
     const path = resolve(root, file)
+    // 工作树已删除而删除尚未暂存的文件(git ls-files 仍列出)无 residue 可言,跳过。
+    if (!existsSync(path)) continue
     const before = readFileSync(path, 'utf8')
     const { text: after, lines } = rewrite(before, file, all)
     if (after === before) continue

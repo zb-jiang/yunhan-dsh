@@ -62,15 +62,16 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 0 16px;
+  padding: 0 0 16px;
 }
 
+/* 区块:顶部内距 + 区块间细分隔线,替代松散的 margin 堆叠。 */
 .section {
-  padding: 12px 14px 0;
+  padding: 12px 14px;
 }
 
 .section + .section {
-  margin-top: 6px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
 }
 
 .sectionTitle {
@@ -81,8 +82,58 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--dsw-alias-label-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+}
+
+/* 折叠区块头(流程节点/上下文变量):整行可点,chevron 展开右转 90°,计数徽标。 */
+.disclosure {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.disclosure:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.disclosure:focus-visible {
+  outline: 1px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -1px;
+}
+
+.disclosureChevron {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  transition: transform 0.15s ease;
+}
+
+.disclosureChevronOpen {
+  transform: rotate(90deg);
+}
+
+.disclosureLabel {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.disclosureCount {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .linkButton {
@@ -131,6 +182,12 @@
   white-space: nowrap;
 }
 
+/* 机器标识(流程实例 id):等宽字体,与人工字段拉开质感。 */
+.infoValueMono {
+  font-family: var(--dsw-alias-font-mono, ui-monospace, 'Cascadia Mono', Consolas, monospace);
+  font-size: 11px;
+}
+
 /* ── 任务指令 ── */
 
 .prompt {
@@ -148,13 +205,12 @@
   overflow-y: auto;
 }
 
-/* ── 执行记录 ── */
+/* ── 流程节点(折叠区块内容) ── */
 
 .records {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-top: 8px;
 }
 
 .recordRow {
@@ -265,8 +321,6 @@
   background: var(--dsw-alias-state-business-tertiary);
   color: var(--dsw-alias-state-business-primary);
   font-size: 11px;
-  text-transform: none;
-  letter-spacing: normal;
 }
 
 .select {
@@ -278,8 +332,6 @@
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-primary);
   font-size: 11px;
-  text-transform: none;
-  letter-spacing: normal;
   cursor: pointer;
 }
 

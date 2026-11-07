@@ -1,0 +1,71 @@
+/* 登录用户栏:侧栏底部内嵌账户卡(首字头像 + 姓名一行 + 退出按钮)。 */
+
+.footer {
+  padding: 8px 10px;
+}
+
+/* 账户卡:圆角浅底容器,自带边界不依赖分隔线;鼠标经过仅退出按钮响应。 */
+.card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+/* 首字头像:30px 圆片,品牌主色底 + 反底文字(亮色白字/暗色深字)。 */
+.avatar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dsw-alias-state-business-primary);
+  color: var(--dsw-alias-bg-base);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+/* 姓名:单行,超长省略(title 提示全文)。 */
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+/* 退出:静态即有完整按钮形(描边),hover 才转错误色调。 */
+.logout {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-md, 8px);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.logout:hover {
+  border-color: transparent;
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.logout:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: -2px;
+}
