@@ -8,6 +8,8 @@
  *
  * launch token 每次进程重启重新生成，每次握手即时取用，不缓存跨重启。
  */
+import { createHash } from 'node:crypto'
+
 /** 注入时补 token 的 query 参数名。 */
 export const LAUNCH_TOKEN_QUERY_KEY = 'token'
 
@@ -62,6 +64,46 @@ export function hasAuthCookie(cookieHeader: string | undefined): boolean {
 }
 
 /**
+ * 当前上游端口对应的宿主认证 cookie 名（与 webserver 侧同算法：`dsh-auth-` +
+ * base64url(sha256(authority))；authority 为代理改写后的上游 Host `127.0.0.1:<port>`）。
+ * @param upstreamPort 上游 webserver 端口
+ * @returns 期望的宿主认证 cookie 名
+ */
+export function authCookieNameFor(upstreamPort: number): string {
+  const digest = createHash('sha256').update(`127.0.0.1:${String(upstreamPort)}`).digest()
+  return DSH_AUTH_COOKIE_PREFIX + digest.toString('base64url')
+}
+
+/**
+ * 请求是否携带名字与当前上游端口期望名一致的宿主认证 cookie。历史端口/宿主
+ * 遗留的同前缀 cookie（上游按名查找必然落空）不算有效会话，否则上游 401 而
+ * 代理因「已有认证 cookie」拒绝注入新 token，手机端陷入永久 401 死循环。
+ * @param cookieHeader 请求的 Cookie 头原文
+ * @param expectedName {@link authCookieNameFor} 计算的当前期望 cookie 名
+ * @returns 存在名字精确等于 expectedName 的 cookie 时为 true
+ */
+export function hasMatchingAuthCookie(cookieHeader: string | undefined, expectedName: string): boolean {
+  return parseCookieNames(cookieHeader).includes(expectedName)
+}
+
+/**
+ * 从 Cookie 头剥除全部 `dsh-auth-` 前缀项（上游 401 兜底重试前清掉失效会话），
+ * 其余 cookie 原样保留。
+ * @param cookieHeader 请求的 Cookie 头原文；undefined（头缺失）直接返回 undefined
+ * @returns 剥除后的 Cookie 头；全部为认证 cookie 或头缺失时 undefined
+ */
+export function stripAuthCookies(cookieHeader: string | undefined): string | undefined {
+  if (cookieHeader === undefined) return undefined
+  const kept = cookieHeader.split(';').map(part => part.trim()).filter((part) => {
+    if (part === '') return false
+    const eq = part.indexOf('=')
+    return !(eq === -1 ? part : part.slice(0, eq)).startsWith(DSH_AUTH_COOKIE_PREFIX)
+  })
+  const joined = kept.join('; ')
+  return joined === '' ? undefined : joined
+}
+
+/**
  * 请求 Accept 头是否表明 HTML 导航。
  * @param acceptHeader 请求的 Accept 头原文
  * @returns 头存在且含 `text/html` 时为 true
@@ -113,9 +155,10 @@ export class HandshakeManager {
   }
 
   /**
-   * 是否为注入候选：仅 `GET /`，且（无 `dsh-auth-` cookie 或带 `__pocket_reauth=1`）。
-   * token 是否非空由调用方取得 token 后再判。
-   * @param input 请求方法、路径、Cookie 头与 reauth 标记
+   * 是否为注入候选：仅 `GET /`，且（无当前上游端口期望名的认证 cookie 或带
+   * `__pocket_reauth=1`）。历史端口遗留的同前缀 cookie 不算有效会话（见
+   * {@link hasMatchingAuthCookie}）；token 是否非空由调用方取得 token 后再判。
+   * @param input 请求方法、路径、Cookie 头、reauth 标记与期望 cookie 名
    * @returns 该请求需要注入 launch token 时为 true
    */
   isInjectCandidate(input: {
@@ -123,10 +166,11 @@ export class HandshakeManager {
     path: string
     cookieHeader: string | undefined
     reauth: boolean
+    expectedCookieName: string
   }): boolean {
     if (input.method !== 'GET') return false
     if (input.path !== '/') return false
-    if (hasAuthCookie(input.cookieHeader)) return input.reauth
+    if (hasMatchingAuthCookie(input.cookieHeader, input.expectedCookieName)) return input.reauth
     return true
   }
 

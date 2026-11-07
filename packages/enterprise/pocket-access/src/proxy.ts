@@ -18,7 +18,7 @@ import { classifySource, policyHost, resolveClientIp } from './classify.ts'
 import type { HostClass } from './classify.ts'
 import { DEVICE_COOKIE_NAME, deviceCookieSetCookie } from './pairing.ts'
 import type { PairingManager } from './pairing.ts'
-import { hasReauthFlag, isHtmlNavigation } from './handshake.ts'
+import { authCookieNameFor, hasReauthFlag, isHtmlNavigation, stripAuthCookies } from './handshake.ts'
 import type { HandshakeManager } from './handshake.ts'
 import type { IdentityChecker } from './identity.ts'
 import { IDENTITY_REJECTION_MESSAGES } from './identity.ts'
@@ -618,14 +618,22 @@ export class PocketProxyServer {
     }
 
     // 6+7. 头改写与 query 清洗；握手注入。
-    const handshakeOutcome = await this.applyHandshake(req, ctx, true)
+    const handshakeOutcome = await this.applyHandshake(
+      {
+        method: req.method ?? 'GET',
+        cookieHeader: headerString(req.headers, 'cookie'),
+        acceptHeader: headerString(req.headers, 'accept'),
+      },
+      ctx,
+      true,
+    )
     if (handshakeOutcome.kind === 'rejected') {
       res.writeHead(503, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
       res.end(renderHandshakeLimitedPage())
       return
     }
 
-    this.forwardHttp(req, res, handshakeOutcome.forwardedPath, handshakeOutcome.injectedToken)
+    this.forwardHttp(req, res, handshakeOutcome.forwardedPath, handshakeOutcome.injectedToken, true, ctx)
   }
 
   /**
@@ -633,24 +641,29 @@ export class PocketProxyServer {
    * HTML 导航 503；token 取用失败（connection 未就绪）不注入直接转发。
    */
   private async applyHandshake(
-    req: IncomingMessage,
+    handshakeInput: {
+      method: string
+      cookieHeader: string | undefined
+      acceptHeader: string | undefined
+    },
     ctx: { clientIp: string; pathWithQuery: string; pathname: string },
     hasDevice: boolean,
   ): Promise<{ kind: 'forward'; forwardedPath: string; injectedToken: boolean } | { kind: 'rejected' }> {
-    const cookieHeader = headerString(req.headers, 'cookie')
+    const cookieHeader = handshakeInput.cookieHeader
     this.deps.handshake.clearIfAuthenticated(cookieHeader, ctx.clientIp)
     const forwardedPath = stripDesktopQueryParams(ctx.pathWithQuery)
     if (!hasDevice) return { kind: 'forward', forwardedPath, injectedToken: false }
     const reauth = hasReauthFlag(ctx.pathWithQuery)
     const candidate = this.deps.handshake.isInjectCandidate({
-      method: req.method ?? 'GET',
+      method: handshakeInput.method,
       path: ctx.pathname,
       cookieHeader,
       reauth,
+      expectedCookieName: authCookieNameFor(this.upstreamPort),
     })
     if (!candidate) return { kind: 'forward', forwardedPath, injectedToken: false }
     if (this.deps.handshake.isLimited(ctx.clientIp)) {
-      if (isNavigationRequest(ctx.pathWithQuery, headerString(req.headers, 'accept'))) {
+      if (isNavigationRequest(ctx.pathWithQuery, handshakeInput.acceptHeader)) {
         return { kind: 'rejected' }
       }
       return { kind: 'forward', forwardedPath, injectedToken: false }
@@ -731,12 +744,43 @@ export class PocketProxyServer {
     res.end(renderPairingPage(PAIRING_ERROR_TEXT[result.reason]))
   }
 
+  /**
+   * 401 兜底重试：剥掉全部 `dsh-auth-` 认证 cookie 后重新握手注入（限速与
+   * token 取用失败时维持上游 401 文案），注入成功则重发导航请求；响应透传，
+   * 不再二次重试。
+   */
+  private retryWithFreshCookie(
+    req: IncomingMessage,
+    res: ServerResponse,
+    ctx: { clientIp: string; pathWithQuery: string; pathname: string },
+  ): void {
+    const strippedCookie = stripAuthCookies(headerString(req.headers, 'cookie'))
+    void this.applyHandshake(
+      { method: 'GET', cookieHeader: strippedCookie, acceptHeader: headerString(req.headers, 'accept') },
+      ctx,
+      true,
+    ).then((outcome) => {
+      if (outcome.kind === 'rejected' || !outcome.injectedToken) {
+        res.writeHead(401, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' })
+        res.end('dsh web authentication required; reopen the URL printed by dsh web.\n')
+        return
+      }
+      this.forwardHttp(req, res, outcome.forwardedPath, outcome.injectedToken, false, ctx)
+    }, (error: unknown) => {
+      this.deps.logger.warn('pocket-access: 401 兜底重试失败', error)
+      res.writeHead(401, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' })
+      res.end('dsh web authentication required; reopen the URL printed by dsh web.\n')
+    })
+  }
+
   /** 上游转发：agent:false 流式，双向断连清理，上游不可达 502。 */
   private forwardHttp(
     req: IncomingMessage,
     res: ServerResponse,
     forwardedPath: string,
     injectedToken: boolean,
+    allow401Retry: boolean,
+    ctx: { clientIp: string; pathWithQuery: string; pathname: string },
   ): void {
     const headers = rewriteRequestHeaders(req, this.upstreamPort, false)
     const upstreamReq = httpRequest(
@@ -749,7 +793,7 @@ export class PocketProxyServer {
         agent: false,
       },
       (upstreamRes) => {
-        this.handleUpstreamResponse(req, res, upstreamRes, injectedToken)
+        this.handleUpstreamResponse(req, res, upstreamRes, injectedToken, allow401Retry, ctx)
       },
     )
     upstreamReq.on('error', (error) => {
@@ -772,8 +816,27 @@ export class PocketProxyServer {
     res: ServerResponse,
     upstreamRes: IncomingMessage,
     injectedToken: boolean,
+    allow401Retry: boolean,
+    ctx: { clientIp: string; pathWithQuery: string; pathname: string },
   ): void {
     const status = upstreamRes.statusCode ?? 502
+
+    // 401 兜底自愈：上游按当前 Host 查宿主认证 cookie，失效 cookie（历史端口
+    // 遗留/secret 重建/过期）会落在「代理以为已认证不注入、上游查无此 cookie」
+    // 的死循环。此处剥掉全部认证 cookie 重新握手注入一次，让上游重种有效
+    // cookie；仅对未注入过的 GET / 导航生效，重试响应不再二次重试。
+    if (
+      status === 401
+      && allow401Retry
+      && !injectedToken
+      && (req.method ?? 'GET') === 'GET'
+      && ctx.pathname === '/'
+      && isNavigationRequest(ctx.pathWithQuery, headerString(req.headers, 'accept'))
+    ) {
+      upstreamRes.resume()
+      this.retryWithFreshCookie(req, res, ctx)
+      return
+    }
 
     // Safari 过渡页：本轮已注入 token 的上游 303 改写为 200（保留 Set-Cookie）。
     if (this.deps.handshake.shouldRewriteRedirect({ upstreamStatusCode: status, injectedToken })) {

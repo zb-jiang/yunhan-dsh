@@ -184,12 +184,17 @@ async function sha256Bytes(data: Uint8Array<ArrayBuffer>): Promise<Uint8Array> {
 }
 
 /**
- * 当前访问是否为 loopback(本机 Electron 窗口/浏览器)入口。员工本机访问恒为
- * 127.0.0.1:3080(webserver 只绑 loopback),非 loopback 即 Pocket Access 手机端
- * (LAN IP 或隧道域名)。
+ * 当前访问是否为本机入口。员工本机访问两种形态:浏览器直连 127.0.0.1:3080
+ * (webserver 只绑 loopback),或 Electron 桌面壳的自定义协议 dsh-app://app/
+ * (protocol.handle 代理到同一 webserver,hostname='app' 非 loopback 但同属
+ * 本机)。非本机入口即 Pocket Access 手机端(LAN IP 或隧道域名,http(s))。
+ * 供 OIDC redirect_uri 分流与手机端 UI 分流共用。
+ * @returns 本机入口(浏览器 loopback 直连或 Electron 壳内页面)为 true
  */
-function isLoopbackAccess(): boolean {
-  const hostname = window.location.hostname
+export function isLoopbackAccess(): boolean {
+  const { protocol, hostname } = window.location
+  // 非 http(s) origin 只能是 Electron 壳内页面(dsh-app:)或 welcome(file:)——本机入口
+  if (protocol !== 'http:' && protocol !== 'https:') return true
   return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '[::1]'
 }
 

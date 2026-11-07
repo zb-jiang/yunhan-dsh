@@ -52,7 +52,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // 生成态 remote contribution:客户端 bundle 内联(typert remote-client 产物),
 // 挂载后在 ctx.remote.enterpriseFiles 暴露文件写端点。
 import enterpriseFilesRemote from '@deepseek-ai/dsh-enterprise-file-write/remote'
-import { EnterpriseOverlay } from './EnterpriseUi.tsx'
+import { EnterpriseOverlay, getAuthSnapshot, subscribeAuth } from './EnterpriseUi.tsx'
 import { ARCHIVE_TAB_ID, ARCHIVE_TAB_KIND, EnterpriseWorkbench } from './enterprise-workbench.ts'
 import { EnterpriseServicesSection } from './EnterpriseServicesSection.tsx'
 import { PocketAccessSection } from './pocket/PocketAccessSection.tsx'
@@ -345,14 +345,38 @@ export function apply(ctx: ClientContext): void {
     inject: () => ({ load: servicesAccess.load, save: servicesAccess.save, saveSso: servicesAccess.saveSso }),
   }, EnterpriseServicesSection))
 
-  // 手机访问:settings.section 座位(M1:状态轮询+总开关+局域网卡)。
-  ctx.slots.inject('settings.section', () => ctx.slots.register({
-    name: 'settings.section',
-    id: 'pocket-access',
-    order: 31,
-    label: () => '手机访问',
-    icon: () => createElement(IconPhoneOutlineMedium, { size: 16 }),
-  }, PocketAccessSection))
+  // 手机访问:settings.section 座位(M1:状态轮询+总开关+局域网卡)。仅登录态
+  // 注册——个人工作台(匿名放行)没有企业身份,远程访问在身份闸门即被拒绝,
+  // 菜单项一并摘除;登出即时卸载,登录后重新挂回。loading 期间保持注册,
+  // 避免桌面登录用户每次启动时菜单闪烁。
+  let pocketAccessRegistration: (() => void) | null = null
+  const reconcilePocketAccess = (): void => {
+    const snapshot = getAuthSnapshot()
+    const allowed = snapshot.loading || snapshot.currentUser !== null
+    const current = pocketAccessRegistration
+    if (allowed) {
+      if (current !== null) return
+      pocketAccessRegistration = ctx.slots.register({
+        name: 'settings.section',
+        id: 'pocket-access',
+        order: 31,
+        label: () => '手机访问',
+        icon: () => createElement(IconPhoneOutlineMedium, { size: 16 }),
+      }, PocketAccessSection)
+      return
+    }
+    current?.()
+    pocketAccessRegistration = null
+  }
+  reconcilePocketAccess()
+  ctx.effect(() => {
+    const unsubscribe = subscribeAuth(reconcilePocketAccess)
+    return () => {
+      unsubscribe()
+      pocketAccessRegistration?.()
+      pocketAccessRegistration = null
+    }
+  }, 'ui-enterprise: pocket-access section follows auth state')
 
   // 已归档会话的「删除会话」三件套:菜单第一项(order 50,官方条目 100-400)
   // + 行悬停按钮 + shell.overlay 确认对话框;发起与确认经共享的 deleteRequest

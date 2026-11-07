@@ -40,6 +40,7 @@ function makeBrowser() {
   const historyUrls: string[] = []
   const location = {
     origin: 'http://localhost:3080',
+    protocol: 'http:',
     hostname: 'localhost',
     pathname: '/',
     search: '',

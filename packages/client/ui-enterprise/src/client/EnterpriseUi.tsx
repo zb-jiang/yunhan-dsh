@@ -21,6 +21,7 @@ import {
   tryOidcRefresh,
   writeAnonymousPreference,
   writeToken,
+  isLoopbackAccess,
   type AuthMode,
   type AuthWebConfig,
 } from './auth-session.ts'
@@ -147,12 +148,14 @@ export function useGuest(): boolean {
   return useSyncExternalStore(subscribeGuest, getGuestSnapshot, getGuestSnapshot)
 }
 
-function subscribeAuth(fn: () => void): () => void {
+/** 订阅登录快照变化(组件外的动态注册按登录态挂/摘条目用)。 */
+export function subscribeAuth(fn: () => void): () => void {
   authListeners.add(fn)
   return () => { authListeners.delete(fn) }
 }
 
-function getAuthSnapshot(): AuthSnapshot {
+/** 当前登录快照(不订阅;配合 {@link subscribeAuth} 做外部 reconcile)。 */
+export function getAuthSnapshot(): AuthSnapshot {
   return authSnapshot
 }
 
@@ -614,7 +617,6 @@ function ModeSelectScreen({
     <div className={css.modeSelect}>
       <div className={css.modeBrand}><BrandWordmark /></div>
       <div className={css.modeTitle}>选择你的工作台</div>
-      <div className={css.modeSubtitle}>两种模式的数据与会话随时可以互相迁移</div>
       <div className={css.modeCards}>
         <section className={clsx(css.modeCard, css.modeCardEnterprise)}>
           <div className={css.modeCardIcon}><BuildingIcon /></div>
@@ -718,8 +720,12 @@ function ServiceConfigSheet({
 export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesInjected }) {
   const { currentUser, loading, mode, loginError, login, register, logout } = useAuth()
   const [configOpen, setConfigOpen] = useState(false)
-  /** 未登录视图:mode-select=双工作台模式选择首屏,enterprise-login=企业登录表单。 */
-  const [view, setView] = useState<'mode-select' | 'enterprise-login'>('mode-select')
+  /** 未登录视图:mode-select=双工作台模式选择首屏,enterprise-login=企业登录表单。
+   *  手机端(经 Pocket Access 代理,非本机入口)跳过模式选择直达登录表单——
+   *  个人工作台不支持远程访问,手机端不提供模式分流入口。 */
+  const [view, setView] = useState<'mode-select' | 'enterprise-login'>(
+    () => (isLoopbackAccess() ? 'mode-select' : 'enterprise-login'),
+  )
   /** 非 null 时弹 Modal 内嵌认证中心登录页(iframe),null 收起。 */
   const [oidcFrameUrl, setOidcFrameUrl] = useState<string | null>(null)
   /** iframe 引用:load 后读其地址提取授权码,兜住认证中心不发 postMessage 的第三方扫码路径。 */
@@ -856,13 +862,16 @@ export function EnterpriseOverlay({ services }: { services?: EnterpriseServicesI
                   onRegister={register}
                   onOidcLogin={openOidcFrame}
                 />
-                <button
-                  type="button"
-                  className={css.backLink}
-                  onClick={() => { setView('mode-select') }}
-                >
-                  ← 返回模式选择
-                </button>
+                {/* 返回链接仅本机入口渲染:手机端无模式选择首屏可回。 */}
+                {isLoopbackAccess() && (
+                  <button
+                    type="button"
+                    className={css.backLink}
+                    onClick={() => { setView('mode-select') }}
+                  >
+                    ← 返回模式选择
+                  </button>
+                )}
               </>
             )}
             {(authState === 'pending' || authState === 'blocked') && (

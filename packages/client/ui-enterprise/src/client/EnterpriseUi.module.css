@@ -70,13 +70,6 @@
   text-align: center;
 }
 
-.modeSubtitle {
-  margin-top: 10px;
-  color: var(--dsw-alias-label-secondary);
-  font-size: 14px;
-  text-align: center;
-}
-
 .modeCards {
   margin-top: 34px;
   width: min(720px, 100%);

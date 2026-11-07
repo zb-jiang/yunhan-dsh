@@ -3,14 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   HANDSHAKE_INJECTION_LIMIT,
   HandshakeManager,
+  authCookieNameFor,
   hasAuthCookie,
   hasReauthFlag,
   isHtmlNavigation,
   parseCookieNames,
   parseTokenFromUrl,
+  stripAuthCookies,
 } from '../src/handshake.ts'
 
 const T0 = 1_700_000_000_000
+const EXPECTED_COOKIE = authCookieNameFor(3080)
 
 function createManager() {
   let clock = T0
@@ -83,30 +86,45 @@ describe('HandshakeManager.isInjectCandidate', () => {
   it('GET / 且无认证 cookie 为候选', () => {
     const { manager } = createManager()
     expect(
-      manager.isInjectCandidate({ method: 'GET', path: '/', cookieHeader: undefined, reauth: false }),
+      manager.isInjectCandidate({ method: 'GET', path: '/', cookieHeader: undefined, reauth: false, expectedCookieName: EXPECTED_COOKIE }),
     ).toBe(true)
   })
 
-  it('已带认证 cookie 且无重握手标记不注入（防 303 死循环）', () => {
+  it('已带期望名认证 cookie 且无重握手标记不注入（防 303 死循环）', () => {
     const { manager } = createManager()
     expect(
       manager.isInjectCandidate({
         method: 'GET',
         path: '/',
-        cookieHeader: 'dsh-auth-abc=tok',
+        cookieHeader: `${EXPECTED_COOKIE}=tok`,
         reauth: false,
+        expectedCookieName: EXPECTED_COOKIE,
       }),
     ).toBe(false)
   })
 
-  it('带认证 cookie 但 __pocket_reauth=1 时强制重握手', () => {
+  it('历史端口遗留的同前缀 cookie 不算有效会话，仍为候选', () => {
     const { manager } = createManager()
     expect(
       manager.isInjectCandidate({
         method: 'GET',
         path: '/',
-        cookieHeader: 'dsh-auth-abc=tok',
+        cookieHeader: `dsh-auth-staleport=tok; ${EXPECTED_COOKIE.slice(0, 20)}stale=v`,
+        reauth: false,
+        expectedCookieName: EXPECTED_COOKIE,
+      }),
+    ).toBe(true)
+  })
+
+  it('带期望名认证 cookie 但 __pocket_reauth=1 时强制重握手', () => {
+    const { manager } = createManager()
+    expect(
+      manager.isInjectCandidate({
+        method: 'GET',
+        path: '/',
+        cookieHeader: `${EXPECTED_COOKIE}=tok`,
         reauth: true,
+        expectedCookieName: EXPECTED_COOKIE,
       }),
     ).toBe(true)
   })
@@ -114,11 +132,30 @@ describe('HandshakeManager.isInjectCandidate', () => {
   it('非根路径与非 GET 请求不是候选', () => {
     const { manager } = createManager()
     expect(
-      manager.isInjectCandidate({ method: 'GET', path: '/api/x', cookieHeader: undefined, reauth: false }),
+      manager.isInjectCandidate({ method: 'GET', path: '/api/x', cookieHeader: undefined, reauth: false, expectedCookieName: EXPECTED_COOKIE }),
     ).toBe(false)
     expect(
-      manager.isInjectCandidate({ method: 'POST', path: '/', cookieHeader: undefined, reauth: false }),
+      manager.isInjectCandidate({ method: 'POST', path: '/', cookieHeader: undefined, reauth: false, expectedCookieName: EXPECTED_COOKIE }),
     ).toBe(false)
+  })
+})
+
+describe('stripAuthCookies', () => {
+  it('剥除认证 cookie 保留其余成员', () => {
+    expect(stripAuthCookies(`foo=1; ${EXPECTED_COOKIE}=tok; bar=2`)).toBe('foo=1; bar=2')
+  })
+
+  it('全部为认证 cookie 或头缺失时返回 undefined', () => {
+    expect(stripAuthCookies('dsh-auth-a=1; dsh-auth-b=2')).toBeUndefined()
+    expect(stripAuthCookies(undefined)).toBeUndefined()
+  })
+})
+
+describe('authCookieNameFor', () => {
+  it('与 webserver 侧同形：dsh-auth- 前缀 + base64url(sha256(host:port))', () => {
+    expect(authCookieNameFor(3080)).toMatch(/^dsh-auth-[A-Za-z0-9_-]+$/)
+    expect(authCookieNameFor(3080)).toBe(authCookieNameFor(3080))
+    expect(authCookieNameFor(3081)).not.toBe(authCookieNameFor(3080))
   })
 })
 
