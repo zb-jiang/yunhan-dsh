@@ -8,6 +8,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { Session, SessionId } from '@deepseek-ai/dsh-session'
 import AgentRegistry, { agentEvents, type Agent } from '@deepseek-ai/dsh-agent'
+import { unsupportedModel, unsupportedInbox } from '@deepseek-ai/dsh-agent-loop-testkit'
 import * as instanceWorkspace from '../src/index.ts'
 import type { Config } from '../src/index.ts'
 import { INSTANCE_WORKSPACE_SECTION, renderInstanceWorkspaceContextText } from '../src/text.ts'
@@ -529,7 +530,8 @@ describe('员工面会话绑定与每回合注入', () => {
       id: session.id,
       options: {},
       session,
-      inbox: { nextTurn: [], nextStep: [] } as never,
+      model: unsupportedModel(),
+      inbox: unsupportedInbox(),
       status: 'running',
       ctx: scopedCtx,
       send: () => {},
@@ -572,7 +574,7 @@ describe('员工面会话绑定与每回合注入', () => {
     })
     const decision = await agentEvents(ctx, agent).waterfall(
       'agent/pre-step',
-      { messages: [proposed], turn, step, signal },
+      { modelSelection: { provider: 'mock', model: 'mock' }, messages: [proposed], turn, step, signal },
       () => Promise.resolve({ kind: 'enter' as const, messages: [proposed] }),
     )
     if (decision.kind === 'enter') {

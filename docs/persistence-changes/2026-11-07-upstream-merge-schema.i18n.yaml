@@ -1,0 +1,28 @@
+# Bilingual-pair consistency record for 2026-11-07-upstream-merge-schema.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-11-07-upstream-merge-schema.md
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-11-07-upstream-merge-schema:
+  en: 46b87182ffd0c57b
+  zh: f1a0f7df22d9f114
+/2026-11-07-upstream-merge-schema/summary:
+  en: 20a54c2c67d1a110
+  zh: d667fafa40dc558f
+/2026-11-07-upstream-merge-schema/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-11-07-upstream-merge-schema/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-11-07-upstream-merge-schema/compatibility:
+  en: 52fce23ae344e533
+  zh: f0a5bfa16582acd4
+/2026-11-07-upstream-merge-schema/verification:
+  en: 6f32f4d553c7b064
+  zh: eb712efffb865a51
+/2026-11-07-upstream-merge-schema/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

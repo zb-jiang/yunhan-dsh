@@ -20,6 +20,7 @@ const CAPTURED_SPAN = { start: 0, end: 0, draftRev: 1 }
 
 function createInputActions(overrides: Partial<InputActions> = {}): InputActions {
   return {
+    insertQuote: unused,
     captureInsertion: vi.fn(() => CAPTURED_SPAN),
     insertText: unused,
     insertReference: vi.fn(() => true),

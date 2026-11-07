@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-ppt-client",
   "description": "AI 生成 PPT 插件客户端 UI:模板画廊、模板 chip、预览器、设置卡片与 Python 首用引导,经 ui-slots 挂载到对话界面",
-  "version": "0.2.1-rc.4",
+  "version": "0.2.2-rc.1",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",

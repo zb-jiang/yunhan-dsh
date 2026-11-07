@@ -27,19 +27,19 @@ id: 2026-10-25-upstream-merge-schema
 baseline: false
 changes:
   - root: "event:agent/inbox/spliced"
-    previous: "2026-10-16-instance-workspace-source-kind"
+    previous: "2026-10-22-action-card-status"
     after: "14e2ef66f32ec9a75442c48942d37a6d4321f52257f16afb4e11e3cccf3e2ebe"
     decision: same-version
   - root: "event:developer/message"
-    previous: "2026-10-16-instance-workspace-source-kind"
+    previous: "2026-10-22-action-card-status"
     after: "01a854d70c5c8346ed4f180fcbc2829a19e2150ba8cb062ffb85e781687a3b9a"
     decision: same-version
   - root: "event:session/title-llm-request"
-    previous: "2026-10-16-instance-workspace-source-kind"
+    previous: "2026-10-22-action-card-status"
     after: "a501282aa00c5686d68e1bbb92f9053b4aef5b4c829d07898a19fe342d582cdd"
     decision: same-version
   - root: "event:user/message"
-    previous: "2026-10-16-instance-workspace-source-kind"
+    previous: "2026-10-22-action-card-status"
     after: "b94578e2236495cb4a319a428e9777a8e94f550b9e51d597adfcd06499bc3de9"
     decision: same-version
 ```

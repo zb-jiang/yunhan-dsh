@@ -63,6 +63,7 @@ describe('ui-enterprise-skills browser plugin', () => {
       useSessionStatus={() => { throw new Error('The sidebar icon must not read application state') }}
       useSessionRetainInfo={() => { throw new Error('The sidebar icon must not read application state') }}
       useWorkspaces={() => { throw new Error('The sidebar icon must not read application state') }}
+      useContextMenu={() => { throw new Error('The sidebar icon must not read application state') }}
       useResource={() => { throw new Error('The sidebar icon must not read application state') }}
       {...allowAllAccess} />)
     expect(glyph.container.querySelector('svg')?.getAttribute('width')).toBe('18')

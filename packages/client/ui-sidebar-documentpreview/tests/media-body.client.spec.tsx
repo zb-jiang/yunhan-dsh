@@ -10,6 +10,9 @@ import { ABSOLUTE_PATH, harness, t, TAB_ID } from './fixtures.client.ts'
 
 beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+  // The element's error path probes the file route; default to a playable
+  // response so no spec performs real network I/O.
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 200 })))
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
@@ -96,6 +99,25 @@ it('shows the failure line and retries when the element cannot load', () => {
   expect(view.container.querySelector('[data-document-loading]')).not.toBeNull()
   fireMediaEvent(next!, 'loadedmetadata')
   expect(h.instance.getSnapshot().byTab[TAB_ID]?.version).toBe('v1')
+})
+
+it('maps a too-large file route rejection onto the explicit message', async () => {
+  const h = harness()
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 413 })))
+  const view = mountMedia('video', h)
+  fireMediaEvent(view.container.querySelector('video')!, 'error')
+  await act(async () => {})
+  expect(screen.getByRole('alert').textContent).toBe('failed.tooLarge')
+  expect(vi.mocked(fetch)).toHaveBeenCalledWith(fileRouteUrl(), { method: 'HEAD' })
+})
+
+it('maps a missing file route rejection onto the explicit message', async () => {
+  const h = harness()
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(null, { status: 404 })))
+  const view = mountMedia('video', h)
+  fireMediaEvent(view.container.querySelector('video')!, 'error')
+  await act(async () => {})
+  expect(screen.getByRole('alert').textContent).toBe('failed.missing')
 })
 
 it('re-keys the element for a changed file, so the new version loads fresh', async () => {

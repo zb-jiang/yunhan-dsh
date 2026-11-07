@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-enterprise-skills",
   "description": "Enterprise skill governance panel: the sidebar Skills entry lists process-required, local (uploaded or hand-copied), and market-installed skills, and installs, imports (zip), and uninstalls them through the local webserver",
-  "version": "0.2.1-rc.4",
+  "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"
   },

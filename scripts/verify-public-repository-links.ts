@@ -66,8 +66,7 @@ export function findUnavailableRepositoryReferences(file: string, source: string
 }
 
 function trackedFiles(repoRoot: string): string[] {
-  // The enterprise fork's plugin assets push the listing past Node's 1 MiB
-  // default; 64 MiB matches the other scripts' ENOBUFS deviation.
+  // 企业偏离:Windows ENOBUFS——企业插件资产使清单超过默认缓冲,64MB 与其余脚本的 maxBuffer 偏离对齐。
   return execFileSync('git', ['ls-files', '-z'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
     .split('\0')
     .filter(file => file !== '')

@@ -66,6 +66,9 @@ packages/host/webserver/src/*.js
 packages/host/webserver/src/*.js.map
 packages/host/webserver/src/*.d.ts
 packages/host/webserver/src/*.d.ts.map
+
+# Generated company-signed CUA release record.
+/packages/experimental/cua-macos/cua-helper.json
 # Local test data: invoice fixtures and Tesseract OCR language packs
 /发票/
 apps/web-console/tessdata/

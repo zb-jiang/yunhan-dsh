@@ -467,10 +467,10 @@ it.each([false, true])('starts Creator from Plugins with Coding Tools=%s without
       page.waitForResponse('**/api/session/create'),
       page.getByRole('menuitem', { name: /^Let the agent create a plugin/ }).click(),
     ])
-    expect(creation.request().postDataJSON()).toHaveProperty('payload.args.request.agentPreset', '@deepseek-ai/cordis')
+    expect(creation.request().postDataJSON()).toHaveProperty('payload.args.request.agentPreset', 'cordis')
     expect(creation.request().postDataJSON()).not.toHaveProperty('payload.args.request.sessionId')
     const creationBody = await creation.json() as { result: { ok: boolean; value: { sessionId: SessionId; agentPreset: string } } }
-    expect(creationBody).toMatchObject({ result: { ok: true, value: { agentPreset: '@deepseek-ai/cordis' } } })
+    expect(creationBody).toMatchObject({ result: { ok: true, value: { agentPreset: 'cordis' } } })
     const creator = scaffold.ctx.agents.get(creationBody.result.value.sessionId)
     if (creator === undefined) throw new Error('The Creator entry did not publish its Session')
     expect(creator.id).not.toBe(standard.id)
@@ -481,16 +481,16 @@ it.each([false, true])('starts Creator from Plugins with Coding Tools=%s without
     expect((await creatorComposer.innerText()).trim()).toBe('')
     expect(await picker.getAttribute('aria-haspopup')).toBe('menu')
     expect(await page.getByRole('dialog', { name: 'Add plugin', exact: true }).count()).toBe(0)
-    expect(creator.session.header.agentPreset).toBe('@deepseek-ai/cordis')
-    expect(scaffold.ctx.sessionProjections.stateOf(creator.session, 'agentPreset')).toBe('@deepseek-ai/cordis')
-    expect(scaffold.ctx.agentPresets.composedPreset(creator.ctx)).toBe('@deepseek-ai/cordis')
+    expect(creator.session.header.agentPreset).toBe('cordis')
+    expect(scaffold.ctx.sessionProjections.checkpoint(creator.session).agentPreset?.val).toBe('cordis')
+    expect(scaffold.ctx.agentPresets.composedPreset(creator.ctx)).toBe('cordis')
     expect(scaffold.ctx.tools.schemas(creator).map(tool => tool.name))
       .toEqual(expect.arrayContaining(['cordis_inspect_list', 'cordis_inspect_query', 'plugin_manager']))
     // The Session starts under Creator; a chip selection after the list updates records no switch.
     expect(creator.session.snapshotEvents().filter(event => event.type === 'agent-preset/selected')).toEqual([])
     expect(creator.session.snapshotEvents().some(event => event.type === 'user/message' || event.type === 'turn/start')).toBe(false)
     // The draft's blank keeps its preset and starts no turn.
-    expect(scaffold.ctx.sessionProjections.stateOf(standard.session, 'agentPreset')).toBe('standard')
+    expect(scaffold.ctx.sessionProjections.checkpoint(standard.session).agentPreset?.val).toBe('standard')
     expect(scaffold.ctx.agentPresets.composedPreset(standard.ctx)).toBe('standard')
     expect(standard.session.snapshotEvents().some(event => event.type === 'agent-preset/selected'
       || event.type === 'user/message' || event.type === 'turn/start')).toBe(false)
@@ -515,9 +515,9 @@ it.each([false, true])('starts Creator from Plugins with Coding Tools=%s without
     const reopened = scaffold.ctx.agents.get(standard.id)
     if (reopened === undefined) throw new Error('New Session did not keep the Standard blank live')
     expect(reopened.session.header.agentPreset).toBe('standard')
-    expect(scaffold.ctx.sessionProjections.stateOf(reopened.session, 'agentPreset')).toBe('standard')
+    expect(scaffold.ctx.sessionProjections.checkpoint(reopened.session).agentPreset?.val).toBe('standard')
     expect(scaffold.ctx.agentPresets.composedPreset(reopened.ctx)).toBe('standard')
-    expect(scaffold.ctx.sessionProjections.stateOf(creator.session, 'agentPreset')).toBe('@deepseek-ai/cordis')
+    expect(scaffold.ctx.sessionProjections.checkpoint(creator.session).agentPreset?.val).toBe('cordis')
     await page.getByRole('button', { name: 'Standard mode', exact: true }).waitFor()
     expect(scaffold.ctx.settings.describe().find(row => row.ns === 'ui-settings')?.value).toMatchObject({ enabled: developerTools })
     expect(scaffold.ctx.agentPresets.defaultId).toBe('standard')

@@ -21,6 +21,8 @@ export type MediaBodyProps = DocumentPreviewProps & PropsLocale<'sidebarMedia'> 
 interface MediaState {
   readonly revision: number
   readonly status: 'ready' | 'failed'
+  /** HTTP-derived cause the element cannot report; absent keeps the generic message. */
+  readonly reason?: 'tooLarge' | 'missing' | 'forbidden'
 }
 
 /**
@@ -47,10 +49,14 @@ export function MediaBody(props: MediaBodyProps): ReactNode {
   // loading; the recorded state only settles the revision it was recorded for.
   const settled = state?.revision === request.revision ? state : undefined
   if (settled?.status === 'failed') {
+    const line = settled.reason === 'tooLarge' ? t('failed.tooLarge')
+      : settled.reason === 'missing' ? t('failed.missing')
+        : settled.reason === 'forbidden' ? t('failed.forbidden')
+          : t('failed')
     return (
       <div className={css.frame} data-media-preview={kind} data-media-failed>
         <div className={css.failed}>
-          <p className={css.failedLine} role="alert">{t('failed')}</p>
+          <p className={css.failedLine} role="alert">{line}</p>
           <Button size="sm" onClick={request.reload}>{t('retry')}</Button>
         </div>
       </div>
@@ -61,11 +67,24 @@ export function MediaBody(props: MediaBodyProps): ReactNode {
     if (status === 'ready') request.loaded(version)
     else request.failed()
   }
+  const diagnose = (revision: number): void => {
+    // The element reports no HTTP status; a HEAD probe maps the file route's
+    // failure statuses onto an explicit message and stays silent otherwise.
+    fetch(url, { method: 'HEAD' }).then((response) => {
+      const reason = response.status === 413 ? 'tooLarge' as const
+        : response.status === 404 ? 'missing' as const
+          : response.status === 403 ? 'forbidden' as const
+            : undefined
+      if (reason !== undefined) setState({ revision, status: 'failed', reason })
+    }).catch(() => { /* Best effort: a failed probe keeps the generic message. */ })
+  }
   const element = kind === 'video'
     ? <video key={request.revision} className={css.media} src={url} controls preload="metadata"
-      aria-label={label} onLoadedMetadata={() => { settle('ready') }} onError={() => { settle('failed') }} />
+      aria-label={label} onLoadedMetadata={() => { settle('ready') }}
+      onError={() => { settle('failed'); diagnose(request.revision) }} />
     : <audio key={request.revision} className={css.media} src={url} controls preload="metadata"
-      aria-label={label} onLoadedMetadata={() => { settle('ready') }} onError={() => { settle('failed') }} />
+      aria-label={label} onLoadedMetadata={() => { settle('ready') }}
+      onError={() => { settle('failed'); diagnose(request.revision) }} />
   return (
     <div className={css.frame} data-media-preview={kind}>
       {settled === undefined && <LoadingIndicator label={t('loading')} />}
