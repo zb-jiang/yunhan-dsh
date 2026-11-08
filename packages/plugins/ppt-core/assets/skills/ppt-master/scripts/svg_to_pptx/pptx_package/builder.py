@@ -5381,7 +5381,7 @@ def _create_writable_work_dir(output_path: Path) -> Path:
         for _ in range(3):
             work_dir = parent / f".pptx-build-{os.getpid()}-{uuid.uuid4().hex}"
             try:
-                work_dir.mkdir(mode=0o700)
+                work_dir.mkdir()
                 probe_path = work_dir / ".write-probe"
                 probe_path.write_text("ok", encoding="utf-8")
                 probe_path.unlink()

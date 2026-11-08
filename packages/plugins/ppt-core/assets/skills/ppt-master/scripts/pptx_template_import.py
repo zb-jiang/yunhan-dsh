@@ -31,6 +31,7 @@ from xml.etree import ElementTree as ET
 from zipfile import BadZipFile
 
 from console_encoding import configure_utf8_stdio
+from dsh_windows_compat import mkdtemp_inherit
 from pptx_workspace import (
     AUTHORING_SVG_DIR,
     AUTHORING_SVG_FLAT_DIR,
@@ -219,9 +220,9 @@ def main() -> int:
         return 1
     previous_resources = _managed_resource_paths(output_dir)
     output_dir.parent.mkdir(parents=True, exist_ok=True)
-    staging_root = Path(tempfile.mkdtemp(
+    staging_root = Path(mkdtemp_inherit(
         prefix=f".{output_dir.name}.import-",
-        dir=output_dir.parent,
+        dir=str(output_dir.parent),
     ))
     staged_dir = staging_root / "generated"
     staged_dir.mkdir()

@@ -38,6 +38,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from attribution_guard import require_skill_integrity  # noqa: E402
 from console_encoding import configure_utf8_stdio  # noqa: E402
+from dsh_windows_compat import mkdtemp_inherit  # noqa: E402
 from register_template import (  # noqa: E402
     KIND_CONFIG,
     SpecParseError,
@@ -512,7 +513,7 @@ def _write(plan: InstallPlan) -> None:
     renames if any publication fails, including removed Deck files and the old
     receipt. Backups survive if rollback itself fails so recovery remains possible.
     """
-    transaction = Path(tempfile.mkdtemp(prefix=".template-install-", dir=plan.project))
+    transaction = Path(mkdtemp_inherit(prefix=".template-install-", dir=str(plan.project)))
     staged = transaction / "staged"
     backup = transaction / "backup"
     moved: list[str] = []

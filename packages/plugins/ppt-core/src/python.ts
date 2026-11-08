@@ -30,7 +30,7 @@ export function pythonCandidates(platform: NodeJS.Platform): string[] {
 }
 
 /** ppt-master 生成 PPTX 的最小依赖集(requirements.txt 的核心子集)。 */
-export const CORE_PACKAGES = ['python-pptx', 'PyYAML', 'XlsxWriter', 'skia-pathops', 'uharfbuzz', 'Pillow', 'numpy', 'requests'] as const
+export const CORE_PACKAGES = ['python-pptx', 'PyYAML', 'XlsxWriter', 'skia-pathops', 'uharfbuzz', 'Pillow', 'numpy', 'requests', 'flask'] as const
 
 /** 单个解释器候选的探测结果。 */
 export interface PythonDetection {

@@ -51,6 +51,7 @@ configure_utf8_stdio()
 
 # Import finalize helpers from the internal package.
 sys.path.insert(0, str(Path(__file__).parent))
+from dsh_windows_compat import mkdtemp_inherit  # noqa: E402
 from resource_paths import icon_dir_for_project  # noqa: E402
 from svg_finalize.align_embed_images import (
     align_and_embed_images_in_svg,
@@ -133,9 +134,9 @@ def _publish_candidate_directory(candidate_dir: Path, output_dir: Path) -> None:
         raise RuntimeError(f"Output path must be a real directory: {output_dir}")
 
     transaction_dir = Path(
-        tempfile.mkdtemp(
+        mkdtemp_inherit(
             prefix=f".{output_dir.name}.publish-",
-            dir=output_dir.parent,
+            dir=str(output_dir.parent),
         )
     )
     backup_dir = transaction_dir / "previous"
@@ -363,9 +364,9 @@ def finalize_project(
         return True
 
     candidate_dir = Path(
-        tempfile.mkdtemp(
+        mkdtemp_inherit(
             prefix=f".{svg_final.name}.candidate-",
-            dir=svg_final.parent,
+            dir=str(svg_final.parent),
         )
     )
     try:

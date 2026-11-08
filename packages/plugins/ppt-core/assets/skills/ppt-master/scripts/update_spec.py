@@ -33,6 +33,7 @@ import tempfile
 from pathlib import Path
 
 from console_encoding import configure_utf8_stdio
+from dsh_windows_compat import mkdtemp_inherit
 from project_management.project_specs import parse_spec_lock as parse_lock
 from stamp_native_fallbacks import (
     NativeFallbackStampError,
@@ -158,9 +159,9 @@ def _publish_text_updates(updates: list[tuple[Path, str]]) -> None:
             raise OSError(f"transaction target must be a regular file: {target}")
 
     transaction_dir = Path(
-        tempfile.mkdtemp(
+        mkdtemp_inherit(
             prefix=".update-spec-",
-            dir=targets[0].parent,
+            dir=str(targets[0].parent),
         )
     )
     staged_dir = transaction_dir / "staged"

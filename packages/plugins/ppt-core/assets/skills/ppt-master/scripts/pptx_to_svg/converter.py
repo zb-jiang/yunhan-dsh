@@ -20,6 +20,7 @@ import os
 import posixpath
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from collections.abc import Callable
@@ -30,6 +31,8 @@ from urllib.parse import unquote, urlsplit, urlunsplit
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import quoteattr
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from dsh_windows_compat import mkdtemp_inherit  # noqa: E402
 from extract_svg_assets import extract_directory
 from pptx_embedded_fonts import (
     FONT_BUNDLE_DIR,
@@ -1277,9 +1280,9 @@ def publish_staged_workspace(
         raise RuntimeError(f"Output path must be a real directory: {output_dir}")
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
-    transaction_dir = Path(tempfile.mkdtemp(
+    transaction_dir = Path(mkdtemp_inherit(
         prefix=f".{output_dir.name}.publish-",
-        dir=output_dir.parent,
+        dir=str(output_dir.parent),
     ))
     candidate_dir = transaction_dir / "candidate"
     backup_dir = transaction_dir / "previous"
@@ -1776,9 +1779,9 @@ def _write_artifacts(
     output_dir = output_dir.absolute()
     reject_removed_workspace_layout(output_dir)
     output_dir.parent.mkdir(parents=True, exist_ok=True)
-    staging_root = Path(tempfile.mkdtemp(
+    staging_root = Path(mkdtemp_inherit(
         prefix=f".{output_dir.name}.convert-",
-        dir=output_dir.parent,
+        dir=str(output_dir.parent),
     ))
     staged_dir = staging_root / "generated"
     try:
