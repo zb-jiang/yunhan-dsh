@@ -70,6 +70,18 @@ function harness(nodes: readonly ChatConversationViewNode[], currentTimeline = t
   return { builder, state, store, snapshot, commit }
 }
 
+function settledTool(key: string, seq: number, name: string, meta?: unknown): ChatNode<'tool-call'> {
+  return {
+    ...tool(key, seq, name),
+    data: { root: {
+      kind: 'tool-result', callId: key, seq: seq + 1, time: seq + 1, callTime: seq,
+      name, args: PartialArguments.fromText('{}'),
+      call: { name, argsRaw: '{}' }, content: [], isError: false, subCalls: [],
+      ...meta !== undefined ? { meta } : {},
+    } },
+  }
+}
+
 describe('Definition-owned Chat process groups', () => {
   it.each([
     ['whitespace', '  one\t\n two  ', 'one two'],
@@ -231,6 +243,40 @@ describe('Definition-owned Chat process groups', () => {
     h.builder.apply({ upserts: [settled], timeline })
     h.commit()
     expect(source.getSnapshot()?.data.summary).toEqual({ counts: [{ kind, count: 1 }], running: undefined, runningDetail: '' })
+  })
+
+  it('keeps an artifact tool result outside the folded process group', () => {
+    const h = harness([
+      settledTool('slide', 2, 'openmaic_slide', { kind: 'openmaic-slide', title: '向量与标量' }),
+      tool('bash', 4),
+    ])
+    expect(h.store.entries.map(entry => entry.kind === 'group' ? 'group' : entry.key)).toEqual(['slide', 'group'])
+    const group = h.store.entries[1]!
+    if (group.kind !== 'group') throw new Error('expected group')
+    expect(h.store.groupSource(group.key).getSnapshot()?.members.map(member => member.key)).toEqual(['bash'])
+  })
+
+  it.each([
+    ['no meta', undefined],
+    ['non-object meta', 'plain text'],
+    ['non-string kind', { kind: 3 }],
+    ['an errored result', { kind: 'openmaic-slide' }],
+  ] as const)('keeps folding a settled tool result with %s', (_label, meta) => {
+    const errored = _label === 'an errored result'
+    const artifact = settledTool('slide', 2, 'openmaic_slide', errored ? undefined : meta)
+    const h = harness([errored ? { ...artifact, data: { root: { ...artifact.data.root, isError: true } } } : artifact, tool('bash', 4)])
+    expect(h.store.entries.map(entry => entry.kind)).toEqual(['group'])
+    const group = h.store.entries[0]!
+    if (group.kind !== 'group') throw new Error('expected group')
+    expect(h.store.groupSource(group.key).getSnapshot()?.members.map(member => member.key)).toEqual(['slide', 'bash'])
+  })
+
+  it('moves an artifact tool call out of its group once its result declares a kind', () => {
+    const h = harness([tool('slide', 2, 'openmaic_slide')])
+    expect(h.store.entries.map(entry => entry.kind)).toEqual(['group'])
+    h.builder.apply({ upserts: [settledTool('slide', 2, 'openmaic_slide', { kind: 'openmaic-slide' })], timeline })
+    h.commit()
+    expect(h.store.entries.map(entry => entry.kind === 'group' ? 'group' : entry.key)).toEqual(['slide'])
   })
 
   it.each(['process', 'turn', 'input'] as const)('ends the group at a Node declared at %s, whatever its kind', (position) => {
