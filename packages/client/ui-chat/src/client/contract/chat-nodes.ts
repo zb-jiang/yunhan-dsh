@@ -133,3 +133,20 @@ export function isSettledTool(block: ToolCallBlock): block is Extract<ToolCallBl
 export function isRunningTool(block: ToolCallBlock): block is RunningToolCall {
   return !isSettledTool(block)
 }
+
+/**
+ * Test whether a Chat Node is a Tool call whose settled result presents an
+ * artifact card that must stay visible outside Turn-process folding. Plugins
+ * declare an artifact result with an object `meta` carrying a string `kind`
+ * (for example `openmaic-slide`); every other result keeps the ordinary
+ * process folding.
+ * @param node - final Chat Node under Turn-process eligibility checks.
+ * @returns whether the Node is a Tool call whose result declares an artifact kind.
+ */
+export function isArtifactToolNode(node: ChatNode | undefined): boolean {
+  if (node === undefined || node.kind !== 'tool-call') return false
+  const root = node.data.root
+  if (!isSettledTool(root) || root.isError) return false
+  const meta = root.meta
+  return typeof meta === 'object' && meta !== null && 'kind' in meta && typeof meta.kind === 'string'
+}

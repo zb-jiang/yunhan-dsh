@@ -5,6 +5,7 @@ import type {
   GroupUpdate, NodeKey, NodeReference, RenderEntry,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ChatConversationViewNode, ChatNode } from '../contract/chat-nodes.ts'
+import { isArtifactToolNode } from '../contract/chat-nodes.ts'
 import type { ProcessActivitySummary, ProcessGroupData } from '../contract/process-groups.ts'
 import { hasAssistantReplyContent } from '../contract/assistant-content.ts'
 import { isVisibleChatNode } from '../contract/chat-visibility.ts'
@@ -46,6 +47,8 @@ function structureChanged(previous: ChatNode | undefined, current: ChatNode): bo
     || isVisibleChatNode(previous) !== isVisibleChatNode(current)
     || previous.groupTree !== current.groupTree
     || reasoning(previous) !== reasoning(current) || reply(previous) !== reply(current)
+    // A settled result declaring an artifact kind leaves the process group.
+    || isArtifactToolNode(previous) !== isArtifactToolNode(current)
 }
 
 function readNode(input: ProcessInput, key: NodeKey): ChatNode {
@@ -150,7 +153,8 @@ class TurnGroups {
       previous = key
       followed = position.next !== undefined
       const node = readNode(input, key)
-      if (isAtOrOutside(node, 'process')) {
+      // An artifact card is the deliverable itself: like a node outside the process window, it stands outside the fold.
+      if (isAtOrOutside(node, 'process') || isArtifactToolNode(node)) {
         flush(true)
         emit(key, { kind: 'node', key })
       } else if (node.kind === 'assistant-step') {

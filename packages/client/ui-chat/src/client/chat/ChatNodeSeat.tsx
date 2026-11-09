@@ -4,6 +4,7 @@ import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { ConversationLocationDataStore, ConversationTurnDataMap } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ChatNodeHookContext, ChatNodeOwnerProps, ChatFlowSlotProps, UsePresentation } from '../contract/slots.ts'
 import { hasAssistantReplyContent } from '../contract/assistant-content.ts'
+import { isArtifactToolNode } from '../contract/chat-nodes.ts'
 import type { ChatNode } from '../contract/chat-nodes.ts'
 import type { ChatNodeStore } from '../contract/snapshot.ts'
 import { isAtOrOutside } from '../contract/group-tree.ts'
@@ -85,6 +86,7 @@ export const ChatNodeSeat = memo(function ChatNodeSeat({
   const processMember = routedNode !== undefined
     && processWindowReady
     && !replyRow
+    && !isArtifactToolNode(routedNode)
     && !isAtOrOutside(routedNode, 'turn')
     && routedNode.anchorSeq >= processSpec.processStartSeq
     && (liveProcess || processSpec.answerAnchorSeq === null || routedNode.anchorSeq < processSpec.answerAnchorSeq
