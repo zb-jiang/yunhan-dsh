@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.dsh.console.audit.AuditService;
 import com.dsh.console.common.GlobalExceptionHandler.NotFoundException;
 import com.dsh.console.orgunit.dto.AddOrgUnitMembersRequest;
+import com.dsh.console.orgunit.dto.BackendOrgUnitMemberDto;
 import com.dsh.console.orgunit.dto.OrgUnitDto;
 import com.dsh.console.orgunit.dto.OrgUnitTreeNode;
 import com.dsh.console.orgunit.dto.OrgPositionDto;
@@ -197,6 +198,30 @@ class OrgUnitServiceTest {
         assertThat(tree.get(0).parentId()).isNull();
         assertThat(tree.get(0).children()).hasSize(1);
         assertThat(tree.get(0).children().get(0).id()).isEqualTo(deptId);
+    }
+
+    @Test
+    void membersForServiceDelegatesToAuthSubjectVariant() {
+        UUID deptId = UUID.randomUUID();
+        BackendOrgUnitMemberDto member = new BackendOrgUnitMemberDto(
+            UUID.randomUUID(), "zhangsan", "张三", "active", "auth0|abc123");
+        when(orgUnitRepository.findById(deptId)).thenReturn(
+            Optional.of(unit(deptId, "A 部门", null, null)));
+        when(memberRepository.listMembersWithAuthSubject(deptId)).thenReturn(List.of(member));
+
+        List<BackendOrgUnitMemberDto> members = service.membersForService(deptId);
+
+        assertThat(members).containsExactly(member);
+        verify(memberRepository).listMembersWithAuthSubject(deptId);
+    }
+
+    @Test
+    void membersForServiceRejectsUnknownUnit() {
+        when(orgUnitRepository.findById(any())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.membersForService(UUID.randomUUID()))
+            .isInstanceOf(NotFoundException.class)
+            .hasMessageContaining("部门不存在");
     }
 
     private static OrgUnitDto unit(UUID id, String name, UUID parentId, UUID headUserId) {

@@ -1,5 +1,6 @@
 package com.dsh.console.orgunit;
 
+import com.dsh.console.orgunit.dto.BackendOrgUnitMemberDto;
 import com.dsh.console.orgunit.dto.OrgUnitMemberDto;
 import com.dsh.console.orgunit.dto.UserOrgUnitDto;
 import java.util.ArrayList;
@@ -160,6 +161,26 @@ public class OrgUnitMemberJdbcRepository {
             .query((rs, rowNum) -> new OrgUnitMemberDto(
                 rs.getObject("user_id", UUID.class), rs.getString("login_name"),
                 rs.getString("display_name"), rs.getString("status")))
+            .list();
+    }
+
+    /**
+     * 部门成员明细的服务面变体:同 {@link #listMembersByOrgUnit} 查询增列
+     * auth_subject,外部 SOR(OpenMAIC)按 (issuer, subject) 建档映射成员;
+     * 员工端不暴露该列,故不并入 {@link OrgUnitMemberDto}。
+     */
+    public List<BackendOrgUnitMemberDto> listMembersWithAuthSubject(UUID orgUnitId) {
+        return jdbcClient.sql("""
+                SELECT m.user_id, p.login_name, p.display_name, p.status, p.auth_subject
+                FROM public.org_unit_members m
+                JOIN public.platform_users p ON p.id = m.user_id
+                WHERE m.org_unit_id = :orgUnitId
+                ORDER BY p.display_name, p.login_name
+                """)
+            .param("orgUnitId", orgUnitId)
+            .query((rs, rowNum) -> new BackendOrgUnitMemberDto(
+                rs.getObject("user_id", UUID.class), rs.getString("login_name"),
+                rs.getString("display_name"), rs.getString("status"), rs.getString("auth_subject")))
             .list();
     }
 

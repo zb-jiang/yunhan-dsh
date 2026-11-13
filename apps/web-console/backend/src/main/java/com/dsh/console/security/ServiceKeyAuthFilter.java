@@ -21,10 +21,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * 实例)无 Supabase 登录态,凭静态服务密钥访问白名单端点。
  *
  * <p>白名单为「路径前缀 + 允许方法集」条目集合(2026-10 知识库集成 + 2026-10-14
- * 实例工作空间,设计 docs/plans/2026-10-14-instance-workspace-design.md §4.3):
- * {@code GET /api/backend/kb/**}(流程归属知识库解析 + 只读检索/清单/全文,见
+ * 实例工作空间 + 2026-11-13 组织架构,设计 docs/plans/2026-10-14-instance-workspace-design.md
+ * §4.3):{@code GET /api/backend/kb/**}(流程归属知识库解析 + 只读检索/清单/全文,见
  * BackendKbController)、{@code GET|POST|DELETE /api/backend/instances/**}(实例
- * 工作空间文件读写,见 BackendWorkspaceController)。携带头但密钥不符、未配置、
+ * 工作空间文件读写,见 BackendWorkspaceController)、{@code GET /api/backend/org/**}
+ * (组织架构树/成员只读,见 BackendOrgController)。携带头但密钥不符、未配置、
  * 方法不在条目方法集或路径不在任何条目前缀 → 401 fail loud,不静默降级为匿名
  * JWT 路径。无该头的请求原样放行走 JWT 过滤链。
  *
@@ -46,12 +47,14 @@ public class ServiceKeyAuthFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 服务面白名单条目:知识库只读端点(BackendKbController)与实例工作空间
-     * 文件读写端点(BackendWorkspaceController)。新增服务面控制器在此追加条目。
+     * 服务面白名单条目:知识库只读端点(BackendKbController)、实例工作空间
+     * 文件读写端点(BackendWorkspaceController)与组织架构只读端点
+     * (BackendOrgController)。新增服务面控制器在此追加条目。
      */
     private static final List<ServiceRoute> SERVICE_ROUTES = List.of(
         new ServiceRoute("/api/backend/kb/", Set.of("GET")),
-        new ServiceRoute("/api/backend/instances/", Set.of("GET", "POST", "DELETE")));
+        new ServiceRoute("/api/backend/instances/", Set.of("GET", "POST", "DELETE")),
+        new ServiceRoute("/api/backend/org/", Set.of("GET")));
 
     /** 注入 Authentication 的固定 principal。 */
     private static final String SERVICE_PRINCIPAL = "dsh-service";

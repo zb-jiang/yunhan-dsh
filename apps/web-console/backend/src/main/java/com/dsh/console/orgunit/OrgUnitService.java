@@ -3,6 +3,7 @@ package com.dsh.console.orgunit;
 import com.dsh.console.audit.AuditService;
 import com.dsh.console.common.GlobalExceptionHandler.NotFoundException;
 import com.dsh.console.orgunit.dto.AddOrgUnitMembersRequest;
+import com.dsh.console.orgunit.dto.BackendOrgUnitMemberDto;
 import com.dsh.console.orgunit.dto.OrgUnitDto;
 import com.dsh.console.orgunit.dto.OrgUnitMemberDto;
 import com.dsh.console.orgunit.dto.OrgPositionDto;
@@ -173,6 +174,16 @@ public class OrgUnitService {
     public List<OrgUnitMemberDto> members(UUID orgUnitId) {
         requireOrgUnitExists(orgUnitId);
         return memberRepository.listMembersByOrgUnit(orgUnitId);
+    }
+
+    /**
+     * 部门成员明细的服务面变体(X-Service-Key 调用方,增列 authSubject;
+     * 见 {@link BackendOrgController}),员工端 {@link #members} 不受影响。
+     */
+    @Transactional(readOnly = true)
+    public List<BackendOrgUnitMemberDto> membersForService(UUID orgUnitId) {
+        requireOrgUnitExists(orgUnitId);
+        return memberRepository.listMembersWithAuthSubject(orgUnitId);
     }
 
     /**
