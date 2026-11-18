@@ -4,7 +4,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { apply, Config, name, statusPayload, type Config as ConfigShape } from '../src/index.ts'
+import { apply, Config, name, type Config as ConfigShape } from '../src/index.ts'
+import { statusPayload } from '../src/status.ts'
 import type { Context } from '@deepseek-ai/cordis'
 
 /** 面向 apply() 的宿主桩:收集 webServer 路由、systemPrompt 段与 skill 注册工厂。 */

@@ -18,7 +18,7 @@ import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session'
 import SessionPersistence, { SessionPersistenceRevision } from '@deepseek-ai/dsh-session-persistence'
 import type { SessionHandle, SessionPersistenceSnapshot } from '@deepseek-ai/dsh-session-persistence'
 import * as JsonlSessionPersistence from '@deepseek-ai/dsh-session-persistence-jsonl'
-import { sessionDir } from '@deepseek-ai/dsh-session-persistence-jsonl'
+import { sessionDir } from '@deepseek-ai/dsh-session-persistence-jsonl/format'
 import { SessionProjectionCache } from '@deepseek-ai/dsh-session-projection-cache'
 import { WebServer } from '@deepseek-ai/dsh-host-webserver'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
@@ -29,17 +29,25 @@ import { apply } from '../src/index.ts'
 /** escape 用例的开关：激活后被测代码拿到的 sessionDir 逃逸出持久化根。 */
 const escapeState = vi.hoisted(() => ({ active: false }))
 
-// 只劫持 sessionDir 的跨模块导入面：激活时把目录指到持久化根之外，覆盖逃逸
-// 防御分支；未激活时透传真实实现。JsonlSessionPersistence 内部物化走同模块
-// 本地绑定不受影响，落盘仍在真实 root 下。
+// 真实模块无 inject 导出(装配器读到 undefined 按空注入列表处理);
+// vitest 的 mock 代理对缺失键抛错,显式声明 undefined 保持透传语义。
 vi.mock('@deepseek-ai/dsh-session-persistence-jsonl', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@deepseek-ai/dsh-session-persistence-jsonl')>()
+  return {
+    ...actual,
+    inject: undefined,
+  }
+})
+
+// 只劫持 sessionDir 的跨模块导入面(被测插件经 /format 子路径导入):激活时把
+// 目录指到持久化根之外,覆盖逃逸防御分支;未激活时透传真实实现。
+// JsonlSessionPersistence 内部物化走同模块本地绑定不受影响,落盘仍在真实
+// root 下。
+vi.mock('@deepseek-ai/dsh-session-persistence-jsonl/format', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@deepseek-ai/dsh-session-persistence-jsonl/format')>()
   const pathModule = await import('node:path')
   return {
     ...actual,
-    // 真实模块无 inject 导出(装配器读到 undefined 按空注入列表处理);
-    // vitest 的 mock 代理对缺失键抛错,显式声明 undefined 保持透传语义。
-    inject: undefined,
     sessionDir(root: string, cwd: string | undefined, id: SessionId) {
       if (escapeState.active) return pathModule.join(root, '..', 'escaped-session')
       return actual.sessionDir(root, cwd, id)

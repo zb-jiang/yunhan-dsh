@@ -129,7 +129,7 @@ export function QuoteToConversationAction({ absolutePath, inputActions }: QuoteT
           autoFocus
           dense
           anchor={<span hidden aria-hidden="true" />}
-          getAnchorRect={() => menu.rect}
+          anchorPoint={{ x: menu.rect.x, y: menu.rect.y }}
           items={[{ id: 'quote-to-conversation', label: '引用到对话' }]}
           onSelect={() => { quote(menu) }}
           onClose={() => { setMenu(null) }}

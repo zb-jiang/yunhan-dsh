@@ -25,7 +25,6 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-user-identity-context'
 import { KB_CONTEXT_SECTION, type KbBlockData, renderKbContextText } from './text.ts'
 
-export { KB_CONTEXT_SECTION, renderKbContextText } from './text.ts'
 export type { KbBlockData } from './text.ts'
 
 /** Cordis plugin name used by loader diagnostics. */

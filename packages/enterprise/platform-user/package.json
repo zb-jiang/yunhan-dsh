@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-platform-user",
   "description": "Platform-user governance seam (ctx.platformUsers) for enterprise account approval, roles, and status management",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -22,13 +22,20 @@
       "types": "./lib/types/types.d.ts",
       "default": "./lib/types/types.js"
     },
+    "./sso": {
+      "types": "./lib/types/sso.d.ts",
+      "default": "./lib/types/sso.js"
+    },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
     "lib/types/**/*.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {

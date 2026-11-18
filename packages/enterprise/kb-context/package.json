@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-kb-context",
   "description": "Enterprise session knowledge-base context: employee-client session-to-application reports plus a per-turn model-visible kb block",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -18,12 +18,20 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./text": {
+      "types": "./lib/types/text.d.ts",
+      "default": "./lib/types/text.js"
+    },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {

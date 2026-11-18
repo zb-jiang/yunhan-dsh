@@ -32,12 +32,9 @@ import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-platform-user'
-import {
-  PlatformUserError,
-  resolveSsoSettings,
-  type PlatformUser,
-  type ResolvedSsoSettings,
-} from '@deepseek-ai/dsh-platform-user'
+import { PlatformUserError } from '@deepseek-ai/dsh-platform-user'
+import { resolveSsoSettings } from '@deepseek-ai/dsh-platform-user/sso'
+import type { PlatformUser, ResolvedSsoSettings } from '@deepseek-ai/dsh-platform-user'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'platform-user-api'
@@ -96,7 +93,7 @@ export const Config = z.object({
  * @param config - 插件 Config(注入的 Volatile 引用)。
  * @returns 校验+推导后的 SSO 设置。
  */
-export function resolveAuthSettings(config: Config): ResolvedSsoSettings {
+function resolveAuthSettings(config: Config): ResolvedSsoSettings {
   const resolved = resolveSsoSettings({
     provider: config.provider.get(),
     supabaseUrl: config.supabaseUrl.get(),

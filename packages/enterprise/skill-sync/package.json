@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-skill-sync",
   "description": "Enterprise skill distribution: periodic required-skill scan against flowable-engine, download from SkillHub into a dedicated cache root, and injection into ctx.skills",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -18,12 +18,20 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./skillhub": {
+      "types": "./lib/types/skillhub.d.ts",
+      "default": "./lib/types/skillhub.js"
+    },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.js",
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dependencies": {

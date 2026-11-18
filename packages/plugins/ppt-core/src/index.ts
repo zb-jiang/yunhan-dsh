@@ -49,20 +49,6 @@ export const Config: z<Config> = z.object({
   imageModel: z.string().default(''),
 })
 
-/** `GET /api/ppt/status` 的响应体。 */
-export interface PptStatus {
-  ok: true
-  plugin: 'ppt'
-}
-
-/**
- * 健康端点载荷(纯函数,安装闭环验证的观测点)。
- * @returns 固定的健康载荷 `{ ok: true, plugin: 'ppt' }`。
- */
-export function statusPayload(): PptStatus {
-  return { ok: true, plugin: 'ppt' }
-}
-
 /** systemPrompt 能力说明段名。 */
 const PROMPT_SECTION_NAME = 'ppt:capability'
 
@@ -125,5 +111,3 @@ export function apply(ctx: Context, config: Config): void {
     commandRunner: nodeCommandRunner(),
   }), 'ppt-core: /api/ppt routes')
 }
-
-export { buildExtractionPrompt } from './extraction.ts'

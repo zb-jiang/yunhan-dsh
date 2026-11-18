@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-enterprise-backend",
   "description": "The dsh backend-profile bundle: server-side unattended backend task runner over dsh-base (webserver + backend-task plugin; no browser UI)",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.3",
   "publishConfig": {
     "access": "public"
   },
@@ -30,7 +30,10 @@
     "lib/index.js",
     "lib/startup.js",
     "cordis.patch.yml",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dsh": {

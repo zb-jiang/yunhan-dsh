@@ -78,8 +78,7 @@ import type { PiAiRequestHeaderContext } from './types.ts'
 export { PiAiAdapter } from './adapter.ts'
 export type { PiAiAdapterOptions } from './adapter.ts'
 export type { PiAiRequestHeaderContext } from './types.ts'
-// 企业偏离:llm-access 经包名导入 resolveProfiles 解析兼容 profile,保留重导出。
-export { Config, resolveProfiles } from './config.ts'
+export { Config } from './config.ts'
 export type {
   Options,
   PiAiCompatProfile,
@@ -91,7 +90,9 @@ export type {
   PiAiThinkingFormat,
   ResolvedPiAiProviderProfile,
 } from './config.ts'
-export { authContextFrom, credentialStoreFrom, recordKeyFor } from './auth.ts'
+// resolveProfiles / authContextFrom / credentialStoreFrom 经 ./config 与 ./auth 子路径共享
+// (企业偏离:llm-access 跨包导入;entry 不再重导出函数值,见 verify-plugin-entry-exports)。
+export { recordKeyFor } from './auth.ts'
 export { supportedProtocols } from './provider.ts'
 
 export const name = 'llm-pi-ai'
@@ -252,6 +253,9 @@ export function apply(ctx: Context, config: Config): void {
         `llm-pi-ai: unusable replay state on assistant history for route "${provider}/${model}";`
         + ` sending that message as provider-neutral content (${reason})`,
       )
+    },
+    onThinkingOmitted: ({ provider, model, count }) => {
+      ctx.logger.debug(`llm-pi-ai: omitted stale thinking from ${count} assistant message(s) for route "${provider}/${model}"`)
     },
   })
   // Independent of the route set: signing in is what makes a route worth

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SSO_SCOPES, resolveSsoSettings } from '../src/index.ts'
+import { DEFAULT_SSO_SCOPES, resolveSsoSettings } from '../src/sso.ts'
 
 describe('resolveSsoSettings', () => {
   it('缺省 provider=supabase,issuer/jwksUrl 按 Supabase 约定推导,scopes 缺省 openid profile', () => {

@@ -18,10 +18,6 @@ export type {
   PlatformUserStatus,
 } from './types.ts'
 
-export {
-  DEFAULT_SSO_SCOPES,
-  resolveSsoSettings,
-} from './sso.ts'
 export type {
   ResolvedSsoSettings,
   SsoProvider,

@@ -96,11 +96,9 @@ function mapThrownFailure(error: unknown): unknown {
   if (error instanceof LlmError) {
     const mapped = mapEnterpriseFailure(error.failure)
     if (mapped !== error.failure) {
-      // 重建为 LlmError:normalizeLlmFailure 只采信自有 code/failure 一致的错误
-      return new LlmError(mapped.message, mapped.code, {
-        cause: error,
-        ...mapped.status === undefined ? {} : { status: mapped.status },
-      })
+      // 重建为 LlmError:normalizeLlmFailure 只采信自有 code/failure 一致的错误;网关码
+      // (LLM_QUOTA_EXHAUSTED 等)不是 builtin code,须走 fromFailure 携带自有 code。
+      return LlmError.fromFailure(mapped, { cause: error })
     }
   }
   return error

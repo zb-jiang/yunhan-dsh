@@ -27,20 +27,20 @@ id: 2026-11-07-upstream-merge-schema
 baseline: false
 changes:
   - root: "event:agent/inbox/spliced"
-    previous: "2026-10-13-liveshare-share-viewer-principal"
-    after: "9da84b5b247f572ad790f0b62737183a783487cb934a3237ab8f98731d969767"
+    previous: "2026-10-27-retry-control-input"
+    after: "3751df8d766c18929a7063d47fb082df688ba4f515508bd7cbabb761fb5c6f1e"
     decision: same-version
   - root: "event:developer/message"
-    previous: "2026-10-13-liveshare-share-viewer-principal"
-    after: "5221bb64e9f9f09863cbf684993f9638d29630b3c91e997eae5c85a749dbc0b6"
+    previous: "2026-10-27-retry-control-input"
+    after: "8cac2692de155bde4da82554a6652e9825291d69006b2722b5f824bd17f0463e"
     decision: same-version
   - root: "event:session/title-llm-request"
-    previous: "2026-10-13-liveshare-share-viewer-principal"
-    after: "af3f5704ba7ddf71f3815c21740d783b922d46bbc5387bf18132d10b532c483e"
+    previous: "2026-10-27-retry-control-input"
+    after: "34bf7064180a314210e0f8cbcefa191313843c519828d9a7e7a0c6db8b7b9d4c"
     decision: same-version
   - root: "event:user/message"
-    previous: "2026-10-13-liveshare-share-viewer-principal"
-    after: "703a649d6600822bdb408686a600bbefd2255592606ed23dfd2b0f08fc5ae2cf"
+    previous: "2026-10-27-retry-control-input"
+    after: "ae9a18c21e88c444cd9d9c9ff234da8e31bf0cabaaa5916eac5d3b9df5ffc548"
     decision: same-version
 ```
 

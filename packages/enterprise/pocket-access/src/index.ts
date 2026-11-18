@@ -41,7 +41,7 @@ export const name = 'pocket-access'
 export const inject = ['webServer', 'currentUser', 'platformUsers', 'connection', 'settings', 'subprocess']
 
 /** 管理路由前缀（代理侧 denylist 同值，两端必须同步修改）。 */
-export const MANAGEMENT_ROUTE_PREFIX = '/api/enterprise/pocket'
+const MANAGEMENT_ROUTE_PREFIX = '/api/enterprise/pocket'
 
 /** 管理请求体字节上限（JSON 开关/配对载荷，冗余余量防滥用）。 */
 const MANAGEMENT_BODY_MAX_BYTES = 8 * 1024 * 1024
@@ -189,7 +189,7 @@ function epochOf(iso: string): number {
  * @param tunnel - 隧道管理器的当前状态快照。
  * @returns 公网访问 origin（无尾随斜杠的 `https://` 前缀 URL）；隧道未运行或无法解析出 URL 为 null。
  */
-export function resolvePublicOrigin(tunnel: TunnelSnapshot): string | null {
+function resolvePublicOrigin(tunnel: TunnelSnapshot): string | null {
   if (tunnel.state !== 'running') return null
   if (tunnel.url !== null) return tunnel.url.replace(/\/+$/, '')
   if (tunnel.mode === 'named') {

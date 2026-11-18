@@ -3,14 +3,14 @@ import type { Context } from '@deepseek-ai/cordis'
 import type { PlatformRole, PlatformUserId } from '@deepseek-ai/dsh-platform-user'
 import { PlatformUserError } from '@deepseek-ai/dsh-platform-user'
 import {
-  apply,
   fetchMeResponse,
   mapPlatformUser,
   readMeResponse,
   readMeUser,
   resolveConfig,
   type MeUser,
-} from '../src/index.ts'
+} from '../src/console-client.ts'
+import { apply } from '../src/index.ts'
 
 const me = (overrides: Partial<MeUser> = {}): MeUser => ({
   id: 'user-1',

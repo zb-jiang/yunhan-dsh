@@ -48,7 +48,6 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-user-identity-context'
 
 import { INSTANCE_WORKSPACE_SECTION, renderInstanceWorkspaceContextText } from './text.ts'
-export { INSTANCE_WORKSPACE_SECTION, renderInstanceWorkspaceContextText } from './text.ts'
 export type { InstanceWorkspaceBlockData } from './text.ts'
 
 /** Cordis plugin name used by loader diagnostics. */

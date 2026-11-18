@@ -37,7 +37,7 @@ import type { SessionPersistence } from '@deepseek-ai/dsh-session-persistence'
 import { SessionAlreadyOwnedError } from '@deepseek-ai/dsh-session-persistence'
 import type {} from '@deepseek-ai/dsh-session-projection-cache'
 import type {} from '@deepseek-ai/dsh-workspace'
-import { sessionDir } from '@deepseek-ai/dsh-session-persistence-jsonl'
+import { sessionDir } from '@deepseek-ai/dsh-session-persistence-jsonl/format'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'session-delete'

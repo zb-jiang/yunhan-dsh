@@ -58,8 +58,6 @@ import {
 } from './generation.ts'
 
 export type { JsonlCompression } from './format.ts'
-/** 外部消费者（如企业会话删除端点）按同一事实来源计算会话工件目录。 */
-export { sessionDir }
 
 /**
  * Internal handoff-reuse policy, not deployment configuration: a cold

@@ -7,7 +7,7 @@
  * @module @deepseek-ai/dsh-llm-access/catalog
  */
 
-import { resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai'
+import { resolveProfiles } from '@deepseek-ai/dsh-llm-pi-ai/config'
 import type {
   PiAiModality,
   PiAiModelProfile,
