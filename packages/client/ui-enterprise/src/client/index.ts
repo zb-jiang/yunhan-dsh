@@ -52,7 +52,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // 生成态 remote contribution:客户端 bundle 内联(typert remote-client 产物),
 // 挂载后在 ctx.remote.enterpriseFiles 暴露文件写端点。
 import enterpriseFilesRemote from '@deepseek-ai/dsh-enterprise-file-write/remote'
-import { EnterpriseOverlay, getAuthSnapshot, subscribeAuth } from './EnterpriseUi.tsx'
+import { EnterpriseOverlay, getAuthSnapshot, getGuestSnapshot, subscribeAuth, subscribeGuest } from './EnterpriseUi.tsx'
 import { ARCHIVE_TAB_ID, ARCHIVE_TAB_KIND, EnterpriseWorkbench } from './enterprise-workbench.ts'
 import { EnterpriseServicesSection } from './EnterpriseServicesSection.tsx'
 import { PocketAccessSection } from './pocket/PocketAccessSection.tsx'
@@ -231,14 +231,37 @@ export function apply(ctx: ClientContext): void {
     inject: () => ({ workbench, hooks: { directoryFlow: directoryFlowSource } }),
   }, WorkflowPanel))
   // 工作流侧栏入口:顶部功能入口区(插件 0/技能库 5/计划任务 10 之后),
-  // 图标自带待办数徽标(计数经 inject 的 workbench 读取)。
-  ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
-    name: 'sidebar.panellist',
-    id: WORKFLOW_PANEL_ID,
-    order: 6,
-    label: () => '工作流',
-    inject: () => ({ workbench }),
-  }, WorkflowPanelIcon))
+  // 图标自带待办数徽标(计数经 inject 的 workbench 读取)。仅企业工作台
+  // 显示:个人工作台(匿名放行)没有企业流程身份,菜单项按形态挂/摘——
+  // 登录即时挂回,进入个人工作台即时摘除。座位由 ui-sidebar 的 generator
+  // inject 声明,注册保持 inject 包装等待声明,不能像 pocketAccess 那样
+  // 在 apply 里直接 register。
+  ctx.slots.inject('sidebar.panellist', () => {
+    let registration: (() => void) | null = null
+    const reconcile = (): void => {
+      const current = registration
+      if (!getGuestSnapshot()) {
+        if (current !== null) return
+        registration = ctx.slots.register({
+          name: 'sidebar.panellist',
+          id: WORKFLOW_PANEL_ID,
+          order: 6,
+          label: () => '工作流',
+          inject: () => ({ workbench }),
+        }, WorkflowPanelIcon)
+        return
+      }
+      current?.()
+      registration = null
+    }
+    reconcile()
+    const unsubscribe = subscribeGuest(reconcile)
+    return () => {
+      unsubscribe()
+      registration?.()
+      registration = null
+    }
+  })
 
   // 匿名使用引导卡:侧栏底部(设置项上方)的登录入口——匿名放行态认证遮罩
   // 不盖帧,登录引导收进侧栏 footer(右上角悬浮条会挡顶栏控件,已废弃);

@@ -120,12 +120,14 @@ let authInitialized = false
 let guestSnapshot = readAnonymousPreference()
 const guestListeners = new Set<() => void>()
 
-function subscribeGuest(fn: () => void): () => void {
+/** 订阅匿名放行快照变化(组件外的动态注册按个人/企业工作台形态挂/摘条目用)。 */
+export function subscribeGuest(fn: () => void): () => void {
   guestListeners.add(fn)
   return () => { guestListeners.delete(fn) }
 }
 
-function getGuestSnapshot(): boolean {
+/** 当前匿名放行快照(不订阅;配合 {@link subscribeGuest} 做外部 reconcile)。 */
+export function getGuestSnapshot(): boolean {
   return guestSnapshot
 }
 
