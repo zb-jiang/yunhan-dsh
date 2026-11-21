@@ -47,7 +47,7 @@ class MetricsPollerTest {
         properties = new AnalyticsProperties();
         properties.setMetrics(List.of("dsh.flowable.jobs.deadletter", "dsh.backend.task"));
         properties.setAlerts(Map.of("dsh.flowable.jobs.deadletter", 0.0));
-        FlowableRestClient stubClient = new FlowableRestClient(null) {
+        FlowableRestClient stubClient = new FlowableRestClient(null, JSON) {
             @Override
             public com.fasterxml.jackson.databind.JsonNode getEngineMetric(String metricName,
                                                                            String tagFilter) {

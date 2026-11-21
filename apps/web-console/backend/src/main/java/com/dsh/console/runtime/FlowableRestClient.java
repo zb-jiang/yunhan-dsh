@@ -2,7 +2,10 @@ package com.dsh.console.runtime;
 
 import com.dsh.console.common.GlobalExceptionHandler.NotFoundException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
@@ -26,9 +29,11 @@ import org.springframework.web.client.RestClient;
 public class FlowableRestClient {
 
     private final RestClient flowableRestClient;
+    private final ObjectMapper objectMapper;
 
-    public FlowableRestClient(RestClient flowableRestClient) {
+    public FlowableRestClient(RestClient flowableRestClient, ObjectMapper objectMapper) {
         this.flowableRestClient = flowableRestClient;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -194,55 +199,87 @@ public class FlowableRestClient {
     /**
      * 查单个历史实例(runtime 不存在时的详情回退)。
      *
-     * <p>调引擎 {@code GET /dsh/history/process-instances?processInstanceId=},引擎按过滤
-     * 条件返回数组;不存在返回 {@code null}(引擎端点不返回 404)。
+     * <p>调官方 REST {@code GET /process-api/history/historic-process-instances/{id}}
+     * (无行级归属过滤,管理员/应用管理员审计详情依赖此语义);不存在返回 {@code null}。
+     * 响应无 {@code processDefinitionKey} 字段,定义归属回退由调用方按 procdefId 补查。
      */
     public JsonNode getHistoricProcessInstance(String instanceId) {
-        JsonNode list = flowableRestClient.get()
-            .uri(uriBuilder -> uriBuilder
-                .path("/dsh/history/process-instances")
-                .queryParam("processInstanceId", instanceId)
-                .build())
+        return flowableRestClient.get()
+            .uri("/process-api/history/historic-process-instances/{id}", instanceId)
             .retrieve()
+            .onStatus(status -> status.value() == 404,
+                (req, resp) -> { throw new NotFoundException("历史实例不存在: " + instanceId); })
             .body(JsonNode.class);
-        if (list == null || !list.isArray() || list.isEmpty()) {
-            return null;
-        }
-        return list.get(0);
     }
 
     /**
-     * 列历史实例(含运行中,按发起时间倒序)。
+     * 列历史实例(含运行中,按发起时间倒序),返回 plain JSON 数组。
      *
-     * <p>调引擎 {@code GET /dsh/history/process-instances},返回 plain JSON 数组
-     * (非 Flowable REST 的 {@code {"data":[...]}} 包装)。
+     * <p>调官方 REST {@code POST /process-api/query/historic-process-instances}
+     * (无行级归属过滤——引擎 {@code /dsh/history/*} 端点强制「仅本人相关」,管理员/
+     * 应用管理员的实例列表依赖全量语义,故走官方 REST;角色可见性由调用方在
+     * {@code ProcessInstanceService} 收窄)。排序固定按发起时间倒序,对齐引擎端点语义。
+     *
+     * <p>completed/terminated 没有服务端 deleteReason 过滤参数:按 finished=true
+     * 拉取到当前页尾,本地按 deleteReason 过滤(正常完成实例 deleteReason 为 null,
+     * 被终止实例非空)后切片,对齐原引擎端点「过滤后再分页」语义,翻页不漏不重。
      *
      * @param processDefinitionId  可选;按 procdef id 过滤(部署版本级)
      * @param processDefinitionKey 可选;按流程定义 key 过滤(跨部署版本收集,重新发布后旧版本实例不漏)
-     * @param state                可选;running/completed/terminated,不传看全部
-     * @param page                 页码(0-based,引擎端点语义;completed/terminated 在引擎端过滤后分页)
+     * @param state                可选;completed/terminated,不传看全部(运行中列表不经此方法)
+     * @param page                 页码(0-based)
      * @param size                 单页条数
      */
     public JsonNode listHistoricProcessInstances(String processDefinitionId, String processDefinitionKey,
                                                  String state, int page, int size) {
-        return flowableRestClient.get()
-            .uri(uriBuilder -> {
-                uriBuilder.path("/dsh/history/process-instances");
-                if (processDefinitionId != null && !processDefinitionId.isBlank()) {
-                    uriBuilder.queryParam("processDefinitionId", processDefinitionId);
-                }
-                if (processDefinitionKey != null && !processDefinitionKey.isBlank()) {
-                    uriBuilder.queryParam("processDefinitionKey", processDefinitionKey);
-                }
-                if (state != null && !state.isBlank()) {
-                    uriBuilder.queryParam("state", state);
-                }
-                uriBuilder.queryParam("page", Math.max(0, page));
-                uriBuilder.queryParam("size", Math.max(1, size));
-                return uriBuilder.build();
-            })
+        boolean completedOnly = "completed".equalsIgnoreCase(state);
+        boolean terminatedOnly = "terminated".equalsIgnoreCase(state);
+        boolean finishedFilter = completedOnly || terminatedOnly;
+        int safeSize = Math.max(1, size);
+        int firstResult = Math.max(0, page) * safeSize;
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (processDefinitionId != null && !processDefinitionId.isBlank()) {
+            body.put("processDefinitionId", processDefinitionId);
+        }
+        if (processDefinitionKey != null && !processDefinitionKey.isBlank()) {
+            body.put("processDefinitionKey", processDefinitionKey);
+        }
+        if (finishedFilter) {
+            body.put("finished", true);
+        }
+        body.put("order", "desc");
+        body.put("sort", "startTime");
+        body.put("start", finishedFilter ? 0 : firstResult);
+        body.put("size", finishedFilter ? firstResult + safeSize : safeSize);
+
+        JsonNode resp = flowableRestClient.post()
+            .uri("/process-api/query/historic-process-instances")
+            .body(body)
             .retrieve()
             .body(JsonNode.class);
+        JsonNode data = resp == null ? null : resp.path("data");
+        if (data == null || !data.isArray()) {
+            return objectMapper.createArrayNode();
+        }
+        if (!finishedFilter) {
+            return data;
+        }
+        List<JsonNode> filtered = new ArrayList<>(data.size());
+        for (JsonNode node : data) {
+            boolean hasDeleteReason = node.hasNonNull("deleteReason")
+                && !node.path("deleteReason").asText("").isBlank();
+            if (terminatedOnly == hasDeleteReason) {
+                filtered.add(node);
+            }
+        }
+        ArrayNode pageData = objectMapper.createArrayNode();
+        int from = Math.min(firstResult, filtered.size());
+        int to = Math.min(firstResult + safeSize, filtered.size());
+        for (int i = from; i < to; i++) {
+            pageData.add(filtered.get(i));
+        }
+        return pageData;
     }
 
     /**

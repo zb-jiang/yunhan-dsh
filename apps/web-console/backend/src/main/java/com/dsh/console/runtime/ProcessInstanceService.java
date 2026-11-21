@@ -666,6 +666,19 @@ public class ProcessInstanceService {
         }
         Map<String, WorkflowDefinitionDto> byProcdef = wfFilter != null
             ? Map.of() : workflowRepository.findByProcdefIds(procdefIds);
+        if (wfFilter == null) {
+            // 历史官方 REST 响应不带 processDefinitionKey:procdefId miss 的节点按
+            // procdefId 补查 key(带缓存)并入 key 集合,key 反查才能命中
+            for (JsonNode node : resp) {
+                if (byProcdef.containsKey(textOrNull(node, "processDefinitionId"))) {
+                    continue;
+                }
+                String key = resolveInstanceProcdefKey(node);
+                if (key != null) {
+                    keys.add(key);
+                }
+            }
+        }
         Map<String, WorkflowDefinitionDto> byKey = wfFilter != null
             ? Map.of() : workflowRepository.findByBpmnProcessKeys(keys);
         Map<String, String> displayNames = userService.findDisplayNames(startUserIds);
@@ -673,12 +686,29 @@ public class ProcessInstanceService {
             WorkflowDefinitionDto wf = wfFilter != null ? wfFilter
                 : byProcdef.get(textOrNull(node, "processDefinitionId"));
             if (wf == null) {
-                // ① procdefId miss(重新发布后的旧版本实例)→ key 回退(key 跨版本稳定)
-                wf = byKey.get(textOrNull(node, "processDefinitionKey"));
+                // ① procdefId miss(重新发布后的旧版本实例)→ key 回退(key 跨版本稳定)。
+                // 历史官方 REST 响应不带 processDefinitionKey:缺失时按 procdefId
+                // 查 repository API 补(带缓存),避免 byKey.get(null)
+                wf = byKey.get(resolveInstanceProcdefKey(node));
             }
             result.add(toDto(node, wf, displayNames));
         }
         return result;
+    }
+
+    /** 实例 JSON 自带 processDefinitionKey 时直接用;缺失按 procdefId 补查(带缓存)。 */
+    private String resolveInstanceProcdefKey(JsonNode node) {
+        String key = textOrNull(node, "processDefinitionKey");
+        if (key != null) {
+            return key;
+        }
+        String procdefId = textOrNull(node, "processDefinitionId");
+        if (procdefId == null) {
+            return null;
+        }
+        return procdefKeyCache
+            .computeIfAbsent(procdefId, this::lookupProcdefKeyFromEngine)
+            .orElse(null);
     }
 
     private static void collectInstanceKeys(JsonNode node, Set<String> procdefIds,
