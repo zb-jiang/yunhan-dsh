@@ -429,6 +429,15 @@
       "@deepseek-ai/dsh-native-command/types": ["./packages/util/native-command/src/types.ts"],
       "@deepseek-ai/dsh-message-quotes/client": ["./packages/session/message-quotes/src/client/index.ts"],
       "@deepseek-ai/dsh-ptc-runtime-node/configuration": ["./packages/ptc-runtime/ptc-runtime-node/src/configuration.ts"],
+      // Enterprise subpath exports added in the rc.3 merge (plugin entry exports gate):
+      // the generated region maps bare names only, so each subpath needs its own alias.
+      "@deepseek-ai/dsh-instance-workspace/text": ["./packages/enterprise/instance-workspace/src/text.ts"],
+      "@deepseek-ai/dsh-kb-context/text": ["./packages/enterprise/kb-context/src/text.ts"],
+      "@deepseek-ai/dsh-skill-sync/skillhub": ["./packages/enterprise/skill-sync/src/skillhub.ts"],
+      "@deepseek-ai/dsh-platform-user/sso": ["./packages/enterprise/platform-user/src/sso.ts"],
+      "@deepseek-ai/dsh-llm-pi-ai/config": ["./packages/llm/llm-pi-ai/src/config.ts"],
+      "@deepseek-ai/dsh-llm-pi-ai/auth": ["./packages/llm/llm-pi-ai/src/auth.ts"],
+      "@deepseek-ai/dsh-session-persistence-jsonl/format": ["./packages/session/session-persistence-jsonl/src/format.ts"],
       // BEGIN generated package aliases — pnpm run gen-tsconfig-paths
       "@deepseek-ai/dsh-acp": ["./packages/acp/acp/src"],
       "@deepseek-ai/dsh-acp-app": ["./packages/bundle/acp-app/src"],

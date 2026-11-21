@@ -72,6 +72,7 @@ import { UserFooterCard } from './UserFooterCard.tsx'
 import { GuestSidebarCard } from './GuestSidebarCard.tsx'
 import { KbChipsDock } from './KbChipsDock.tsx'
 import { KbPickerButton } from './KbPickerButton.tsx'
+import { ArchiveTabsHeaderButton } from './ArchiveTabsHeaderButton.tsx'
 import { KbUploadAction } from './KbUploadAction.tsx'
 import type { KbUploadInjected } from './KbUploadAction.tsx'
 import { InstanceUploadAction } from './InstanceUploadAction.tsx'
@@ -322,6 +323,15 @@ export function apply(ctx: ClientContext): void {
     id: 'instance-upload',
     inject: () => ({ readWorkspaceFile, workbench }),
   }, InstanceUploadAction))
+
+  // 会话头部「实例空间/任务档案」重开入口(header.utilities 座位):仅绑定
+  // 待办的会话渲染两个图标按钮,右栏标签页被 × 关闭后从此处一键重开;未
+  // 绑定会话返回 null,头部 utilities 区域经 :empty 塌缩、零占位。
+  ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register({
+    name: 'conversation.session.header.utilities',
+    id: 'enterprise-archive-tabs',
+    inject: () => ({ workbench }),
+  }, ArchiveTabsHeaderButton))
 
   // 右栏文件预览「引用到对话」:预览正文右键选区 → 结构化引用 chip 经
   // inputActions 插入输入草稿,发送时序列化为带行号署名的 markdown 围栏

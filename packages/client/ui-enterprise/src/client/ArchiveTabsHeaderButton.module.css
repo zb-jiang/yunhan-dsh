@@ -1,0 +1,26 @@
+/* header.utilities 紧凑图标按钮:与 headerMenuButton(28px/15px svg)同尺寸节奏。 */
+.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--dsw-alias-label-secondary);
+  line-height: 1;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.button:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.button svg {
+  width: 15px;
+  height: 15px;
+}

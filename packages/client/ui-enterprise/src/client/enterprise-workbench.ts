@@ -462,6 +462,16 @@ export class EnterpriseWorkbench {
   }
 
   /**
+   * 打开目标会话的任务档案标签页(会话头部重开入口)。调用场景是用户正看着
+   * 该会话(按钮就渲染在该会话头部),座位必然已挂载、openTabIn 必然落地
+   * (无 openArchiveTab 的时序缺口)。
+   * @param sessionId - 目标会话(即当前会话)。
+   */
+  openTaskArchiveTab(sessionId: SessionId): void {
+    this.archiveTabPort.openTabIn(sessionId, ARCHIVE_TAB_KIND)
+  }
+
+  /**
    * 打开任务档案标签页,并保证它落在目标会话的 rightbar 表面上。
    *
    * <p>经 openTabIn 直接写目标会话自己的 adopted store(openContent 自带
